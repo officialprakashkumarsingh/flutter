@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'dart:io' show zlib;
 
 class ExternalTool {
   final String name;
@@ -141,18 +142,18 @@ class ExternalToolsService extends ChangeNotifier {
       execute: _createImageCollage,
     );
 
-    // Enhanced Mermaid chart generation - create professional diagrams using mermaid.js
-    _tools['mermaid_chart'] = ExternalTool(
-      name: 'mermaid_chart',
-      description: 'Generates professional charts and diagrams using mermaid.js with enhanced styling and structure. Supports flowcharts, sequence diagrams, class diagrams, gitgraph, gantt charts, and more. Automatically optimizes diagram structure and appearance.',
+    // Enhanced PlantUML diagram generation - create professional diagrams using PlantUML
+    _tools['plantuml_chart'] = ExternalTool(
+      name: 'plantuml_chart',
+      description: 'Generates professional diagrams using PlantUML with robust syntax support. Supports UML diagrams, flowcharts, sequence diagrams, class diagrams, use case diagrams, component diagrams, deployment diagrams, activity diagrams, state diagrams, and more. Auto-enhances diagram structure and provides multiple fallback services.',
       parameters: {
-        'diagram': {'type': 'string', 'description': 'Mermaid diagram code (will be enhanced automatically)', 'required': true},
-        'diagram_type': {'type': 'string', 'description': 'Type of diagram (flowchart, sequence, class, gitgraph, gantt, pie, journey)', 'default': 'flowchart'},
-        'format': {'type': 'string', 'description': 'Image format (svg or png)', 'default': 'svg'},
-        'theme': {'type': 'string', 'description': 'Theme (default, dark, forest, base, neutral)', 'default': 'default'},
+        'diagram': {'type': 'string', 'description': 'PlantUML diagram code (will be enhanced automatically)', 'required': true},
+        'diagram_type': {'type': 'string', 'description': 'Type of diagram (sequence, class, usecase, activity, component, deployment, state, object, timing, mindmap, wbs, gantt, salt)', 'default': 'sequence'},
+        'format': {'type': 'string', 'description': 'Image format (svg, png)', 'default': 'svg'},
+        'theme': {'type': 'string', 'description': 'PlantUML theme (default, cerulean, cyborg, journal, lumen, sketchy, spacelab, united)', 'default': 'default'},
         'auto_enhance': {'type': 'boolean', 'description': 'Automatically enhance diagram structure and styling', 'default': true},
       },
-      execute: _generateMermaidChart,
+      execute: _generatePlantUMLChart,
     );
 
     // Crypto Market Data - Real-time cryptocurrency information
@@ -1175,12 +1176,13 @@ class ExternalToolsService extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> _generateMermaidChart(Map<String, dynamic> params) async {
-    String diagram = params['diagram'] as String? ?? '';
-    final diagramType = params['diagram_type'] as String? ?? 'flowchart';
-    final format = params['format'] as String? ?? 'svg';
-    final theme = params['theme'] as String? ?? 'default';
-    final autoEnhance = params['auto_enhance'] as bool? ?? true;
+  /// Generate PlantUML diagrams with multiple fallback services
+  Future<Map<String, dynamic>> _generatePlantUMLChart(Map<String, dynamic> params) async {
+    String diagram = params['diagram']?.toString() ?? '';
+    final diagramType = params['diagram_type']?.toString() ?? 'sequence';
+    final format = params['format']?.toString() ?? 'svg';
+    final theme = params['theme']?.toString() ?? 'default';
+    final autoEnhance = _parseBool(params['auto_enhance']) ?? true;
 
     diagram = diagram.trim();
 
@@ -1188,94 +1190,69 @@ class ExternalToolsService extends ChangeNotifier {
       return {
         'success': false,
         'error': 'diagram parameter is required',
-        'tool_executed': false,
+        'message': 'PlantUML diagram code is required',
       };
     }
 
     try {
       // Auto-enhance the diagram if requested
       if (autoEnhance) {
-        diagram = _enhanceMermaidDiagram(diagram, diagramType);
+        diagram = _enhancePlantUMLDiagram(diagram, diagramType, theme);
       }
 
-      // Use Kroki with proper encoding and fallback options
-      final encodedDiagram = base64Encode(utf8.encode(diagram));
-      final primaryUrl = 'https://kroki.io/mermaid/$format/$encodedDiagram';
-      final fallbackUrl = 'https://mermaid.ink/svg/${base64Encode(utf8.encode(diagram))}';
-      
-      http.Response? response;
-      String usedService = '';
-      
-      // Try primary service (Kroki)
-      try {
-        response = await http
-            .get(Uri.parse(primaryUrl))
-            .timeout(const Duration(seconds: 20));
-        usedService = 'Kroki.io';
-        
-        // If response is not successful, try POST method
-        if (response.statusCode != 200) {
-          response = await http
-              .post(
-                Uri.parse('https://kroki.io/mermaid/$format'),
-                headers: {
-                  'Content-Type': 'text/plain; charset=utf-8',
-                  'Accept': format == 'png' ? 'image/png' : 'image/svg+xml',
-                },
-                body: diagram,
-              )
-              .timeout(const Duration(seconds: 20));
-        }
-      } catch (e) {
-        debugPrint('Kroki service failed: $e');
-      }
-      
-      // Try fallback service (Mermaid.ink) if primary failed
-      if (response == null || response.statusCode != 200) {
+      // Try PlantUML services with multiple fallbacks
+      final services = [
+        {
+          'name': 'PlantUML Server',
+          'method': 'plantuml_server',
+        },
+        {
+          'name': 'Kroki.io',
+          'method': 'kroki',
+        },
+        {
+          'name': 'PlantText',
+          'method': 'planttext',
+        },
+      ];
+
+      for (final service in services) {
         try {
-          response = await http
-              .get(Uri.parse(fallbackUrl))
-              .timeout(const Duration(seconds: 20));
-          usedService = 'Mermaid.ink';
+          final result = await _tryPlantUMLService(diagram, format, service['method']!);
+          if (result['success'] == true) {
+            return {
+              'success': true,
+              'format': format,
+              'diagram_type': diagramType,
+              'theme': theme,
+              'auto_enhanced': autoEnhance,
+              'original_diagram': params['diagram'],
+              'enhanced_diagram': diagram,
+              'image_url': result['image_url'],
+              'size': result['size'],
+              'service_used': service['name'],
+              'tool_executed': true,
+              'execution_time': DateTime.now().toIso8601String(),
+              'description': 'Professional PlantUML diagram generated successfully with ${autoEnhance ? 'enhanced styling' : 'original styling'} using ${service['name']}',
+            };
+          }
         } catch (e) {
-          debugPrint('Fallback service failed: $e');
+          debugPrint('${service['name']} failed: $e');
+          continue;
         }
       }
 
-      if (response != null && response.statusCode == 200) {
-        final bytes = response.bodyBytes;
-        final mime = format == 'png' ? 'image/png' : 'image/svg+xml';
-        final base64Data = base64Encode(bytes);
-        final dataUrl = 'data:$mime;base64,$base64Data';
-
-        return {
-          'success': true,
-          'format': format,
-          'diagram_type': diagramType,
-          'theme': theme,
-          'auto_enhanced': autoEnhance,
-          'original_diagram': params['diagram'],
-          'enhanced_diagram': diagram,
-          'image_url': dataUrl,
-          'size': bytes.length,
-          'service_used': usedService,
-          'tool_executed': true,
-          'execution_time': DateTime.now().toIso8601String(),
-          'description': 'Professional Mermaid diagram generated successfully with ${autoEnhance ? 'enhanced styling' : 'original styling'} using $usedService',
-        };
-      } else {
-        return {
-          'success': false,
-          'error': 'Failed to generate chart: HTTP ${response?.statusCode ?? 'No response'} from all services',
-          'tried_services': ['Kroki.io', 'Mermaid.ink'],
-          'tool_executed': true,
-        };
-      }
+      return {
+        'success': false,
+        'error': 'All PlantUML services failed',
+        'message': 'Unable to generate diagram from any available service',
+        'tried_services': services.map((s) => s['name']).toList(),
+      };
     } catch (e) {
       return {
         'success': false,
-        'error': 'Chart generation error: $e',
-        'tool_executed': true,
+        'error': 'PlantUML generation error: $e',
+        'message': 'Error occurred during diagram generation',
       };
     }
   }
@@ -1479,97 +1456,327 @@ class ExternalToolsService extends ChangeNotifier {
     ''';
   }
 
-  String _enhanceMermaidDiagram(String diagram, String diagramType) {
-    // Remove any existing styling to apply new enhanced styling
-    String enhancedDiagram = diagram;
-    
-    switch (diagramType.toLowerCase()) {
-      case 'flowchart':
-        enhancedDiagram = _enhanceFlowchart(diagram);
-        break;
-      case 'sequence':
-        enhancedDiagram = _enhanceSequenceDiagram(diagram);
-        break;
-      case 'class':
-        enhancedDiagram = _enhanceClassDiagram(diagram);
-        break;
-      case 'gantt':
-        enhancedDiagram = _enhanceGanttChart(diagram);
-        break;
-      case 'pie':
-        enhancedDiagram = _enhancePieChart(diagram);
-        break;
+
+
+  // PlantUML Service Implementations
+  
+  Future<Map<String, dynamic>> _tryPlantUMLService(String diagram, String format, String method) async {
+    switch (method) {
+      case 'plantuml_server':
+        return await _generateWithPlantUMLServer(diagram, format);
+      case 'kroki':
+        return await _generateWithKroki(diagram, format);
+      case 'planttext':
+        return await _generateWithPlantText(diagram, format);
       default:
-        enhancedDiagram = _enhanceGeneralDiagram(diagram);
+        throw Exception('Unknown PlantUML service method: $method');
     }
-    
-    return enhancedDiagram;
   }
 
-  String _enhanceFlowchart(String diagram) {
-    // Add professional styling to flowcharts
-    if (!diagram.contains('classDef')) {
-      diagram += '''
+  Future<Map<String, dynamic>> _generateWithPlantUMLServer(String diagram, String format) async {
+    final encodedDiagram = _encodePlantUML(diagram);
+    final url = 'https://www.plantuml.com/plantuml/$format/$encodedDiagram';
+    
+    final response = await http.get(Uri.parse(url), headers: {
+      'Accept': format == 'png' ? 'image/png' : 'image/svg+xml',
+    }).timeout(Duration(seconds: 20));
 
-%%{init: {"flowchart": {"htmlLabels": true, "curve": "basis"}}}%%
+    if (response.statusCode == 200) {
+      final bytes = response.bodyBytes;
+      final mime = format == 'png' ? 'image/png' : 'image/svg+xml';
+      final base64Data = base64Encode(bytes);
+      final dataUrl = 'data:$mime;base64,$base64Data';
 
-classDef default fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000
-classDef startEnd fill:#4caf50,stroke:#2e7d32,stroke-width:3px,color:#fff
-classDef process fill:#2196f3,stroke:#1565c0,stroke-width:2px,color:#fff
-classDef decision fill:#ff9800,stroke:#e65100,stroke-width:2px,color:#fff
-classDef error fill:#f44336,stroke:#c62828,stroke-width:2px,color:#fff''';
+      return {
+        'success': true,
+        'image_url': dataUrl,
+        'size': bytes.length,
+      };
+    } else {
+      throw Exception('HTTP ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> _generateWithKroki(String diagram, String format) async {
+    final encodedDiagram = base64Encode(utf8.encode(diagram));
+    final url = 'https://kroki.io/plantuml/$format/$encodedDiagram';
+    
+    // Try GET first
+    try {
+      final response = await http.get(Uri.parse(url), headers: {
+        'Accept': format == 'png' ? 'image/png' : 'image/svg+xml',
+      }).timeout(Duration(seconds: 20));
+
+      if (response.statusCode == 200) {
+        final bytes = response.bodyBytes;
+        final mime = format == 'png' ? 'image/png' : 'image/svg+xml';
+        final base64Data = base64Encode(bytes);
+        final dataUrl = 'data:$mime;base64,$base64Data';
+
+        return {
+          'success': true,
+          'image_url': dataUrl,
+          'size': bytes.length,
+        };
+      }
+    } catch (e) {
+      // Fall back to POST if GET fails
+    }
+
+    // Try POST method
+    final response = await http.post(
+      Uri.parse('https://kroki.io/plantuml/$format'),
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Accept': format == 'png' ? 'image/png' : 'image/svg+xml',
+      },
+      body: diagram,
+    ).timeout(Duration(seconds: 20));
+
+    if (response.statusCode == 200) {
+      final bytes = response.bodyBytes;
+      final mime = format == 'png' ? 'image/png' : 'image/svg+xml';
+      final base64Data = base64Encode(bytes);
+      final dataUrl = 'data:$mime;base64,$base64Data';
+
+      return {
+        'success': true,
+        'image_url': dataUrl,
+        'size': bytes.length,
+      };
+    } else {
+      throw Exception('HTTP ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> _generateWithPlantText(String diagram, String format) async {
+    final encodedDiagram = _encodePlantUML(diagram);
+    final url = 'https://www.planttext.com/api/plantuml/$format/$encodedDiagram';
+    
+    final response = await http.get(Uri.parse(url), headers: {
+      'Accept': format == 'png' ? 'image/png' : 'image/svg+xml',
+    }).timeout(Duration(seconds: 20));
+
+    if (response.statusCode == 200) {
+      final bytes = response.bodyBytes;
+      final mime = format == 'png' ? 'image/png' : 'image/svg+xml';
+      final base64Data = base64Encode(bytes);
+      final dataUrl = 'data:$mime;base64,$base64Data';
+
+      return {
+        'success': true,
+        'image_url': dataUrl,
+        'size': bytes.length,
+      };
+    } else {
+      throw Exception('HTTP ${response.statusCode}');
+    }
+  }
+
+  String _encodePlantUML(String plantuml) {
+    // PlantUML encoding algorithm (deflate + base64 with custom alphabet)
+    final utf8Bytes = utf8.encode(plantuml);
+    final deflated = zlib.encode(utf8Bytes);
+    
+    // PlantUML uses a custom base64 alphabet
+    const alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_';
+    String result = '';
+    
+    for (int i = 0; i < deflated.length; i += 3) {
+      int b1 = deflated[i];
+      int b2 = i + 1 < deflated.length ? deflated[i + 1] : 0;
+      int b3 = i + 2 < deflated.length ? deflated[i + 2] : 0;
+      
+      int c1 = b1 >> 2;
+      int c2 = ((b1 & 0x3) << 4) | (b2 >> 4);
+      int c3 = ((b2 & 0xF) << 2) | (b3 >> 6);
+      int c4 = b3 & 0x3F;
+      
+      result += alphabet[c1] + alphabet[c2];
+      
+      if (i + 1 < deflated.length) {
+        result += alphabet[c3];
+      }
+      if (i + 2 < deflated.length) {
+        result += alphabet[c4];
+      }
     }
     
-    return diagram;
+    return result;
+  }
+
+  String _enhancePlantUMLDiagram(String diagram, String diagramType, String theme) {
+    // Remove existing @startuml and @enduml if present
+    diagram = diagram.replaceAll(RegExp(r'@startuml.*?\n?'), '');
+    diagram = diagram.replaceAll(RegExp(r'@enduml.*?\n?'), '');
+    diagram = diagram.trim();
+
+    String enhanced = '@startuml\n';
+
+    // Add theme if not default
+    if (theme != 'default') {
+      enhanced += '!theme $theme\n';
+    }
+
+    // Add diagram-specific enhancements
+    switch (diagramType.toLowerCase()) {
+      case 'sequence':
+        enhanced += _enhanceSequenceDiagram(diagram);
+        break;
+      case 'class':
+        enhanced += _enhanceClassDiagram(diagram);
+        break;
+      case 'usecase':
+        enhanced += _enhanceUseCaseDiagram(diagram);
+        break;
+      case 'activity':
+        enhanced += _enhanceActivityDiagram(diagram);
+        break;
+      case 'component':
+        enhanced += _enhanceComponentDiagram(diagram);
+        break;
+      case 'deployment':
+        enhanced += _enhanceDeploymentDiagram(diagram);
+        break;
+      case 'state':
+        enhanced += _enhanceStateDiagram(diagram);
+        break;
+      default:
+        enhanced += diagram;
+    }
+
+    enhanced += '\n@enduml';
+    return enhanced;
   }
 
   String _enhanceSequenceDiagram(String diagram) {
-    // Add professional styling to sequence diagrams
-    if (!diagram.contains('%%{init:')) {
-      diagram = '''%%{init: {"sequence": {"mirrorActors": false, "showSequenceNumbers": true}}}%%
-''' + diagram;
+    if (!diagram.contains('skinparam')) {
+      return '''
+skinparam backgroundColor #FEFEFE
+skinparam actor {
+  BackgroundColor #E1F5FE
+  BorderColor #01579B
+}
+skinparam participant {
+  BackgroundColor #E8F5E8
+  BorderColor #2E7D32
+}
+skinparam sequence {
+  ArrowColor #1976D2
+  LifeLineBorderColor #1976D2
+  MessageAlignment center
+}
+autoactivate on
+
+$diagram''';
     }
-    
     return diagram;
   }
 
   String _enhanceClassDiagram(String diagram) {
-    // Add professional styling to class diagrams
-    if (!diagram.contains('%%{init:')) {
-      diagram = '''%%{init: {"class": {"htmlLabels": true}}}%%
-''' + diagram;
+    if (!diagram.contains('skinparam')) {
+      return '''
+skinparam backgroundColor #FEFEFE
+skinparam class {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  ArrowColor #1976D2
+}
+skinparam stereotypeCBackgroundColor #FFE0B2
+hide empty members
+
+$diagram''';
     }
-    
     return diagram;
   }
 
-  String _enhanceGanttChart(String diagram) {
-    // Add professional styling to gantt charts
-    if (!diagram.contains('%%{init:')) {
-      diagram = '''%%{init: {"gantt": {"numberSectionStyles": 4}}}%%
-''' + diagram;
+  String _enhanceUseCaseDiagram(String diagram) {
+    if (!diagram.contains('skinparam')) {
+      return '''
+skinparam backgroundColor #FEFEFE
+skinparam usecase {
+  BackgroundColor #E8F5E8
+  BorderColor #388E3C
+  ArrowColor #4CAF50
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+}
+
+$diagram''';
     }
-    
     return diagram;
   }
 
-  String _enhancePieChart(String diagram) {
-    // Add professional styling to pie charts
-    if (!diagram.contains('%%{init:')) {
-      diagram = '''%%{init: {"pie": {"textPosition": 0.5}, "themeVariables": {"pieOuterStrokeWidth": "5px"}}}%%
-''' + diagram;
+  String _enhanceActivityDiagram(String diagram) {
+    if (!diagram.contains('skinparam')) {
+      return '''
+skinparam backgroundColor #FEFEFE
+skinparam activity {
+  BackgroundColor #E1F5FE
+  BorderColor #0277BD
+  DiamondBackgroundColor #FFF8E1
+  DiamondBorderColor #F9A825
+}
+start
+
+$diagram
+
+stop''';
     }
-    
     return diagram;
   }
 
-  String _enhanceGeneralDiagram(String diagram) {
-    // Add general enhancements
-    if (!diagram.contains('%%{init:')) {
-      diagram = '''%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ff0000"}}}%%
-''' + diagram;
+  String _enhanceComponentDiagram(String diagram) {
+    if (!diagram.contains('skinparam')) {
+      return '''
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #E8F5E8
+  BorderColor #2E7D32
+  ArrowColor #4CAF50
+}
+skinparam interface {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+}
+
+$diagram''';
     }
-    
+    return diagram;
+  }
+
+  String _enhanceDeploymentDiagram(String diagram) {
+    if (!diagram.contains('skinparam')) {
+      return '''
+skinparam backgroundColor #FEFEFE
+skinparam node {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam artifact {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+
+$diagram''';
+    }
+    return diagram;
+  }
+
+  String _enhanceStateDiagram(String diagram) {
+    if (!diagram.contains('skinparam')) {
+      return '''
+skinparam backgroundColor #FEFEFE
+skinparam state {
+  BackgroundColor #E1F5FE
+  BorderColor #0277BD
+  ArrowColor #1976D2
+}
+
+$diagram''';
+    }
     return diagram;
   }
 
