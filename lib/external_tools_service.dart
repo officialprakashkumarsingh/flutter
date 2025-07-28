@@ -1187,11 +1187,11 @@ class ExternalToolsService extends ChangeNotifier {
     diagram = diagram.trim();
 
     if (diagram.isEmpty) {
-      return {
-        'success': false,
-        'error': 'diagram parameter is required',
-        'message': 'PlantUML diagram code is required',
-      };
+      // Provide a default diagram if none is provided
+      diagram = '''
+Alice -> Bob: Hello Bob, how are you?
+Bob --> Alice: I am good thanks!
+''';
     }
 
     try {
@@ -1231,8 +1231,6 @@ class ExternalToolsService extends ChangeNotifier {
               'image_url': result['image_url'],
               'size': result['size'],
               'service_used': service['name'],
-              'tool_executed': true,
-              'execution_time': DateTime.now().toIso8601String(),
               'description': 'Professional PlantUML diagram generated successfully with ${autoEnhance ? 'enhanced styling' : 'original styling'} using ${service['name']}',
             };
           }
@@ -1786,7 +1784,7 @@ $diagram''';
   Future<Map<String, dynamic>> _getCryptoMarketData(Map<String, dynamic> params) async {
     try {
       // Safe parameter extraction with proper type handling
-      final coins = params['coins']?.toString() ?? '';
+      String coins = params['coins']?.toString() ?? '';
       final vsCurrencies = params['vs_currencies']?.toString() ?? 'usd';
       final includeMarketCap = _parseBool(params['include_market_cap']) ?? true;
       final include24hrVol = _parseBool(params['include_24hr_vol']) ?? true;
@@ -1799,6 +1797,9 @@ $diagram''';
           'message': 'Please provide at least one cryptocurrency ID',
         };
       }
+
+      // Convert symbols to coin IDs
+      coins = _convertSymbolsToCoinIds(coins);
 
       // Try CoinGecko first (primary)
       try {
@@ -1843,7 +1844,7 @@ $diagram''';
   Future<Map<String, dynamic>> _getCryptoPriceHistory(Map<String, dynamic> params) async {
     try {
       // Safe parameter extraction
-      final coinId = params['coin_id']?.toString() ?? '';
+      String coinId = params['coin_id']?.toString() ?? '';
       final vsCurrency = params['vs_currency']?.toString() ?? 'usd';
       final days = params['days']?.toString() ?? '7';
       final interval = params['interval']?.toString() ?? 'daily';
@@ -1855,6 +1856,9 @@ $diagram''';
           'message': 'Please provide a cryptocurrency ID',
         };
       }
+
+      // Convert symbol to coin ID if needed
+      coinId = _convertSymbolsToCoinIds(coinId);
 
       // Try CoinGecko first
       try {
@@ -1979,6 +1983,80 @@ $diagram''';
     }
     if (value is double) return value.toInt();
     return null;
+  }
+
+  // Crypto symbol to coin ID mapping
+  String _convertSymbolsToCoinIds(String input) {
+    // Common cryptocurrency symbol mappings
+    final symbolMap = {
+      'btc': 'bitcoin',
+      'eth': 'ethereum',
+      'ada': 'cardano',
+      'dot': 'polkadot',
+      'sol': 'solana',
+      'matic': 'polygon',
+      'avax': 'avalanche-2',
+      'link': 'chainlink',
+      'atom': 'cosmos',
+      'xrp': 'ripple',
+      'ltc': 'litecoin',
+      'bch': 'bitcoin-cash',
+      'xlm': 'stellar',
+      'vet': 'vechain',
+      'fil': 'filecoin',
+      'trx': 'tron',
+      'eos': 'eos',
+      'xmr': 'monero',
+      'dash': 'dash',
+      'zec': 'zcash',
+      'etc': 'ethereum-classic',
+      'bsv': 'bitcoin-sv',
+      'xtz': 'tezos',
+      'neo': 'neo',
+      'mkr': 'maker',
+      'comp': 'compound-coin',
+      'aave': 'aave',
+      'snx': 'havven',
+      'uni': 'uniswap',
+      'sushi': 'sushi',
+      '1inch': '1inch',
+      'crv': 'curve-dao-token',
+      'yfi': 'yearn-finance',
+      'bal': 'balancer',
+      'zrx': '0x',
+      'bat': 'basic-attention-token',
+      'enj': 'enjincoin',
+      'mana': 'decentraland',
+      'sand': 'the-sandbox',
+      'gala': 'gala',
+      'axs': 'axie-infinity',
+      'chz': 'chiliz',
+      'flow': 'flow',
+      'icp': 'internet-computer',
+      'hbar': 'hedera-hashgraph',
+      'algo': 'algorand',
+      'egld': 'elrond-erd-2',
+      'near': 'near',
+      'ftm': 'fantom',
+      'one': 'harmony',
+      'waves': 'waves',
+      'kava': 'kava',
+      'band': 'band-protocol',
+      'rune': 'thorchain',
+      'luna': 'terra-luna',
+      'ust': 'terrausd',
+      'mir': 'mirror-protocol',
+      'anc': 'anchor-protocol',
+    };
+
+    // Split by comma and convert each symbol
+    final coins = input.split(',');
+    final convertedCoins = coins.map((coin) {
+      final trimmed = coin.trim().toLowerCase();
+      return symbolMap[trimmed] ?? trimmed;
+    }).toList();
+
+    return convertedCoins.join(',');
   }
 
   // CoinGecko API implementations
