@@ -1575,42 +1575,54 @@ classDef error fill:#f44336,stroke:#c62828,stroke-width:2px,color:#fff''';
 
   // Crypto Tools Implementation
   
-  /// Get real-time cryptocurrency market data
+  /// Get real-time cryptocurrency market data with multiple API fallbacks
   Future<Map<String, dynamic>> _getCryptoMarketData(Map<String, dynamic> params) async {
     try {
-      final coins = params['coins'] as String;
-      final vsCurrencies = params['vs_currencies'] as String? ?? 'usd';
-      final includeMarketCap = params['include_market_cap'] as bool? ?? true;
-      final include24hrVol = params['include_24hr_vol'] as bool? ?? true;
-      final include24hrChange = params['include_24hr_change'] as bool? ?? true;
+      // Safe parameter extraction with proper type handling
+      final coins = params['coins']?.toString() ?? '';
+      final vsCurrencies = params['vs_currencies']?.toString() ?? 'usd';
+      final includeMarketCap = _parseBool(params['include_market_cap']) ?? true;
+      final include24hrVol = _parseBool(params['include_24hr_vol']) ?? true;
+      final include24hrChange = _parseBool(params['include_24hr_change']) ?? true;
 
-      final uri = Uri.parse('https://api.coingecko.com/api/v3/simple/price').replace(queryParameters: {
-        'ids': coins,
-        'vs_currencies': vsCurrencies,
-        'include_market_cap': includeMarketCap.toString(),
-        'include_24hr_vol': include24hrVol.toString(),
-        'include_24hr_change': include24hrChange.toString(),
-        'include_last_updated_at': 'true',
-      });
-
-      final response = await http.get(uri, headers: {'Accept': 'application/json'});
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return {
-          'success': true,
-          'data': data,
-          'message': 'Successfully retrieved crypto market data',
-          'timestamp': DateTime.now().toIso8601String(),
-          'source': 'CoinGecko API',
-        };
-      } else {
+      if (coins.isEmpty) {
         return {
           'success': false,
-          'error': 'Failed to fetch crypto data: ${response.statusCode}',
-          'message': 'API request failed',
+          'error': 'coins parameter is required',
+          'message': 'Please provide at least one cryptocurrency ID',
         };
       }
+
+      // Try CoinGecko first (primary)
+      try {
+        final result = await _fetchCoinGeckoMarketData(coins, vsCurrencies, includeMarketCap, include24hrVol, include24hrChange);
+        if (result['success'] == true) return result;
+      } catch (e) {
+        debugPrint('CoinGecko API failed: $e');
+      }
+
+      // Try CoinCap as fallback
+      try {
+        final result = await _fetchCoinCapMarketData(coins);
+        if (result['success'] == true) return result;
+      } catch (e) {
+        debugPrint('CoinCap API failed: $e');
+      }
+
+      // Try CryptoCompare as last fallback
+      try {
+        final result = await _fetchCryptoCompareMarketData(coins, vsCurrencies);
+        if (result['success'] == true) return result;
+      } catch (e) {
+        debugPrint('CryptoCompare API failed: $e');
+      }
+
+      return {
+        'success': false,
+        'error': 'All crypto APIs failed',
+        'message': 'Unable to fetch data from CoinGecko, CoinCap, or CryptoCompare',
+        'tried_apis': ['CoinGecko', 'CoinCap', 'CryptoCompare'],
+      };
     } catch (e) {
       return {
         'success': false,
@@ -1620,42 +1632,45 @@ classDef error fill:#f44336,stroke:#c62828,stroke-width:2px,color:#fff''';
     }
   }
 
-  /// Get historical cryptocurrency price data
+  /// Get historical cryptocurrency price data with multiple API fallbacks
   Future<Map<String, dynamic>> _getCryptoPriceHistory(Map<String, dynamic> params) async {
     try {
-      final coinId = params['coin_id'] as String;
-      final vsCurrency = params['vs_currency'] as String? ?? 'usd';
-      final days = params['days'] as String? ?? '7';
-      final interval = params['interval'] as String? ?? 'daily';
+      // Safe parameter extraction
+      final coinId = params['coin_id']?.toString() ?? '';
+      final vsCurrency = params['vs_currency']?.toString() ?? 'usd';
+      final days = params['days']?.toString() ?? '7';
+      final interval = params['interval']?.toString() ?? 'daily';
 
-      final uri = Uri.parse('https://api.coingecko.com/api/v3/coins/$coinId/market_chart').replace(queryParameters: {
-        'vs_currency': vsCurrency,
-        'days': days,
-        'interval': interval,
-      });
-
-      final response = await http.get(uri, headers: {'Accept': 'application/json'});
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return {
-          'success': true,
-          'data': data,
-          'coin_id': coinId,
-          'currency': vsCurrency,
-          'time_period': days,
-          'interval': interval,
-          'message': 'Successfully retrieved price history data',
-          'timestamp': DateTime.now().toIso8601String(),
-          'source': 'CoinGecko API',
-        };
-      } else {
+      if (coinId.isEmpty) {
         return {
           'success': false,
-          'error': 'Failed to fetch price history: ${response.statusCode}',
-          'message': 'API request failed',
+          'error': 'coin_id parameter is required',
+          'message': 'Please provide a cryptocurrency ID',
         };
       }
+
+      // Try CoinGecko first
+      try {
+        final result = await _fetchCoinGeckoPriceHistory(coinId, vsCurrency, days, interval);
+        if (result['success'] == true) return result;
+      } catch (e) {
+        debugPrint('CoinGecko price history failed: $e');
+      }
+
+      // Try CoinCap as fallback
+      try {
+        final result = await _fetchCoinCapPriceHistory(coinId, days);
+        if (result['success'] == true) return result;
+      } catch (e) {
+        debugPrint('CoinCap price history failed: $e');
+      }
+
+      return {
+        'success': false,
+        'error': 'All price history APIs failed',
+        'message': 'Unable to fetch historical data from available APIs',
+        'tried_apis': ['CoinGecko', 'CoinCap'],
+      };
     } catch (e) {
       return {
         'success': false,
@@ -1665,50 +1680,33 @@ classDef error fill:#f44336,stroke:#c62828,stroke-width:2px,color:#fff''';
     }
   }
 
-  /// Get global cryptocurrency market statistics
+  /// Get global cryptocurrency market statistics with API fallbacks
   Future<Map<String, dynamic>> _getCryptoGlobalStats(Map<String, dynamic> params) async {
     try {
-      final includeDefi = params['include_defi'] as bool? ?? true;
+      final includeDefi = _parseBool(params['include_defi']) ?? true;
 
-      final uri = Uri.parse('https://api.coingecko.com/api/v3/global');
-      final response = await http.get(uri, headers: {'Accept': 'application/json'});
-      
-      Map<String, dynamic> result = {};
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        result = {
-          'success': true,
-          'global_data': data['data'],
-          'message': 'Successfully retrieved global market statistics',
-          'timestamp': DateTime.now().toIso8601String(),
-          'source': 'CoinGecko API',
-        };
-
-        // Get DeFi data if requested
-        if (includeDefi) {
-          try {
-            final defiUri = Uri.parse('https://api.coingecko.com/api/v3/global/decentralized_finance_defi');
-            final defiResponse = await http.get(defiUri, headers: {'Accept': 'application/json'});
-            
-            if (defiResponse.statusCode == 200) {
-              final defiData = json.decode(defiResponse.body);
-              result['defi_data'] = defiData['data'];
-              result['message'] = 'Successfully retrieved global market and DeFi statistics';
-            }
-          } catch (e) {
-            result['defi_error'] = 'Failed to fetch DeFi data: $e';
-          }
-        }
-
-        return result;
-      } else {
-        return {
-          'success': false,
-          'error': 'Failed to fetch global stats: ${response.statusCode}',
-          'message': 'API request failed',
-        };
+      // Try CoinGecko first
+      try {
+        final result = await _fetchCoinGeckoGlobalStats(includeDefi);
+        if (result['success'] == true) return result;
+      } catch (e) {
+        debugPrint('CoinGecko global stats failed: $e');
       }
+
+      // Try CoinCap as fallback
+      try {
+        final result = await _fetchCoinCapGlobalStats();
+        if (result['success'] == true) return result;
+      } catch (e) {
+        debugPrint('CoinCap global stats failed: $e');
+      }
+
+      return {
+        'success': false,
+        'error': 'All global stats APIs failed',
+        'message': 'Unable to fetch global statistics from available APIs',
+        'tried_apis': ['CoinGecko', 'CoinCap'],
+      };
     } catch (e) {
       return {
         'success': false,
@@ -1718,70 +1716,381 @@ classDef error fill:#f44336,stroke:#c62828,stroke-width:2px,color:#fff''';
     }
   }
 
-  /// Get trending cryptocurrencies and market sentiment
+  /// Get trending cryptocurrencies and market sentiment with API fallbacks
   Future<Map<String, dynamic>> _getCryptoTrending(Map<String, dynamic> params) async {
     try {
-      final category = params['category'] as String? ?? 'search_trending';
-      final timePeriod = params['time_period'] as String? ?? '24h';
-      final limit = params['limit'] as int? ?? 10;
+      final category = params['category']?.toString() ?? 'search_trending';
+      final timePeriod = params['time_period']?.toString() ?? '24h';
+      final limit = _parseInt(params['limit']) ?? 10;
 
-      Map<String, dynamic> result = {
-        'success': true,
-        'category': category,
-        'time_period': timePeriod,
-        'limit': limit,
-        'timestamp': DateTime.now().toIso8601String(),
-        'source': 'CoinGecko API',
-      };
-
-      if (category == 'search_trending') {
-        final uri = Uri.parse('https://api.coingecko.com/api/v3/search/trending');
-        final response = await http.get(uri, headers: {'Accept': 'application/json'});
-        
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          result['trending_data'] = data;
-          result['message'] = 'Successfully retrieved trending search data';
-        } else {
-          throw Exception('Failed to fetch trending data: ${response.statusCode}');
-        }
-      } else if (category == 'top_gainers' || category == 'top_losers') {
-        // Get market data for top coins and sort by price change
-        final uri = Uri.parse('https://api.coingecko.com/api/v3/coins/markets').replace(queryParameters: {
-          'vs_currency': 'usd',
-          'order': 'market_cap_desc',
-          'per_page': '100',
-          'page': '1',
-          'sparkline': 'false',
-          'price_change_percentage': timePeriod,
-        });
-
-        final response = await http.get(uri, headers: {'Accept': 'application/json'});
-        
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body) as List;
-          
-          // Sort by price change percentage
-          data.sort((a, b) {
-            final aChange = a['price_change_percentage_${timePeriod.replaceAll('h', 'h').replaceAll('d', 'd')}'] ?? 0.0;
-            final bChange = b['price_change_percentage_${timePeriod.replaceAll('h', 'h').replaceAll('d', 'd')}'] ?? 0.0;
-            return category == 'top_gainers' ? bChange.compareTo(aChange) : aChange.compareTo(bChange);
-          });
-
-          result['market_data'] = data.take(limit).toList();
-          result['message'] = 'Successfully retrieved $category for $timePeriod period';
-        } else {
-          throw Exception('Failed to fetch market data: ${response.statusCode}');
-        }
+      // Try CoinGecko first
+      try {
+        final result = await _fetchCoinGeckoTrending(category, timePeriod, limit);
+        if (result['success'] == true) return result;
+      } catch (e) {
+        debugPrint('CoinGecko trending failed: $e');
       }
 
-      return result;
+      // Try CoinCap as fallback
+      try {
+        final result = await _fetchCoinCapTrending(limit);
+        if (result['success'] == true) return result;
+      } catch (e) {
+        debugPrint('CoinCap trending failed: $e');
+      }
+
+      return {
+        'success': false,
+        'error': 'All trending APIs failed',
+        'message': 'Unable to fetch trending data from available APIs',
+        'tried_apis': ['CoinGecko', 'CoinCap'],
+      };
     } catch (e) {
       return {
         'success': false,
         'error': 'Error fetching trending data: $e',
         'message': 'Network or parsing error occurred',
       };
+    }
+  }
+
+  // Helper methods for safe type parsing
+  bool? _parseBool(dynamic value) {
+    if (value == null) return null;
+    if (value is bool) return value;
+    if (value is String) {
+      return value.toLowerCase() == 'true';
+    }
+    return null;
+  }
+
+  int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) {
+      return int.tryParse(value);
+    }
+    if (value is double) return value.toInt();
+    return null;
+  }
+
+  // CoinGecko API implementations
+  Future<Map<String, dynamic>> _fetchCoinGeckoMarketData(String coins, String vsCurrencies, bool includeMarketCap, bool include24hrVol, bool include24hrChange) async {
+    final uri = Uri.parse('https://api.coingecko.com/api/v3/simple/price').replace(queryParameters: {
+      'ids': coins,
+      'vs_currencies': vsCurrencies,
+      'include_market_cap': includeMarketCap.toString(),
+      'include_24hr_vol': include24hrVol.toString(),
+      'include_24hr_change': include24hrChange.toString(),
+      'include_last_updated_at': 'true',
+    });
+
+    final response = await http.get(uri, headers: {'Accept': 'application/json'}).timeout(Duration(seconds: 15));
+    
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return {
+        'success': true,
+        'data': data,
+        'message': 'Successfully retrieved crypto market data from CoinGecko',
+        'timestamp': DateTime.now().toIso8601String(),
+        'source': 'CoinGecko API',
+      };
+    } else {
+      throw Exception('HTTP ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchCoinGeckoPriceHistory(String coinId, String vsCurrency, String days, String interval) async {
+    final uri = Uri.parse('https://api.coingecko.com/api/v3/coins/$coinId/market_chart').replace(queryParameters: {
+      'vs_currency': vsCurrency,
+      'days': days,
+      'interval': interval,
+    });
+
+    final response = await http.get(uri, headers: {'Accept': 'application/json'}).timeout(Duration(seconds: 15));
+    
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return {
+        'success': true,
+        'data': data,
+        'coin_id': coinId,
+        'currency': vsCurrency,
+        'time_period': days,
+        'interval': interval,
+        'message': 'Successfully retrieved price history from CoinGecko',
+        'timestamp': DateTime.now().toIso8601String(),
+        'source': 'CoinGecko API',
+      };
+    } else {
+      throw Exception('HTTP ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchCoinGeckoGlobalStats(bool includeDefi) async {
+    final uri = Uri.parse('https://api.coingecko.com/api/v3/global');
+    final response = await http.get(uri, headers: {'Accept': 'application/json'}).timeout(Duration(seconds: 15));
+    
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      Map<String, dynamic> result = {
+        'success': true,
+        'global_data': data['data'],
+        'message': 'Successfully retrieved global market statistics from CoinGecko',
+        'timestamp': DateTime.now().toIso8601String(),
+        'source': 'CoinGecko API',
+      };
+
+      // Get DeFi data if requested
+      if (includeDefi) {
+        try {
+          final defiUri = Uri.parse('https://api.coingecko.com/api/v3/global/decentralized_finance_defi');
+          final defiResponse = await http.get(defiUri, headers: {'Accept': 'application/json'}).timeout(Duration(seconds: 15));
+          
+          if (defiResponse.statusCode == 200) {
+            final defiData = json.decode(defiResponse.body);
+            result['defi_data'] = defiData['data'];
+            result['message'] = 'Successfully retrieved global market and DeFi statistics from CoinGecko';
+          }
+        } catch (e) {
+          result['defi_error'] = 'Failed to fetch DeFi data: $e';
+        }
+      }
+
+      return result;
+    } else {
+      throw Exception('HTTP ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchCoinGeckoTrending(String category, String timePeriod, int limit) async {
+    Map<String, dynamic> result = {
+      'success': true,
+      'category': category,
+      'time_period': timePeriod,
+      'limit': limit,
+      'timestamp': DateTime.now().toIso8601String(),
+      'source': 'CoinGecko API',
+    };
+
+    if (category == 'search_trending') {
+      final uri = Uri.parse('https://api.coingecko.com/api/v3/search/trending');
+      final response = await http.get(uri, headers: {'Accept': 'application/json'}).timeout(Duration(seconds: 15));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        result['trending_data'] = data;
+        result['message'] = 'Successfully retrieved trending search data from CoinGecko';
+        return result;
+      } else {
+        throw Exception('HTTP ${response.statusCode}');
+      }
+    } else if (category == 'top_gainers' || category == 'top_losers') {
+      final uri = Uri.parse('https://api.coingecko.com/api/v3/coins/markets').replace(queryParameters: {
+        'vs_currency': 'usd',
+        'order': 'market_cap_desc',
+        'per_page': '100',
+        'page': '1',
+        'sparkline': 'false',
+        'price_change_percentage': timePeriod,
+      });
+
+      final response = await http.get(uri, headers: {'Accept': 'application/json'}).timeout(Duration(seconds: 15));
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as List;
+        
+        data.sort((a, b) {
+          final aChange = (a['price_change_percentage_${timePeriod.replaceAll('h', 'h').replaceAll('d', 'd')}'] ?? 0.0) as num;
+          final bChange = (b['price_change_percentage_${timePeriod.replaceAll('h', 'h').replaceAll('d', 'd')}'] ?? 0.0) as num;
+          return category == 'top_gainers' ? bChange.compareTo(aChange) : aChange.compareTo(bChange);
+        });
+
+        result['market_data'] = data.take(limit).toList();
+        result['message'] = 'Successfully retrieved $category for $timePeriod period from CoinGecko';
+        return result;
+      } else {
+        throw Exception('HTTP ${response.statusCode}');
+      }
+    }
+
+    return result;
+  }
+
+  // CoinCap API implementations (fallback)
+  Future<Map<String, dynamic>> _fetchCoinCapMarketData(String coins) async {
+    final coinIds = coins.split(',').map((coin) => coin.trim()).join(',');
+    final uri = Uri.parse('https://api.coincap.io/v2/assets').replace(queryParameters: {
+      'ids': coinIds,
+    });
+
+    final response = await http.get(uri, headers: {'Accept': 'application/json'}).timeout(Duration(seconds: 15));
+    
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      
+      // Transform CoinCap data to match CoinGecko format
+      Map<String, dynamic> transformedData = {};
+      if (data['data'] is List) {
+        for (var asset in data['data']) {
+          transformedData[asset['id']] = {
+            'usd': double.tryParse(asset['priceUsd'] ?? '0') ?? 0,
+            'usd_market_cap': double.tryParse(asset['marketCapUsd'] ?? '0') ?? 0,
+            'usd_24h_vol': double.tryParse(asset['volumeUsd24Hr'] ?? '0') ?? 0,
+            'usd_24h_change': double.tryParse(asset['changePercent24Hr'] ?? '0') ?? 0,
+            'last_updated_at': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          };
+        }
+      }
+
+      return {
+        'success': true,
+        'data': transformedData,
+        'message': 'Successfully retrieved crypto market data from CoinCap (fallback)',
+        'timestamp': DateTime.now().toIso8601String(),
+        'source': 'CoinCap API',
+      };
+    } else {
+      throw Exception('HTTP ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchCoinCapPriceHistory(String coinId, String days) async {
+    final interval = days == '1' ? 'm15' : 'd1';
+    final uri = Uri.parse('https://api.coincap.io/v2/assets/$coinId/history').replace(queryParameters: {
+      'interval': interval,
+    });
+
+    final response = await http.get(uri, headers: {'Accept': 'application/json'}).timeout(Duration(seconds: 15));
+    
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      
+      // Transform CoinCap history to match CoinGecko format
+      List<List<num>> prices = [];
+      if (data['data'] is List) {
+        for (var point in data['data']) {
+          final timestamp = point['time'];
+          final price = double.tryParse(point['priceUsd'] ?? '0') ?? 0;
+          prices.add([timestamp, price]);
+        }
+      }
+
+      return {
+        'success': true,
+        'data': {
+          'prices': prices,
+          'market_caps': [], // CoinCap doesn't provide historical market caps
+          'total_volumes': [], // CoinCap doesn't provide historical volumes
+        },
+        'coin_id': coinId,
+        'time_period': days,
+        'message': 'Successfully retrieved price history from CoinCap (fallback)',
+        'timestamp': DateTime.now().toIso8601String(),
+        'source': 'CoinCap API',
+      };
+    } else {
+      throw Exception('HTTP ${response.statusCode}');
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchCoinCapGlobalStats() async {
+    final uri = Uri.parse('https://api.coincap.io/v2/assets');
+    final response = await http.get(uri, headers: {'Accept': 'application/json'}).timeout(Duration(seconds: 15));
+    
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      
+      if (data['data'] is List) {
+        final assets = data['data'] as List;
+        double totalMarketCap = 0;
+        double totalVolume = 0;
+        
+        for (var asset in assets) {
+          totalMarketCap += double.tryParse(asset['marketCapUsd'] ?? '0') ?? 0;
+          totalVolume += double.tryParse(asset['volumeUsd24Hr'] ?? '0') ?? 0;
+        }
+
+        return {
+          'success': true,
+          'global_data': {
+            'total_market_cap': {'usd': totalMarketCap},
+            'total_volume': {'usd': totalVolume},
+            'active_cryptocurrencies': assets.length,
+            'message': 'Global stats calculated from CoinCap top assets',
+          },
+          'message': 'Successfully retrieved global market statistics from CoinCap (fallback)',
+          'timestamp': DateTime.now().toIso8601String(),
+          'source': 'CoinCap API',
+        };
+      }
+    }
+    
+    throw Exception('HTTP ${response.statusCode}');
+  }
+
+  Future<Map<String, dynamic>> _fetchCoinCapTrending(int limit) async {
+    final uri = Uri.parse('https://api.coincap.io/v2/assets').replace(queryParameters: {
+      'limit': limit.toString(),
+    });
+
+    final response = await http.get(uri, headers: {'Accept': 'application/json'}).timeout(Duration(seconds: 15));
+    
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      
+      return {
+        'success': true,
+        'trending_data': {
+          'coins': data['data'] ?? [],
+        },
+        'message': 'Successfully retrieved trending data from CoinCap (fallback)',
+        'timestamp': DateTime.now().toIso8601String(),
+        'source': 'CoinCap API',
+      };
+    } else {
+      throw Exception('HTTP ${response.statusCode}');
+    }
+  }
+
+  // CryptoCompare API implementation (additional fallback)
+  Future<Map<String, dynamic>> _fetchCryptoCompareMarketData(String coins, String vsCurrency) async {
+    final coinSymbols = coins.split(',').map((coin) => coin.trim().toUpperCase()).join(',');
+    final uri = Uri.parse('https://min-api.cryptocompare.com/data/pricemultifull').replace(queryParameters: {
+      'fsyms': coinSymbols,
+      'tsyms': vsCurrency.toUpperCase(),
+    });
+
+    final response = await http.get(uri, headers: {'Accept': 'application/json'}).timeout(Duration(seconds: 15));
+    
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      
+      // Transform CryptoCompare data
+      Map<String, dynamic> transformedData = {};
+      if (data['RAW'] is Map) {
+        for (var symbol in data['RAW'].keys) {
+          final coinData = data['RAW'][symbol][vsCurrency.toUpperCase()];
+          transformedData[symbol.toLowerCase()] = {
+            vsCurrency: coinData['PRICE'] ?? 0,
+            '${vsCurrency}_market_cap': coinData['MKTCAP'] ?? 0,
+            '${vsCurrency}_24h_vol': coinData['TOTALVOLUME24HTO'] ?? 0,
+            '${vsCurrency}_24h_change': coinData['CHANGEPCT24HOUR'] ?? 0,
+            'last_updated_at': coinData['LASTUPDATE'] ?? DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          };
+        }
+      }
+
+      return {
+        'success': true,
+        'data': transformedData,
+        'message': 'Successfully retrieved crypto market data from CryptoCompare (fallback)',
+        'timestamp': DateTime.now().toIso8601String(),
+        'source': 'CryptoCompare API',
+      };
+    } else {
+      throw Exception('HTTP ${response.statusCode}');
     }
   }
 }
