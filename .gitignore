@@ -53,5 +53,8 @@ commandlinetools-linux-*
 *.apk
 *.aab
 
+# Exception: Include the release APK in repository
+!aham-app-release.apk
+
 # Build outputs
 build/
