@@ -154,6 +154,55 @@ class ExternalToolsService extends ChangeNotifier {
       },
       execute: _generateMermaidChart,
     );
+
+    // Crypto Market Data - Real-time cryptocurrency information
+    _tools['crypto_market_data'] = ExternalTool(
+      name: 'crypto_market_data',
+      description: 'Get real-time cryptocurrency market data including prices, market cap, volume, and 24h changes. Supports multiple coins and currencies.',
+      parameters: {
+        'coins': {'type': 'string', 'description': 'Comma-separated coin IDs (e.g., "bitcoin,ethereum,cardano")', 'required': true},
+        'vs_currencies': {'type': 'string', 'description': 'Currency for prices (usd, eur, btc)', 'default': 'usd'},
+        'include_market_cap': {'type': 'boolean', 'description': 'Include market capitalization', 'default': true},
+        'include_24hr_vol': {'type': 'boolean', 'description': 'Include 24h trading volume', 'default': true},
+        'include_24hr_change': {'type': 'boolean', 'description': 'Include 24h price change', 'default': true},
+      },
+      execute: _getCryptoMarketData,
+    );
+
+    // Crypto Price History - Historical data and charts
+    _tools['crypto_price_history'] = ExternalTool(
+      name: 'crypto_price_history',
+      description: 'Get historical cryptocurrency price data, market cap, and volume over specified time periods with chart data.',
+      parameters: {
+        'coin_id': {'type': 'string', 'description': 'Cryptocurrency ID (e.g., bitcoin, ethereum)', 'required': true},
+        'vs_currency': {'type': 'string', 'description': 'Currency for prices (usd, eur, btc)', 'default': 'usd'},
+        'days': {'type': 'string', 'description': 'Time period: 1, 7, 14, 30, 90, 180, 365, max', 'default': '7'},
+        'interval': {'type': 'string', 'description': 'Data interval: daily, hourly (if days <= 1)', 'default': 'daily'},
+      },
+      execute: _getCryptoPriceHistory,
+    );
+
+    // Crypto Global Statistics - Market overview and DeFi data
+    _tools['crypto_global_stats'] = ExternalTool(
+      name: 'crypto_global_stats',
+      description: 'Get global cryptocurrency market statistics including total market cap, trading volume, market cap dominance, and DeFi statistics.',
+      parameters: {
+        'include_defi': {'type': 'boolean', 'description': 'Include DeFi market statistics', 'default': true},
+      },
+      execute: _getCryptoGlobalStats,
+    );
+
+    // Crypto Trending - Trending coins and market sentiment
+    _tools['crypto_trending'] = ExternalTool(
+      name: 'crypto_trending',
+      description: 'Get trending cryptocurrencies, top gainers, top losers, and market sentiment indicators.',
+      parameters: {
+        'category': {'type': 'string', 'description': 'Type of trending data: search_trending, top_gainers, top_losers', 'default': 'search_trending'},
+        'time_period': {'type': 'string', 'description': 'Time period for gainers/losers: 1h, 24h, 7d', 'default': '24h'},
+        'limit': {'type': 'int', 'description': 'Number of results to return (max 100)', 'default': 10},
+      },
+      execute: _getCryptoTrending,
+    );
   }
 
   /// Execute a single tool by name with given parameters
@@ -1522,5 +1571,217 @@ classDef error fill:#f44336,stroke:#c62828,stroke-width:2px,color:#fff''';
     }
     
     return diagram;
+  }
+
+  // Crypto Tools Implementation
+  
+  /// Get real-time cryptocurrency market data
+  Future<Map<String, dynamic>> _getCryptoMarketData(Map<String, dynamic> params) async {
+    try {
+      final coins = params['coins'] as String;
+      final vsCurrencies = params['vs_currencies'] as String? ?? 'usd';
+      final includeMarketCap = params['include_market_cap'] as bool? ?? true;
+      final include24hrVol = params['include_24hr_vol'] as bool? ?? true;
+      final include24hrChange = params['include_24hr_change'] as bool? ?? true;
+
+      final uri = Uri.parse('https://api.coingecko.com/api/v3/simple/price').replace(queryParameters: {
+        'ids': coins,
+        'vs_currencies': vsCurrencies,
+        'include_market_cap': includeMarketCap.toString(),
+        'include_24hr_vol': include24hrVol.toString(),
+        'include_24hr_change': include24hrChange.toString(),
+        'include_last_updated_at': 'true',
+      });
+
+      final response = await http.get(uri, headers: {'Accept': 'application/json'});
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'success': true,
+          'data': data,
+          'message': 'Successfully retrieved crypto market data',
+          'timestamp': DateTime.now().toIso8601String(),
+          'source': 'CoinGecko API',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': 'Failed to fetch crypto data: ${response.statusCode}',
+          'message': 'API request failed',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error fetching crypto market data: $e',
+        'message': 'Network or parsing error occurred',
+      };
+    }
+  }
+
+  /// Get historical cryptocurrency price data
+  Future<Map<String, dynamic>> _getCryptoPriceHistory(Map<String, dynamic> params) async {
+    try {
+      final coinId = params['coin_id'] as String;
+      final vsCurrency = params['vs_currency'] as String? ?? 'usd';
+      final days = params['days'] as String? ?? '7';
+      final interval = params['interval'] as String? ?? 'daily';
+
+      final uri = Uri.parse('https://api.coingecko.com/api/v3/coins/$coinId/market_chart').replace(queryParameters: {
+        'vs_currency': vsCurrency,
+        'days': days,
+        'interval': interval,
+      });
+
+      final response = await http.get(uri, headers: {'Accept': 'application/json'});
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return {
+          'success': true,
+          'data': data,
+          'coin_id': coinId,
+          'currency': vsCurrency,
+          'time_period': days,
+          'interval': interval,
+          'message': 'Successfully retrieved price history data',
+          'timestamp': DateTime.now().toIso8601String(),
+          'source': 'CoinGecko API',
+        };
+      } else {
+        return {
+          'success': false,
+          'error': 'Failed to fetch price history: ${response.statusCode}',
+          'message': 'API request failed',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error fetching price history: $e',
+        'message': 'Network or parsing error occurred',
+      };
+    }
+  }
+
+  /// Get global cryptocurrency market statistics
+  Future<Map<String, dynamic>> _getCryptoGlobalStats(Map<String, dynamic> params) async {
+    try {
+      final includeDefi = params['include_defi'] as bool? ?? true;
+
+      final uri = Uri.parse('https://api.coingecko.com/api/v3/global');
+      final response = await http.get(uri, headers: {'Accept': 'application/json'});
+      
+      Map<String, dynamic> result = {};
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        result = {
+          'success': true,
+          'global_data': data['data'],
+          'message': 'Successfully retrieved global market statistics',
+          'timestamp': DateTime.now().toIso8601String(),
+          'source': 'CoinGecko API',
+        };
+
+        // Get DeFi data if requested
+        if (includeDefi) {
+          try {
+            final defiUri = Uri.parse('https://api.coingecko.com/api/v3/global/decentralized_finance_defi');
+            final defiResponse = await http.get(defiUri, headers: {'Accept': 'application/json'});
+            
+            if (defiResponse.statusCode == 200) {
+              final defiData = json.decode(defiResponse.body);
+              result['defi_data'] = defiData['data'];
+              result['message'] = 'Successfully retrieved global market and DeFi statistics';
+            }
+          } catch (e) {
+            result['defi_error'] = 'Failed to fetch DeFi data: $e';
+          }
+        }
+
+        return result;
+      } else {
+        return {
+          'success': false,
+          'error': 'Failed to fetch global stats: ${response.statusCode}',
+          'message': 'API request failed',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error fetching global stats: $e',
+        'message': 'Network or parsing error occurred',
+      };
+    }
+  }
+
+  /// Get trending cryptocurrencies and market sentiment
+  Future<Map<String, dynamic>> _getCryptoTrending(Map<String, dynamic> params) async {
+    try {
+      final category = params['category'] as String? ?? 'search_trending';
+      final timePeriod = params['time_period'] as String? ?? '24h';
+      final limit = params['limit'] as int? ?? 10;
+
+      Map<String, dynamic> result = {
+        'success': true,
+        'category': category,
+        'time_period': timePeriod,
+        'limit': limit,
+        'timestamp': DateTime.now().toIso8601String(),
+        'source': 'CoinGecko API',
+      };
+
+      if (category == 'search_trending') {
+        final uri = Uri.parse('https://api.coingecko.com/api/v3/search/trending');
+        final response = await http.get(uri, headers: {'Accept': 'application/json'});
+        
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          result['trending_data'] = data;
+          result['message'] = 'Successfully retrieved trending search data';
+        } else {
+          throw Exception('Failed to fetch trending data: ${response.statusCode}');
+        }
+      } else if (category == 'top_gainers' || category == 'top_losers') {
+        // Get market data for top coins and sort by price change
+        final uri = Uri.parse('https://api.coingecko.com/api/v3/coins/markets').replace(queryParameters: {
+          'vs_currency': 'usd',
+          'order': 'market_cap_desc',
+          'per_page': '100',
+          'page': '1',
+          'sparkline': 'false',
+          'price_change_percentage': timePeriod,
+        });
+
+        final response = await http.get(uri, headers: {'Accept': 'application/json'});
+        
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body) as List;
+          
+          // Sort by price change percentage
+          data.sort((a, b) {
+            final aChange = a['price_change_percentage_${timePeriod.replaceAll('h', 'h').replaceAll('d', 'd')}'] ?? 0.0;
+            final bChange = b['price_change_percentage_${timePeriod.replaceAll('h', 'h').replaceAll('d', 'd')}'] ?? 0.0;
+            return category == 'top_gainers' ? bChange.compareTo(aChange) : aChange.compareTo(bChange);
+          });
+
+          result['market_data'] = data.take(limit).toList();
+          result['message'] = 'Successfully retrieved $category for $timePeriod period';
+        } else {
+          throw Exception('Failed to fetch market data: ${response.statusCode}');
+        }
+      }
+
+      return result;
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Error fetching trending data: $e',
+        'message': 'Network or parsing error occurred',
+      };
+    }
   }
 }
