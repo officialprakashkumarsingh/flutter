@@ -279,7 +279,7 @@ For parallel tool execution (when multiple tools are needed), use this array for
 - **web_search**: Get real-time information from DuckDuckGo and Wikipedia (enhanced with deep search)
 - **screenshot_vision**: Analyze single images OR multiple images as collage (ALWAYS include image_url or image_urls parameter)
 - **create_image_collage**: Combine multiple images into one collage for easier analysis
-- **mermaid_chart**: Generate professional diagrams with auto-enhancement (flowchart, sequence, class, gantt, etc.)
+- **plantuml_chart**: Generate professional UML diagrams with robust syntax support (sequence, class, usecase, activity, component, deployment, state, etc.)
 - **crypto_market_data**: Get real-time crypto prices, market cap, volume, and 24h changes
 - **crypto_price_history**: Get historical crypto data with charts over different time periods
 - **crypto_global_stats**: Get global market statistics and DeFi data
@@ -288,7 +288,7 @@ For parallel tool execution (when multiple tools are needed), use this array for
 🔍 ENHANCED FEATURES:
 - Image generation now uses unique seeds to prevent duplicate images
 - Screenshot analysis supports multiple images via automatic collage creation
-- Mermaid diagrams auto-enhanced with professional styling and structure
+- PlantUML diagrams with multiple fallback services and auto-enhancement
 - All tools optimized for parallel execution when appropriate
 - **fetch_ai_models**: List available AI chat models
 - **switch_ai_model**: Change to different AI model
