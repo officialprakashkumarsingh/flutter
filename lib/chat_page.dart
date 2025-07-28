@@ -280,8 +280,8 @@ For parallel tool execution (when multiple tools are needed), use this array for
 - **screenshot_vision**: Analyze single images OR multiple images as collage (ALWAYS include image_url or image_urls parameter)
 - **create_image_collage**: Combine multiple images into one collage for easier analysis
 - **plantuml_chart**: Generate professional UML diagrams with robust syntax support (sequence, class, usecase, activity, component, deployment, state, etc.)
-- **crypto_market_data**: Get real-time crypto prices, market cap, volume, and 24h changes
-- **crypto_price_history**: Get historical crypto data with charts over different time periods
+- **crypto_market_data**: Get real-time crypto prices, market cap, volume, and 24h changes (automatically converts symbols like BTC→bitcoin, ETH→ethereum, ADA→cardano)
+- **crypto_price_history**: Get historical crypto data with charts over different time periods (use coin IDs like bitcoin, ethereum, cardano)
 - **crypto_global_stats**: Get global market statistics and DeFi data
 - **crypto_trending**: Get trending coins, top gainers/losers, and market sentiment
 
@@ -301,6 +301,27 @@ You can now use multiple tools simultaneously! For example:
 - Fetch models + take screenshot
 - Get crypto prices + historical data for comprehensive analysis
 - Search crypto news + get trending coins for market insights
+
+📋 CRYPTO TOOL USAGE GUIDELINES:
+- **Symbol Conversion**: Automatically convert symbols to coin IDs (BTC→bitcoin, ETH→ethereum, ADA→cardano, etc.)
+- **Multiple Coins**: For crypto_market_data, use comma-separated coin IDs: "bitcoin,ethereum,cardano"
+- **Time Periods**: For crypto_price_history, use days: "1", "7", "30", "90", "365", "max"
+- **Data Display**: Always show prices clearly with currency symbols and percentage changes
+- **Silent Tool Execution**: Tools run silently - only show the final results in natural language
+
+🎨 PLANTUML DIAGRAM GUIDELINES:
+- **Always include diagram parameter**: Never leave diagram parameter empty
+- **Auto-enhancement**: Set auto_enhance to true for better styling
+- **Diagram Types**: Use appropriate types: sequence, class, usecase, activity, component, deployment, state
+- **Display Results**: Always show the generated diagram image in the chat response
+- **Silent Generation**: Don't show tool execution details - only the final diagram
+
+🔄 TOOL EXECUTION BEHAVIOR:
+- ALL tools should execute silently without showing execution panels
+- Only display final results in natural conversational format
+- For diagrams: Show the generated image directly in chat
+- For crypto data: Present data in clean, formatted tables or descriptions
+- Never expose raw tool JSON responses to users
 
 Always use proper JSON format and explain what you're doing to help the user understand the process.
 
@@ -625,25 +646,239 @@ $resultsList
 
           ✅ Screenshot analyzed successfully using vision AI!''';
 
-        case 'mermaid_chart':
-          return '''**📊 Mermaid Chart Generated**
+        case 'plantuml_chart':
+          // For PlantUML charts, only show the image without tool execution details
+          return '''![PlantUML Diagram](${result['image_url']})''';
 
-**Format:** ${result['format']}
+        case 'crypto_market_data':
+          // Format crypto market data cleanly
+          return _formatCryptoMarketData(result);
 
-![Diagram](${result['image_url']})
+        case 'crypto_price_history':
+          // Format crypto price history cleanly
+          return _formatCryptoPriceHistory(result);
 
-✅ Diagram generated successfully!''';
+        case 'crypto_global_stats':
+          // Format crypto global stats cleanly
+          return _formatCryptoGlobalStats(result);
 
+        case 'crypto_trending':
+          // Format crypto trending data cleanly
+          return _formatCryptoTrending(result);
 
         default:
-          return '''**🛠️ Tool Executed: $toolName**
-
-✅ ${result['description'] ?? 'Tool executed successfully'}''';
+          // For other tools, show minimal clean output
+          if (result['description'] != null) {
+            return '''✅ ${result['description']}''';
+          } else {
+            return '''✅ Task completed successfully''';
+          }
       }
     } else {
-      return '''**❌ Tool Execution Failed: $toolName**
+      return '''❌ Error: ${result['error']}''';
+    }
+  }
 
-Error: ${result['error']}''';
+  String _formatCryptoMarketData(Map<String, dynamic> result) {
+    if (result['success'] != true) {
+      return '''❌ **Crypto Data Error**: ${result['error']}''';
+    }
+
+    final data = result['data'] as Map<String, dynamic>?;
+    if (data == null || data.isEmpty) {
+      return '''❌ **No crypto data available**''';
+    }
+
+    String output = '🪙 **Cryptocurrency Market Data**\n\n';
+    
+    for (final entry in data.entries) {
+      final coinId = entry.key;
+      final coinData = entry.value as Map<String, dynamic>;
+      
+      final price = coinData['usd']?.toString() ?? 'N/A';
+      final marketCap = coinData['usd_market_cap']?.toString() ?? 'N/A';
+      final volume = coinData['usd_24h_vol']?.toString() ?? 'N/A';
+      final change = coinData['usd_24h_change']?.toString() ?? 'N/A';
+      
+      final changeDouble = double.tryParse(change) ?? 0;
+      final changeIcon = changeDouble >= 0 ? '🟢' : '🔴';
+      final changeFormatted = changeDouble >= 0 ? '+${change}%' : '${change}%';
+      
+      output += '''**${coinId.toUpperCase()}**
+💰 Price: \$${_formatNumber(price)}
+📊 Market Cap: \$${_formatLargeNumber(marketCap)}
+📈 24h Volume: \$${_formatLargeNumber(volume)}
+$changeIcon 24h Change: $changeFormatted
+
+''';
+    }
+
+    output += '📡 *Data from ${result['source']}*';
+    return output;
+  }
+
+  String _formatCryptoPriceHistory(Map<String, dynamic> result) {
+    if (result['success'] != true) {
+      return '''❌ **Price History Error**: ${result['error']}''';
+    }
+
+    final coinId = result['coin_id'] ?? 'Unknown';
+    final timePeriod = result['time_period'] ?? '7';
+    final data = result['data'] as Map<String, dynamic>?;
+    
+    if (data == null) {
+      return '''❌ **No price history data available for $coinId**''';
+    }
+
+    final prices = data['prices'] as List<dynamic>? ?? [];
+    if (prices.isEmpty) {
+      return '''❌ **No price data available for $coinId**''';
+    }
+
+    final firstPrice = prices.first[1]?.toString() ?? '0';
+    final lastPrice = prices.last[1]?.toString() ?? '0';
+    final firstPriceNum = double.tryParse(firstPrice) ?? 0;
+    final lastPriceNum = double.tryParse(lastPrice) ?? 0;
+    
+    final change = lastPriceNum - firstPriceNum;
+    final changePercent = firstPriceNum > 0 ? (change / firstPriceNum) * 100 : 0;
+    final changeIcon = changePercent >= 0 ? '🟢' : '🔴';
+    final changeFormatted = changePercent >= 0 ? '+${changePercent.toStringAsFixed(2)}%' : '${changePercent.toStringAsFixed(2)}%';
+
+    return '''📈 **${coinId.toUpperCase()} Price History (${timePeriod} days)**
+
+💰 Current Price: \$${_formatNumber(lastPrice)}
+📊 Starting Price: \$${_formatNumber(firstPrice)}
+$changeIcon Period Change: $changeFormatted
+📏 Data Points: ${prices.length}
+
+📡 *Data from ${result['source']}*''';
+  }
+
+  String _formatCryptoGlobalStats(Map<String, dynamic> result) {
+    if (result['success'] != true) {
+      return '''❌ **Global Stats Error**: ${result['error']}''';
+    }
+
+    final globalData = result['global_data'] as Map<String, dynamic>?;
+    if (globalData == null) {
+      return '''❌ **No global stats data available**''';
+    }
+
+    final totalMarketCap = globalData['total_market_cap']?['usd']?.toString() ?? 'N/A';
+    final totalVolume = globalData['total_volume']?['usd']?.toString() ?? 'N/A';
+    final activeCryptos = globalData['active_cryptocurrencies']?.toString() ?? 'N/A';
+    final markets = globalData['markets']?.toString() ?? 'N/A';
+    
+    String output = '''🌍 **Global Cryptocurrency Market Stats**
+
+💰 Total Market Cap: \$${_formatLargeNumber(totalMarketCap)}
+📊 24h Trading Volume: \$${_formatLargeNumber(totalVolume)}
+🪙 Active Cryptocurrencies: $activeCryptos
+🏪 Markets: $markets
+
+''';
+
+    // Add market dominance if available
+    final marketCapPercentage = globalData['market_cap_percentage'] as Map<String, dynamic>?;
+    if (marketCapPercentage != null) {
+      output += '👑 **Market Dominance:**\n';
+      final btcDominance = marketCapPercentage['btc']?.toString() ?? 'N/A';
+      final ethDominance = marketCapPercentage['eth']?.toString() ?? 'N/A';
+      output += '₿ Bitcoin: ${btcDominance}%\n';
+      output += '⟠ Ethereum: ${ethDominance}%\n\n';
+    }
+
+    // Add DeFi data if available
+    if (result['defi_data'] != null) {
+      final defiData = result['defi_data'] as Map<String, dynamic>;
+      final defiMarketCap = defiData['defi_market_cap']?.toString() ?? 'N/A';
+      output += '''🏦 **DeFi Statistics:**
+💎 DeFi Market Cap: \$${_formatLargeNumber(defiMarketCap)}
+
+''';
+    }
+
+    output += '📡 *Data from ${result['source']}*';
+    return output;
+  }
+
+  String _formatCryptoTrending(Map<String, dynamic> result) {
+    if (result['success'] != true) {
+      return '''❌ **Trending Data Error**: ${result['error']}''';
+    }
+
+    final category = result['category'] ?? 'trending';
+    String output = '';
+
+    if (category == 'search_trending') {
+      final trendingData = result['trending_data'] as Map<String, dynamic>?;
+      final coins = trendingData?['coins'] as List<dynamic>? ?? [];
+      
+      output = '''🔥 **Trending Cryptocurrencies**
+
+''';
+      
+      for (int i = 0; i < coins.length && i < 10; i++) {
+        final coin = coins[i] as Map<String, dynamic>;
+        final name = coin['name'] ?? 'Unknown';
+        final symbol = coin['symbol']?.toString().toUpperCase() ?? '';
+        final marketCapRank = coin['market_cap_rank']?.toString() ?? 'N/A';
+        
+        output += '''${i + 1}. **$name ($symbol)**
+   📊 Rank: #$marketCapRank
+
+''';
+      }
+    } else {
+      final marketData = result['market_data'] as List<dynamic>? ?? [];
+      final title = category == 'top_gainers' ? '🚀 **Top Gainers**' : '📉 **Top Losers**';
+      
+      output = '$title\n\n';
+      
+      for (int i = 0; i < marketData.length && i < 10; i++) {
+        final coin = marketData[i] as Map<String, dynamic>;
+        final name = coin['name'] ?? 'Unknown';
+        final symbol = coin['symbol']?.toString().toUpperCase() ?? '';
+        final price = coin['current_price']?.toString() ?? '0';
+        final change = coin['price_change_percentage_24h']?.toString() ?? '0';
+        final changeDouble = double.tryParse(change) ?? 0;
+        final changeIcon = changeDouble >= 0 ? '🟢' : '🔴';
+        final changeFormatted = changeDouble >= 0 ? '+${change}%' : '${change}%';
+        
+        output += '''${i + 1}. **$name ($symbol)**
+   💰 \$${_formatNumber(price)}
+   $changeIcon $changeFormatted
+
+''';
+      }
+    }
+
+    output += '📡 *Data from ${result['source']}*';
+    return output;
+  }
+
+  String _formatNumber(String numberStr) {
+    final number = double.tryParse(numberStr) ?? 0;
+    if (number >= 1) {
+      return number.toStringAsFixed(2);
+    } else {
+      return number.toStringAsFixed(6);
+    }
+  }
+
+  String _formatLargeNumber(String numberStr) {
+    final number = double.tryParse(numberStr) ?? 0;
+    if (number >= 1e12) {
+      return '${(number / 1e12).toStringAsFixed(2)}T';
+    } else if (number >= 1e9) {
+      return '${(number / 1e9).toStringAsFixed(2)}B';
+    } else if (number >= 1e6) {
+      return '${(number / 1e6).toStringAsFixed(2)}M';
+    } else if (number >= 1e3) {
+      return '${(number / 1e3).toStringAsFixed(2)}K';
+    } else {
+      return number.toStringAsFixed(2);
     }
   }
 
