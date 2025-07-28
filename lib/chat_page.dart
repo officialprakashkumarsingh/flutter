@@ -280,6 +280,10 @@ For parallel tool execution (when multiple tools are needed), use this array for
 - **screenshot_vision**: Analyze single images OR multiple images as collage (ALWAYS include image_url or image_urls parameter)
 - **create_image_collage**: Combine multiple images into one collage for easier analysis
 - **mermaid_chart**: Generate professional diagrams with auto-enhancement (flowchart, sequence, class, gantt, etc.)
+- **crypto_market_data**: Get real-time crypto prices, market cap, volume, and 24h changes
+- **crypto_price_history**: Get historical crypto data with charts over different time periods
+- **crypto_global_stats**: Get global market statistics and DeFi data
+- **crypto_trending**: Get trending coins, top gainers/losers, and market sentiment
 
 🔍 ENHANCED FEATURES:
 - Image generation now uses unique seeds to prevent duplicate images
@@ -288,12 +292,15 @@ For parallel tool execution (when multiple tools are needed), use this array for
 - All tools optimized for parallel execution when appropriate
 - **fetch_ai_models**: List available AI chat models
 - **switch_ai_model**: Change to different AI model
+- **Crypto data**: Real-time prices, historical charts, market statistics, and trending analysis using CoinGecko API (no API key required)
 
 🔗 PARALLEL EXECUTION:
 You can now use multiple tools simultaneously! For example:
 - Take screenshot + analyze it with vision
 - Generate image + search for related information
 - Fetch models + take screenshot
+- Get crypto prices + historical data for comprehensive analysis
+- Search crypto news + get trending coins for market insights
 
 Always use proper JSON format and explain what you're doing to help the user understand the process.
 
