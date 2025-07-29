@@ -2262,8 +2262,8 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
               child: image,
             ),
           ),
-          // Save button for generated images (always show for testing)
-          // if (url.startsWith('data:image') || url.contains('ahamai-api.officialprakashkrsingh.workers.dev'))
+          // Save button for all images (base64 and network)
+          if (url.startsWith('data:image') || url.startsWith('http'))
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: Align(
@@ -2320,38 +2320,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
       
       // Tool panels removed - everything shows directly in message UI
       
-      // Check for base64 images (generated images or diagrams)
-      if (line.contains('data:image/') && line.contains('base64,')) {
-        // Add any accumulated text
-        if (currentText.isNotEmpty) {
-          widgets.add(_buildMarkdownText(currentText));
-          currentText = '';
-        }
-        
-        // Extract base64 image data
-        final base64Regex = RegExp(r'data:image/[^;]+;base64,[A-Za-z0-9+/=]+');
-        final base64Match = base64Regex.firstMatch(line);
-        if (base64Match != null) {
-          final base64ImageData = base64Match.group(0) ?? '';
-
-          
-          widgets.add(
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: CachedImageWidget(
-                  imageUrl: base64ImageData,
-                  width: 300,
-                  height: 300,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-          );
-        }
-        continue;
-      }
+      // Base64 image handling removed - let markdown processor handle all images through _buildImageWidget
       
       // Check for interactive crypto chart placeholder
       if (line.contains('[INTERACTIVE_CRYPTO_CHART')) {
