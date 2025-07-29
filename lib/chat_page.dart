@@ -11,6 +11,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'models.dart';
 import 'character_service.dart';
 import 'image_generation_dialog.dart';
@@ -1788,16 +1790,111 @@ $priceChart
   bool _shouldTriggerImageGeneration(String message) {
     final imageKeywords = [
       'generate image', 'create image', 'make image', 'draw image',
-      'generate picture', 'create picture', 'make picture', 'draw picture',
+      'generate picture', 'create picture', 'make picture', 'draw picture', 
       'generate photo', 'create photo', 'make photo', 'draw photo',
       'generate artwork', 'create artwork', 'make artwork', 'draw artwork',
       'generate illustration', 'create illustration', 'make illustration',
       'show me', 'can you draw', 'can you create', 'can you generate',
-      'image of', 'picture of', 'photo of', 'artwork of', 'illustration of'
+      'image of', 'picture of', 'photo of', 'artwork of', 'illustration of',
+      'paint', 'sketch', 'design', 'visualize', 'render',
+      'make a', 'create a', 'generate a', 'draw a', 'show a',
+      'image for', 'picture for', 'photo for', 'visual',
+      'i want image', 'i want picture', 'i need image', 'i need picture',
+      'make me', 'create me', 'generate me', 'draw me'
     ];
     
     final lowerMessage = message.toLowerCase();
-    return imageKeywords.any((keyword) => lowerMessage.contains(keyword));
+    print('🔍 Checking message for image generation: "$message"');
+    final shouldTrigger = imageKeywords.any((keyword) => lowerMessage.contains(keyword));
+    print('🎨 Should trigger image generation: $shouldTrigger');
+    return shouldTrigger;
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Color(0xFF2D3748),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        elevation: 4,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Future<void> _saveImageToDevice(String imageUrl) async {
+    try {
+      // Request storage permission
+      final storagePermission = await Permission.storage.request();
+      if (!storagePermission.isGranted) {
+        _showSnackBar('❌ Storage permission denied');
+        return;
+      }
+
+      // Get the Downloads directory or app documents directory
+      Directory? directory;
+      if (Platform.isAndroid) {
+        directory = await getExternalStorageDirectory();
+        if (directory != null) {
+          // Create AhamAI folder in the app's external directory
+          final ahamAIDir = Directory('${directory.path}/AhamAI');
+          if (!await ahamAIDir.exists()) {
+            await ahamAIDir.create(recursive: true);
+          }
+          directory = ahamAIDir;
+        }
+      } else {
+        directory = await getApplicationDocumentsDirectory();
+        final ahamAIDir = Directory('${directory.path}/AhamAI');
+        if (!await ahamAIDir.exists()) {
+          await ahamAIDir.create(recursive: true);
+        }
+        directory = ahamAIDir;
+      }
+
+      if (directory == null) {
+        _showSnackBar('❌ Could not access storage');
+        return;
+      }
+
+      // Generate unique filename
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final filename = 'ahamai_generated_$timestamp.png';
+      final filePath = '${directory.path}/$filename';
+
+      // Get image data
+      Uint8List imageBytes;
+      if (imageUrl.startsWith('data:image')) {
+        final commaIndex = imageUrl.indexOf(',');
+        final base64Data = imageUrl.substring(commaIndex + 1);
+        imageBytes = base64Decode(base64Data);
+      } else {
+        final response = await http.get(Uri.parse(imageUrl));
+        if (response.statusCode != 200) {
+          _showSnackBar('❌ Failed to download image');
+          return;
+        }
+        imageBytes = response.bodyBytes;
+      }
+
+      // Save file
+      final file = File(filePath);
+      await file.writeAsBytes(imageBytes);
+
+      _showSnackBar('✅ Image saved to AhamAI folder!');
+      HapticFeedback.mediumImpact();
+    } catch (e) {
+      print('Error saving image: $e');
+      _showSnackBar('❌ Error saving image: ${e.toString()}');
+    }
   }
 
   Future<void> _generateImageInline() async {
@@ -1840,10 +1937,10 @@ $priceChart
           _messages.add(promptMessage);
         });
 
-        // Add generated image message
+        // Add generated image message with save marker
         final imageMessage = Message.bot('''**🎨 Image Generated Successfully**
 
-![Generated Image](${result['image_url']})
+![Generated Image](${result['image_url']}?generated=true)
 
 **Model:** ${result['model'].toString().toUpperCase()}
 **Size:** ${result['size_kb']}KB
@@ -1958,6 +2055,7 @@ ${_followUpMode ? '\n*Following previous style*' : ''}''');
                   message: message,
                   onRegenerate: () => _regenerateResponse(index),
                   onUserMessageTap: () => _showUserMessageOptions(context, message),
+                  onSaveImage: _saveImageToDevice,
                 );
               },
             ),
@@ -2041,10 +2139,12 @@ class _MessageBubble extends StatefulWidget {
   final Message message;
   final VoidCallback? onRegenerate;
   final VoidCallback? onUserMessageTap;
+  final Function(String)? onSaveImage;
   const _MessageBubble({
     required this.message,
     this.onRegenerate,
     this.onUserMessageTap,
+    this.onSaveImage,
   });
 
   @override
@@ -2218,12 +2318,43 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
         }
       }
 
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(20), // More rounded for generated images
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxHeight: 300, maxWidth: double.infinity),
-          child: image,
-        ),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20), // More rounded for generated images
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 300, maxWidth: double.infinity),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20), // Double clipping for guaranteed rounding
+                  child: image,
+                ),
+              ),
+            ),
+          ),
+          // Save button for generated images
+          if (url.startsWith('data:image') || url.contains('generated'))
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: ElevatedButton.icon(
+                onPressed: () => widget.onSaveImage?.call(url),
+                icon: const FaIcon(FontAwesomeIcons.download, size: 14),
+                label: const Text('Save to Device'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2D3748),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+              ),
+            ),
+        ],
       );
     } catch (_) {
       return Container(
