@@ -370,7 +370,7 @@ chart = execute_tool('plantuml_chart', diagram='User -> API: Request\\nAPI -> Da
 
 
 - **plantuml_chart**: Generate technical diagrams ONLY - use for flowcharts, UML diagrams, system architecture, process flows
-- **fetch_image_models**: Show available image generation models
+
 - **create_image_collage**: Combine multiple images into one collage for easier analysis
 - **crypto_market_data**: Get real-time crypto prices, market cap, volume, and 24h changes (automatically converts symbols like BTC→bitcoin, ETH→ethereum, ADA→cardano)
 - **crypto_price_history**: Get historical crypto data with charts over different time periods (use coin IDs like bitcoin, ethereum, cardano)
@@ -933,16 +933,7 @@ $screenshotImages**Service:** ${result['service']}
 
 ✅ Model switch completed successfully!''';
 
-        case 'fetch_image_models':
-          final models = result['model_names'] as List;
-          final modelsList = models.take(5).join(', ');
-          return '''**🎨 Image Models Fetched Successfully**
 
-**Available Models:** ${result['total_count']} models found
-**Sample Models:** $modelsList${models.length > 5 ? '...' : ''}
-**API Status:** ${result['api_status']}
-
-✅ Image models list retrieved successfully!''';
 
         case 'screenshot_vision':
           return '''**👁️ Screenshot Vision Analysis Completed**
@@ -1799,11 +1790,20 @@ $priceChart
 
   Future<void> _saveImageToDevice(String imageUrl) async {
     try {
-      // Request storage permission
-      final storagePermission = await Permission.storage.request();
+      // Request storage permission with better handling
+      PermissionStatus storagePermission = await Permission.storage.status;
+      
       if (!storagePermission.isGranted) {
-        _showSnackBar('❌ Storage permission denied');
-        return;
+        storagePermission = await Permission.storage.request();
+        
+        if (storagePermission.isDenied) {
+          _showSnackBar('❌ Storage permission denied. Please enable in settings.');
+          return;
+        } else if (storagePermission.isPermanentlyDenied) {
+          _showSnackBar('❌ Storage permission permanently denied. Please enable in device settings.');
+          await openAppSettings();
+          return;
+        }
       }
 
       // Get the Downloads directory or app documents directory
@@ -2298,21 +2298,36 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
               child: image,
             ),
           ),
-          // Save button for ALL images (temporary for testing)
-          // if (url.startsWith('data:image') || url.contains('generated') || url.contains('?generated'))
+          // Save button for generated images only
+          if (url.startsWith('data:image') || url.contains('generated') || url.contains('?generated'))
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
-              child: ElevatedButton.icon(
-                onPressed: () => widget.onSaveImage?.call(url.split('?').first), // Remove query params for saving
-                icon: const FaIcon(FontAwesomeIcons.download, size: 14),
-                label: const Text('Save to Device'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2D3748),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () => widget.onSaveImage?.call(url.split('?').first), // Remove query params for saving
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2D3748),
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: FaIcon(
+                        FontAwesomeIcons.download,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 ),
               ),
             ),

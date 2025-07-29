@@ -78,17 +78,7 @@ class ExternalToolsService extends ChangeNotifier {
       execute: _switchAIModel,
     );
 
-    // Image generation removed - now handled by direct UI
-
-    // Fetch image models - gets available image generation models
-    _tools['fetch_image_models'] = ExternalTool(
-      name: 'fetch_image_models',
-      description: 'Fetches available image generation models from the API. The AI can use this to show users what image models are available.',
-      parameters: {
-        'refresh': {'type': 'boolean', 'description': 'Force refresh the models list (default: false)', 'default': false},
-      },
-      execute: _fetchImageModels,
-    );
+    // Image generation completely removed - now handled by direct UI only
 
 
 
@@ -607,56 +597,7 @@ class ExternalToolsService extends ChangeNotifier {
 
   // Image generation method removed - now handled by direct UI
 
-  Future<Map<String, dynamic>> _fetchImageModels(Map<String, dynamic> params) async {
-    final refresh = params['refresh'] as bool? ?? false;
 
-    try {
-      final response = await http.get(
-        Uri.parse('https://ahamai-api.officialprakashkrsingh.workers.dev/v1/images/models'),
-        headers: {
-          'Authorization': 'Bearer ahamaibyprakash25',
-        },
-      ).timeout(Duration(seconds: 30));
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final modelsData = data['data'] as List;
-        
-        List<Map<String, dynamic>> models = modelsData.map<Map<String, dynamic>>((item) => {
-          'id': item['id'],
-          'name': item['name'] ?? item['id'],
-          'provider': item['provider'] ?? 'unknown',
-          'width': item['width'] ?? 1024,
-          'height': item['height'] ?? 1024,
-        }).toList();
-        
-        return {
-          'success': true,
-          'models': models,
-          'model_names': models.map((m) => m['id']).toList(),
-          'total_count': models.length,
-          'refreshed': refresh,
-          'tool_executed': true,
-          'execution_time': DateTime.now().toIso8601String(),
-          'api_status': 'Connected successfully',
-        };
-      } else {
-        return {
-          'success': false,
-          'error': 'API returned status ${response.statusCode}: ${response.reasonPhrase}',
-          'tool_executed': true,
-          'api_status': 'Failed to connect',
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'error': 'Failed to fetch image models: $e',
-        'tool_executed': true,
-        'api_status': 'Connection error',
-      };
-    }
-  }
 
 
 
