@@ -78,19 +78,7 @@ class ExternalToolsService extends ChangeNotifier {
       execute: _switchAIModel,
     );
 
-    // Image generation tool - generates images using AI models
-    _tools['generate_image'] = ExternalTool(
-      name: 'generate_image',
-      description: 'Generates images using AI models like Flux and Turbo. The AI can use this tool when users request image creation, art generation, or visual content.',
-      parameters: {
-        'prompt': {'type': 'string', 'description': 'The prompt for image generation', 'required': true},
-        'model': {'type': 'string', 'description': 'Image model to use (flux, turbo)', 'default': 'flux'},
-        'width': {'type': 'integer', 'description': 'Image width in pixels (default: 1024)', 'default': 1024},
-        'height': {'type': 'integer', 'description': 'Image height in pixels (default: 1024)', 'default': 1024},
-        'enhance': {'type': 'boolean', 'description': 'Enhance the prompt (default: false)', 'default': false},
-      },
-      execute: _generateImage,
-    );
+    // Image generation removed - now handled by direct UI
 
     // Fetch image models - gets available image generation models
     _tools['fetch_image_models'] = ExternalTool(
@@ -345,7 +333,7 @@ class ExternalToolsService extends ChangeNotifier {
   bool get hasModelSwitchingCapability => _tools.containsKey('fetch_ai_models') && _tools.containsKey('switch_ai_model');
 
   /// Check if AI can access image generation
-  bool get hasImageGenerationCapability => _tools.containsKey('generate_image');
+  // Image generation now handled by direct UI
 
 
 
@@ -617,125 +605,7 @@ class ExternalToolsService extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> _generateImage(Map<String, dynamic> params) async {
-    final prompt = params['prompt'] as String? ?? '';
-    final model = params['model'] as String? ?? 'flux';
-    final width = params['width'] as int? ?? 1024;
-    final height = params['height'] as int? ?? 1024;
-    final enhance = params['enhance'] as bool? ?? false;
-
-    if (prompt.isEmpty) {
-      return {
-        'success': false,
-        'error': 'Prompt parameter is required',
-      };
-    }
-
-    try {
-      // Create extremely unique seed with maximum randomness to prevent duplicates
-      final now = DateTime.now();
-      final timestamp = now.microsecondsSinceEpoch;
-      final milliseconds = now.millisecondsSinceEpoch;
-      final microseconds = now.microsecond;
-      final second = now.second;
-      final minute = now.minute;
-      
-      // Generate multiple independent random numbers
-      final random1 = (timestamp * 97531) % 999999;
-      final random2 = (microseconds * 86420) % 999999;
-      final random3 = (milliseconds * 13579) % 999999;
-      final random4 = (second * minute * 24680) % 999999;
-      
-      final promptHash = prompt.hashCode.abs() % 999999;
-      final modelHash = model.hashCode.abs() % 99999;
-      final dimensionHash = (width * height).hashCode.abs() % 99999;
-      
-      // Create extremely unique seed combining all factors
-      final seed = (timestamp % 999999) + random1 + random2 + random3 + random4 + promptHash + modelHash + dimensionHash;
-      
-      // Create multiple unique identifiers for maximum cache busting
-      final uniqueId = '${timestamp}_${microseconds}_${random1}_${random2}_${random3}';
-      final cacheId = '${seed}_${random4}_${milliseconds}';
-      final sessionId = '${DateTime.now().toIso8601String()}_${random1}_${random2}';
-      
-      // Significantly modify the prompt with unique variations
-      final variations = [
-        'artistic style ${random1 % 50}',
-        'creative interpretation ${random2 % 100}',
-        'visual variant ${random3 % 75}',
-        'aesthetic ${random4 % 25}',
-        'composition ${seed % 30}'
-      ];
-      final chosenVariation = variations[random1 % variations.length];
-      final enhancedPrompt = '$prompt, $chosenVariation, unique rendering ${uniqueId}';
-      
-      final response = await http.post(
-        Uri.parse('https://ahamai-api.officialprakashkrsingh.workers.dev/v1/images/generations'),
-        headers: {
-          'Authorization': 'Bearer ahamaibyprakash25',
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-        },
-        body: jsonEncode({
-          'model': model,
-          'prompt': enhancedPrompt,
-          'width': width,
-          'height': height,
-          'enhance': enhance,
-          'seed': seed,
-          'timestamp': timestamp,
-          'unique_id': uniqueId,
-          'cache_id': cacheId,
-          'session_id': sessionId,
-          'variation': random1 % 100,
-          'style_variant': random2 % 50,
-          'creative_factor': random3 % 25,
-          'force_unique': true,
-        }),
-      ).timeout(Duration(seconds: 60));
-
-      if (response.statusCode == 200) {
-        // The image is returned as binary data
-        final imageBytes = response.bodyBytes;
-        
-        // Create a data URL for the image
-        final base64Image = base64Encode(imageBytes);
-        final dataUrl = 'data:image/jpeg;base64,$base64Image';
-
-        return {
-          'success': true,
-          'original_prompt': prompt,
-          'model': model,
-          'width': width,
-          'height': height,
-          'seed': seed,
-          'image_url': dataUrl,
-          'image_size': imageBytes.length,
-          'description': 'Image generated successfully using $model model with unique seed $seed',
-        };
-      } else {
-        return {
-          'success': false,
-          'error': 'Failed to generate image: HTTP ${response.statusCode}',
-          'prompt': prompt,
-          'model': model,
-        };
-      }
-    } catch (e) {
-      return {
-        'success': false,
-        'error': 'Failed to generate image: $e',
-        'prompt': prompt,
-        'model': model,
-        'width': width,
-        'height': height,
-        'enhance': enhance,
-        'tool_executed': true,
-      };
-    }
-  }
+  // Image generation method removed - now handled by direct UI
 
   Future<Map<String, dynamic>> _fetchImageModels(Map<String, dynamic> params) async {
     final refresh = params['refresh'] as bool? ?? false;

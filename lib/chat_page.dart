@@ -13,6 +13,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'models.dart';
 import 'character_service.dart';
+import 'image_generation_dialog.dart';
+import 'image_generation_service.dart';
 import 'external_tools_service.dart';
 import 'crypto_chart_widget.dart';
 import 'diagram_save_widget.dart';
@@ -332,10 +334,6 @@ When you need to use tools, write Python code using the execute_tool() function:
 
 Single tool execution:
 ```python
-# Generate an image
-image = execute_tool('generate_image', prompt='beautiful sunset over mountains')
-print(f"Generated image: {image}")
-
 # Create a diagram
 diagram = execute_tool('plantuml_chart', diagram='Alice -> Bob: Hello')
 print(f"Diagram created: {diagram}")
@@ -354,7 +352,7 @@ chart = execute_tool('plantuml_chart', diagram='User -> API: Request\\nAPI -> Da
 🎯 WHEN TO USE TOOLS:
 - **screenshot**: Capture single/multiple webpages visually (supports urls array for batch)
 
-- **generate_image**: Create unique artistic images ONLY - use for photos, artwork, illustrations (models: flux, turbo)
+
 - **plantuml_chart**: Generate technical diagrams ONLY - use for flowcharts, UML diagrams, system architecture, process flows
 - **fetch_image_models**: Show available image generation models
 - **create_image_collage**: Combine multiple images into one collage for easier analysis
@@ -367,26 +365,17 @@ chart = execute_tool('plantuml_chart', diagram='User -> API: Request\\nAPI -> Da
 ⚠️ CRITICAL EXECUTION RULES:
 1. **SEQUENTIAL ONLY**: Execute tools ONE BY ONE, never simultaneously
 2. **NO DUPLICATES**: Execute each tool only ONCE per request
-3. **Image Generation**: Execute generate_image ONCE, wait for completion, THEN describe
-4. **Diagram Generation**: Execute plantuml_chart ONCE, wait for completion, THEN explain
-5. **WAIT FOR COMPLETION**: NEVER provide responses before tools complete execution
-7. **SINGLE EXECUTION**: If user asks for "image and diagram", do generate_image FIRST, wait, then plantuml_chart
+3. **Diagram Generation**: Execute plantuml_chart ONCE, wait for completion, THEN explain
+4. **WAIT FOR COMPLETION**: NEVER provide responses before tools complete execution
 
 CORRECT PYTHON TOOL EXAMPLES:
-```python
-# Image generation example
-generated_image = execute_tool('generate_image', prompt='beautiful sunset over mountains')
-print("Generated image:", generated_image)
-```
-
 ```python
 # Diagram creation example
 diagram_result = execute_tool('plantuml_chart', diagram='Alice -> Bob: Hello\\nBob -> Alice: Hi there')
 print("Diagram created:", diagram_result)
 ```
 
-⚠️ CRITICAL: NEVER confuse image generation with diagram generation:
-- **generate_image**: For artistic images, photos, illustrations, artwork
+⚠️ IMPORTANT: Use tools appropriately:
 - **plantuml_chart**: For technical diagrams, flowcharts, UML diagrams, system designs
 
 🔍 ENHANCED FEATURES:
@@ -408,9 +397,7 @@ trend_data = execute_tool('crypto_trending')
 ```
 
 ```python
-# First generate image, then create diagram
-image = execute_tool('generate_image', prompt='modern office workspace')
-# Wait for image to complete, then create diagram
+# Create diagram
 diagram = execute_tool('plantuml_chart', diagram='User -> Computer: Work\\nComputer -> User: Results')
 ```
 
@@ -929,18 +916,6 @@ $screenshotImages**Service:** ${result['service']}
 **Status:** ${result['action_completed']}
 
 ✅ Model switch completed successfully!''';
-
-        case 'generate_image':
-          return '''**🎨 Image Generated Successfully**
-
-**Prompt:** ${result['original_prompt'] ?? result['prompt'] ?? 'N/A'}
-**Model:** ${result['model']}
-**Dimensions:** ${result['width']}x${result['height']}
-**Image Size:** ${(result['image_size'] as int? ?? 0) ~/ 1024}KB
-
-![Generated Image](${result['image_url']})
-
-✅ High-quality image generated successfully using ${result['model']} model!''';
 
         case 'fetch_image_models':
           final models = result['model_names'] as List;
@@ -1646,6 +1621,123 @@ $priceChart
     }
   }
 
+  void _showAttachmentOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              margin: EdgeInsets.only(top: 12),
+              decoration: BoxDecoration(
+                color: Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // Header
+            Padding(
+              padding: EdgeInsets.all(20),
+              child: Text(
+                'Attachment Options',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D3748),
+                ),
+              ),
+            ),
+            
+            // Options
+            Column(
+              children: [
+                // Upload Image
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Color(0xFF2D3748).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: FaIcon(
+                      FontAwesomeIcons.image,
+                      color: Color(0xFF2D3748),
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    'Upload Image',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2D3748),
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Select an image from your device',
+                    style: TextStyle(color: Color(0xFF718096)),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _handleImageUpload();
+                  },
+                ),
+                
+                // Generate Image
+                ListTile(
+                  leading: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Color(0xFF2D3748).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: FaIcon(
+                      FontAwesomeIcons.paintBrush,
+                      color: Color(0xFF2D3748),
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    'Generate Image',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2D3748),
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Create an image with AI from text prompt',
+                    style: TextStyle(color: Color(0xFF718096)),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showImageGenerationDialog();
+                  },
+                ),
+              ],
+            ),
+            
+            SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showImageGenerationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => ImageGenerationDialog(),
+    );
+  }
+
   void _clearUploadedImage() {
     setState(() {
       _uploadedImagePath = null;
@@ -1787,7 +1879,7 @@ $priceChart
               isEditing: _editingMessageId != null,
               onCancelEdit: _cancelEditing,
               externalToolsService: _externalToolsService,
-              onImageUpload: _handleImageUpload,
+              onImageUpload: _showAttachmentOptions,
               uploadedImagePath: _uploadedImagePath,
               onClearImage: _clearUploadedImage,
             ),
