@@ -32,7 +32,7 @@ dependencies:
   flutter_web_auth_2: ^4.1.0
   font_awesome_flutter: ^10.8.0
   flutter_svg: ^2.1.0
-  flutter_gemma: ^0.10.1
+  # flutter_gemma: ^0.10.1  # Commented out temporarily to fix build issues
 
 dev_dependencies:
   flutter_test:

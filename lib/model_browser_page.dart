@@ -37,10 +37,6 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
     }
   }
 
-  Future<void> _refreshModels() async {
-    await _llmService.refreshModels();
-  }
-
   Future<void> _downloadModel(LocalLLMModel model) async {
     try {
       await _llmService.downloadModel(model.id);
@@ -364,7 +360,7 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
   }
 
   Widget _buildTabContent(String source) {
-    final models = _llmService.getModelsBySource(source);
+    final models = _llmService.availableModels.where((m) => m.source == source).toList();
     
     if (models.isEmpty) {
       return Center(
@@ -409,7 +405,7 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final downloadedCount = _llmService.getDownloadedModels().length;
+    final downloadedCount = _llmService.availableModels.where((m) => m.isDownloaded).length;
     final availableCount = _llmService.availableModels.length;
 
     return Scaffold(
@@ -446,7 +442,10 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
         ),
         actions: [
           IconButton(
-            onPressed: _refreshModels,
+            onPressed: () {
+              // Refresh the model list
+              setState(() {});
+            },
             icon: const Icon(
               Icons.refresh_rounded,
               color: Color(0xFF000000),

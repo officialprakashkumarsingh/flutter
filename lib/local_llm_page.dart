@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'local_llm_service.dart';
@@ -15,265 +13,16 @@ class LocalLLMPage extends StatefulWidget {
 
 class _LocalLLMPageState extends State<LocalLLMPage> {
   final LocalLLMService _llmService = LocalLLMService();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _endpointController = TextEditingController();
-  
+
   @override
   void initState() {
     super.initState();
-    _llmService.addListener(_onLLMServiceChanged);
-    _scanForLLMs();
+    _initializeService();
   }
 
-  @override
-  void dispose() {
-    _llmService.removeListener(_onLLMServiceChanged);
-    _nameController.dispose();
-    _endpointController.dispose();
-    super.dispose();
-  }
-
-  void _onLLMServiceChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  Future<void> _scanForLLMs() async {
-    await _llmService.scanForAvailableLLMs();
-  }
-
-  void _showAddCustomLLMDialog() {
-    _nameController.clear();
-    _endpointController.clear();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFF4F3F0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Add Custom LLM',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF000000),
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: 'Name',
-                hintText: 'My Custom LLM',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                fillColor: Colors.white,
-                filled: true,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _endpointController,
-              decoration: InputDecoration(
-                labelText: 'Endpoint URL',
-                hintText: 'http://localhost:8080',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                fillColor: Colors.white,
-                filled: true,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: const Color(0xFFA3A3A3)),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (_nameController.text.isNotEmpty && 
-                  _endpointController.text.isNotEmpty) {
-                _llmService.addCustomLLM(
-                  _nameController.text,
-                  _endpointController.text,
-                );
-                Navigator.pop(context);
-                _scanForLLMs();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF000000),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _selectLLM(LocalLLM llm) {
-    _llmService.selectLLM(llm);
-    Navigator.pop(context, llm);
-  }
-
-  Widget _buildLLMCard(LocalLLM llm) {
-    final isSelected = _llmService.selectedLLM?.id == llm.id;
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFFEAE9E5) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: isSelected ? Border.all(color: const Color(0xFF000000), width: 2) : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: llm.isAvailable ? () => _selectLLM(llm) : null,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: llm.isAvailable 
-                            ? const Color(0xFF10B981).withOpacity(0.1)
-                            : const Color(0xFFF87171).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        llm.isAvailable ? Icons.computer : Icons.error_outline,
-                        color: llm.isAvailable 
-                            ? const Color(0xFF10B981)
-                            : const Color(0xFFF87171),
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            llm.name,
-                            style: GoogleFonts.inter(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF000000),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            llm.description,
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: const Color(0xFFA3A3A3),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (isSelected)
-                      Icon(
-                        Icons.check_circle,
-                        color: const Color(0xFF000000),
-                        size: 24,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF4F3F0),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.link,
-                        size: 16,
-                        color: const Color(0xFFA3A3A3),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          llm.endpoint,
-                          style: GoogleFonts.robotoMono(
-                            fontSize: 12,
-                            color: const Color(0xFF000000),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: llm.isAvailable 
-                            ? const Color(0xFF10B981)
-                            : const Color(0xFFF87171),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        llm.isAvailable ? 'Available' : 'Offline',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    if (llm.id.startsWith('custom_'))
-                      IconButton(
-                        onPressed: () {
-                          _llmService.removeLLM(llm.id);
-                        },
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: Color(0xFFF87171),
-                          size: 20,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+  Future<void> _initializeService() async {
+    await _llmService.initializeService();
+    setState(() {});
   }
 
   @override
@@ -298,109 +47,171 @@ class _LocalLLMPageState extends State<LocalLLMPage> {
             color: const Color(0xFF000000),
           ),
         ),
-                 actions: [
-           IconButton(
-             onPressed: () {
-               Navigator.push(
-                 context,
-                 MaterialPageRoute(
-                   builder: (context) => const ModelBrowserPage(),
-                 ),
-               );
-             },
-             icon: const Icon(
-               Icons.explore_rounded,
-               color: Color(0xFF000000),
-             ),
-           ),
-           IconButton(
-             onPressed: _llmService.isScanning ? null : _scanForLLMs,
-             icon: _llmService.isScanning
-                 ? const SizedBox(
-                     width: 20,
-                     height: 20,
-                     child: CircularProgressIndicator(
-                       strokeWidth: 2,
-                       color: Color(0xFF000000),
-                     ),
-                   )
-                 : const Icon(
-                     Icons.refresh_rounded,
-                     color: Color(0xFF000000),
-                   ),
-           ),
-           IconButton(
-             onPressed: _showAddCustomLLMDialog,
-             icon: const Icon(
-               Icons.add_rounded,
-               color: Color(0xFF000000),
-             ),
-           ),
-           const SizedBox(width: 8),
-         ],
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ModelBrowserPage(),
+                ),
+              );
+            },
+            icon: const FaIcon(
+              FontAwesomeIcons.compass,
+              color: Color(0xFF000000),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
+      body: AnimatedBuilder(
+        animation: _llmService,
+        builder: (context, child) {
+          final downloadedModels = _llmService.availableModels.where((m) => m.isDownloaded).toList();
+          final availableModels = _llmService.availableModels.where((m) => !m.isDownloaded).toList();
+          
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Available Local LLMs',
-                  style: GoogleFonts.inter(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF000000),
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.smart_toy,
+                        size: 48,
+                        color: const Color(0xFF4285F4),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Google Gemma AI',
+                        style: GoogleFonts.inter(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF000000),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Run AI models locally on your device for complete privacy and offline capabilities',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: const Color(0xFFA3A3A3),
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ModelBrowserPage(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.download, size: 18),
+                        label: const Text('Browse & Download Models'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4285F4),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                                 Text(
-                   'Connect to locally running AI models like Ollama, LM Studio, and more.',
-                   style: GoogleFonts.inter(
-                     fontSize: 16,
-                     color: const Color(0xFFA3A3A3),
-                   ),
-                 ),
-                 const SizedBox(height: 16),
-                 ElevatedButton.icon(
-                   onPressed: () {
-                     Navigator.push(
-                       context,
-                       MaterialPageRoute(
-                         builder: (context) => const ModelBrowserPage(),
-                       ),
-                     );
-                   },
-                   icon: const Icon(Icons.explore_rounded, size: 20),
-                   label: const Text('Browse & Download Models'),
-                   style: ElevatedButton.styleFrom(
-                     backgroundColor: const Color(0xFF3B82F6),
-                     foregroundColor: Colors.white,
-                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                     shape: RoundedRectangleBorder(
-                       borderRadius: BorderRadius.circular(12),
-                     ),
-                   ),
-                 ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: _llmService.localLLMs.isEmpty
-                ? Center(
+                
+                const SizedBox(height: 24),
+                
+                // Downloaded Models Section
+                if (downloadedModels.isNotEmpty) ...[
+                  Text(
+                    'Downloaded Models',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF000000),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...downloadedModels.map((model) => _buildModelCard(model, true)),
+                  const SizedBox(height: 24),
+                ],
+                
+                // Available Models Section
+                if (availableModels.isNotEmpty) ...[
+                  Text(
+                    'Available Models',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF000000),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...availableModels.take(3).map((model) => _buildModelCard(model, false)),
+                  
+                  if (availableModels.length > 3) ...[
+                    const SizedBox(height: 12),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ModelBrowserPage(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.visibility),
+                        label: Text('View All ${availableModels.length} Models'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF4285F4),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+                
+                // Empty State
+                if (downloadedModels.isEmpty && availableModels.isEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(40),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.computer_outlined,
+                          Icons.cloud_download,
                           size: 64,
                           color: const Color(0xFFA3A3A3),
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No Local LLMs Found',
+                          'No Models Available',
                           style: GoogleFonts.inter(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -409,7 +220,8 @@ class _LocalLLMPageState extends State<LocalLLMPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Make sure your local LLM server is running',
+                          'Check your internet connection and try refreshing',
+                          textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             color: const Color(0xFFA3A3A3),
@@ -417,61 +229,118 @@ class _LocalLLMPageState extends State<LocalLLMPage> {
                         ),
                       ],
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: _llmService.localLLMs.length,
-                    itemBuilder: (context, index) {
-                      final llm = _llmService.localLLMs[index];
-                      return _buildLLMCard(llm);
-                    },
-                  ),
-          ),
-          if (_llmService.selectedLLM != null)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, -2),
                   ),
                 ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildModelCard(LocalLLMModel model, bool isDownloaded) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: isDownloaded ? Border.all(color: const Color(0xFF10B981), width: 2) : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4285F4).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.smart_toy,
+                  color: const Color(0xFF4285F4),
+                  size: 20,
+                ),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    color: const Color(0xFF10B981),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Connected to ${_llmService.selectedLLM!.name}',
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      model.name,
                       style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                         color: const Color(0xFF000000),
                       ),
                     ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context, _llmService.selectedLLM),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF000000),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    Text(
+                      model.metadata['description'] ?? '',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: const Color(0xFFA3A3A3),
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    child: const Text('Use Selected'),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+              if (isDownloaded)
+                Icon(
+                  Icons.check_circle,
+                  color: const Color(0xFF10B981),
+                  size: 20,
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4285F4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  model.source,
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                model.size,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: const Color(0xFFA3A3A3),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                model.format,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: const Color(0xFFA3A3A3),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

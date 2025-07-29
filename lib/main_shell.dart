@@ -512,8 +512,10 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                     Navigator.push(
                       context,
                       PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) =>
-                            const LocalLLMPage(),
+                        pageBuilder: (context, animation, secondaryAnimation) {
+                          // Navigate directly to LocalLLMPage without expecting a return value
+                          return const LocalLLMPage();
+                        },
                         transitionsBuilder: (context, animation, secondaryAnimation, child) {
                           return SlideTransition(
                             position: Tween<Offset>(
@@ -528,31 +530,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                         },
                         transitionDuration: const Duration(milliseconds: 300),
                       ),
-                    ).then((selectedLLM) {
-                      if (selectedLLM is LocalLLM) {
-                        // Navigate to local LLM chat
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (context, animation, secondaryAnimation) =>
-                                LocalLLMChatPage(localLLM: selectedLLM),
-                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                              return SlideTransition(
-                                position: Tween<Offset>(
-                                  begin: const Offset(1.0, 0.0),
-                                  end: Offset.zero,
-                                ).animate(CurvedAnimation(
-                                  parent: animation,
-                                  curve: Curves.easeOutCubic,
-                                )),
-                                child: child,
-                              );
-                            },
-                            transitionDuration: const Duration(milliseconds: 300),
-                          ),
-                        );
-                      }
-                    });
+                    );
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
@@ -839,8 +817,10 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                       Navigator.push(
                         context,
                         PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) =>
-                              const LocalLLMPage(),
+                          pageBuilder: (context, animation, secondaryAnimation) {
+                            // Navigate directly to LocalLLMPage without expecting a return value
+                            return const LocalLLMPage();
+                          },
                           transitionsBuilder: (context, animation, secondaryAnimation, child) {
                             return SlideTransition(
                               position: Tween<Offset>(
@@ -855,30 +835,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                           },
                           transitionDuration: const Duration(milliseconds: 300),
                         ),
-                      ).then((selectedLLM) {
-                        if (selectedLLM is LocalLLM) {
-                          Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder: (context, animation, secondaryAnimation) =>
-                                  LocalLLMChatPage(localLLM: selectedLLM),
-                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                return SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(1.0, 0.0),
-                                    end: Offset.zero,
-                                  ).animate(CurvedAnimation(
-                                    parent: animation,
-                                    curve: Curves.easeOutCubic,
-                                  )),
-                                  child: child,
-                                );
-                              },
-                              transitionDuration: const Duration(milliseconds: 300),
-                            ),
-                          );
-                        }
-                      });
+                      );
                     },
                     borderRadius: BorderRadius.circular(21),
                     child: const FaIcon(
