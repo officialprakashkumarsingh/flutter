@@ -912,7 +912,9 @@ Be conversational and helpful!'''
 
         case 'plantuml_chart':
           // For PlantUML charts, show clean diagram without technical details
-          return '''![PlantUML Diagram](${result['image_url']})''';
+          final diagramMarkdown = '''![PlantUML Diagram](${result['image_url']})''';
+          print('🔍 PlantUML diagram formatted: $diagramMarkdown');
+          return diagramMarkdown;
 
         case 'crypto_market_data':
           // Format crypto market data with interactive chart
@@ -1756,46 +1758,38 @@ $priceChart
 
   Future<void> _saveImageToDevice(String imageUrl) async {
     try {
-      // Request storage permission with better handling
-      PermissionStatus storagePermission = await Permission.storage.status;
-      
-      if (!storagePermission.isGranted) {
-        storagePermission = await Permission.storage.request();
-        
-        if (storagePermission.isDenied) {
-          _showSnackBar('❌ Storage permission denied. Please enable in settings.');
-          return;
-        } else if (storagePermission.isPermanentlyDenied) {
-          _showSnackBar('❌ Storage permission permanently denied. Please enable in device settings.');
-          await openAppSettings();
-          return;
-        }
-      }
+      // For Android 10+ (API 29+), we don't need storage permission for app-specific directories
+      // For older versions, try to get permission but continue if denied
 
-      // Get the Downloads directory or app documents directory
+      // Use app-specific external storage (no permission needed on Android 10+)
       Directory? directory;
-      if (Platform.isAndroid) {
-        directory = await getExternalStorageDirectory();
-        if (directory != null) {
-          // Create AhamAI folder in the app's external directory
+      try {
+        if (Platform.isAndroid) {
+          // Try external storage first (app-specific, no permission needed)
+          directory = await getExternalStorageDirectory();
+          if (directory != null) {
+            final ahamAIDir = Directory('${directory.path}/AhamAI');
+            if (!await ahamAIDir.exists()) {
+              await ahamAIDir.create(recursive: true);
+            }
+            directory = ahamAIDir;
+          }
+        }
+        
+        // Fallback to app documents directory if external storage fails
+        if (directory == null) {
+          directory = await getApplicationDocumentsDirectory();
           final ahamAIDir = Directory('${directory.path}/AhamAI');
           if (!await ahamAIDir.exists()) {
             await ahamAIDir.create(recursive: true);
           }
           directory = ahamAIDir;
         }
-      } else {
+      } catch (e) {
+        print('Storage access error: $e');
+        _showSnackBar('❌ Storage access failed, but trying to save anyway...');
+        // Continue trying to save even if directory creation fails
         directory = await getApplicationDocumentsDirectory();
-        final ahamAIDir = Directory('${directory.path}/AhamAI');
-        if (!await ahamAIDir.exists()) {
-          await ahamAIDir.create(recursive: true);
-        }
-        directory = ahamAIDir;
-      }
-
-      if (directory == null) {
-        _showSnackBar('❌ Could not access storage');
-        return;
       }
 
       // Generate unique filename
@@ -2388,9 +2382,13 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
   }
 
   Widget _buildMarkdownText(String text) {
+    print('🔍 Building markdown text: $text');
     return MarkdownBody(
       data: text,
-      imageBuilder: (uri, title, alt) => _buildImageWidget(uri.toString()),
+      imageBuilder: (uri, title, alt) {
+        print('🖼️ Markdown imageBuilder called: $uri');
+        return _buildImageWidget(uri.toString());
+      },
       styleSheet: MarkdownStyleSheet(
         p: const TextStyle(
           fontSize: 15, 
