@@ -46,6 +46,7 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3394897715416901~1671061893"/>
+        <!-- Ollama dart client - no additional native libraries needed -->
     </application>
 
     <!-- Required for PROCESS_TEXT intent -->
