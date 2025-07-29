@@ -52,6 +52,12 @@ class _CoderPageState extends State<CoderPage> {
   bool _showFollowUp = false;
   final TextEditingController _followUpController = TextEditingController();
   
+  // Git Operations
+  bool _showGitOptions = false;
+  final TextEditingController _commitMessageController = TextEditingController();
+  String _gitStatus = '';
+  bool _hasUncommittedChanges = false;
+  
   @override
   void initState() {
     super.initState();
@@ -65,6 +71,7 @@ class _CoderPageState extends State<CoderPage> {
     _taskController.dispose();
     _scrollController.dispose();
     _followUpController.dispose();
+    _commitMessageController.dispose();
     _httpClient.close();
     super.dispose();
   }
@@ -313,9 +320,14 @@ class _CoderPageState extends State<CoderPage> {
       // Step 5: Success with Git operations
       await _updateTaskStep(task, 'Task completed! ${_modifiedFiles.length} files modified', TaskStatus.completed);
       
-      // Show follow-up options
+      // Check Git status and show options
+      await _checkGitStatus(task);
+      
+      // Show follow-up and Git options
       setState(() {
         _showFollowUp = true;
+        _showGitOptions = true;
+        _hasUncommittedChanges = _modifiedFiles.isNotEmpty;
       });
       
     } catch (e) {
@@ -534,6 +546,263 @@ Only return the code, no explanations.
       'success': true,
       'message': 'Successfully modified ${_modifiedFiles.length} files: ${_modifiedFiles.keys.join(', ')}',
     };
+  }
+  
+  // Check Git status
+  Future<void> _checkGitStatus(CoderTask task) async {
+    try {
+      // For now, simulate git status (in real implementation, you'd use git commands)
+      if (_modifiedFiles.isNotEmpty) {
+        final modifiedFilesList = _modifiedFiles.keys.map((file) => '    modified:   $file').join('\n');
+        _gitStatus = '''
+On branch ${task.branch}
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+
+$modifiedFilesList
+
+no changes added to commit (use "git add ." or "git commit -a")
+''';
+      } else {
+        _gitStatus = 'On branch ${task.branch}\nnothing to commit, working tree clean';
+      }
+    } catch (e) {
+      _gitStatus = 'Error checking git status: $e';
+    }
+  }
+  
+  // Commit changes via GitHub API
+  Future<void> _commitChanges(CoderTask task, String commitMessage) async {
+    if (_modifiedFiles.isEmpty) return;
+    
+    setState(() => _isLoading = true);
+    
+    try {
+      // Get current commit SHA
+      final branchResponse = await http.get(
+        Uri.parse('https://api.github.com/repos/${task.repository.fullName}/git/refs/heads/${task.branch}'),
+        headers: {
+          'Authorization': 'Bearer $_githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      );
+      
+      if (branchResponse.statusCode != 200) {
+        throw Exception('Failed to get branch info');
+      }
+      
+      final branchData = json.decode(branchResponse.body);
+      final currentCommitSha = branchData['object']['sha'];
+      
+      // Get current tree
+      final commitResponse = await http.get(
+        Uri.parse('https://api.github.com/repos/${task.repository.fullName}/git/commits/$currentCommitSha'),
+        headers: {
+          'Authorization': 'Bearer $_githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      );
+      
+      if (commitResponse.statusCode != 200) {
+        throw Exception('Failed to get current commit');
+      }
+      
+      final commitData = json.decode(commitResponse.body);
+      final treeSha = commitData['tree']['sha'];
+      
+      // Create new tree with modified files
+      final treeItems = <Map<String, dynamic>>[];
+      
+      for (final entry in _modifiedFiles.entries) {
+        treeItems.add({
+          'path': entry.key,
+          'mode': '100644',
+          'type': 'blob',
+          'content': entry.value,
+        });
+      }
+      
+      final newTreeResponse = await http.post(
+        Uri.parse('https://api.github.com/repos/${task.repository.fullName}/git/trees'),
+        headers: {
+          'Authorization': 'Bearer $_githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'base_tree': treeSha,
+          'tree': treeItems,
+        }),
+      );
+      
+      if (newTreeResponse.statusCode != 201) {
+        throw Exception('Failed to create new tree');
+      }
+      
+      final newTreeData = json.decode(newTreeResponse.body);
+      final newTreeSha = newTreeData['sha'];
+      
+      // Create new commit
+      final newCommitResponse = await http.post(
+        Uri.parse('https://api.github.com/repos/${task.repository.fullName}/git/commits'),
+        headers: {
+          'Authorization': 'Bearer $_githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'message': commitMessage,
+          'tree': newTreeSha,
+          'parents': [currentCommitSha],
+        }),
+      );
+      
+      if (newCommitResponse.statusCode != 201) {
+        throw Exception('Failed to create commit');
+      }
+      
+      final newCommitData = json.decode(newCommitResponse.body);
+      final newCommitSha = newCommitData['sha'];
+      
+      // Update branch reference
+      final updateRefResponse = await http.patch(
+        Uri.parse('https://api.github.com/repos/${task.repository.fullName}/git/refs/heads/${task.branch}'),
+        headers: {
+          'Authorization': 'Bearer $_githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'sha': newCommitSha,
+        }),
+      );
+      
+      if (updateRefResponse.statusCode != 200) {
+        throw Exception('Failed to update branch');
+      }
+      
+      // Success!
+      setState(() {
+        _hasUncommittedChanges = false;
+        _gitStatus = 'On branch ${task.branch}\nnothing to commit, working tree clean';
+      });
+      
+      _showSnackBar('✅ Successfully committed and pushed ${_modifiedFiles.length} files!');
+      _commitMessageController.clear();
+      
+    } catch (e) {
+      _showSnackBar('❌ Commit failed: $e');
+    }
+    
+    setState(() => _isLoading = false);
+  }
+  
+  // Create new branch
+  Future<void> _createBranch(CoderTask task, String branchName) async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // Get current commit SHA
+      final branchResponse = await http.get(
+        Uri.parse('https://api.github.com/repos/${task.repository.fullName}/git/refs/heads/${task.branch}'),
+        headers: {
+          'Authorization': 'Bearer $_githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      );
+      
+      if (branchResponse.statusCode != 200) {
+        throw Exception('Failed to get current branch');
+      }
+      
+      final branchData = json.decode(branchResponse.body);
+      final currentCommitSha = branchData['object']['sha'];
+      
+      // Create new branch
+      final newBranchResponse = await http.post(
+        Uri.parse('https://api.github.com/repos/${task.repository.fullName}/git/refs'),
+        headers: {
+          'Authorization': 'Bearer $_githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'ref': 'refs/heads/$branchName',
+          'sha': currentCommitSha,
+        }),
+      );
+      
+      if (newBranchResponse.statusCode == 201) {
+        // Switch to new branch
+        setState(() {
+          _selectedBranch = branchName;
+          if (!_branches.contains(branchName)) {
+            _branches.add(branchName);
+          }
+        });
+        
+        _showSnackBar('✅ Created and switched to branch: $branchName');
+      } else {
+        throw Exception('Failed to create branch');
+      }
+      
+    } catch (e) {
+      _showSnackBar('❌ Branch creation failed: $e');
+    }
+    
+    setState(() => _isLoading = false);
+  }
+  
+  // Create pull request
+  Future<void> _createPullRequest(CoderTask task, String title, String body, String baseBranch) async {
+    setState(() => _isLoading = true);
+    
+    try {
+      final prResponse = await http.post(
+        Uri.parse('https://api.github.com/repos/${task.repository.fullName}/pulls'),
+        headers: {
+          'Authorization': 'Bearer $_githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'title': title,
+          'body': body,
+          'head': task.branch,
+          'base': baseBranch,
+        }),
+      );
+      
+      if (prResponse.statusCode == 201) {
+        final prData = json.decode(prResponse.body);
+        final prNumber = prData['number'];
+        final prUrl = prData['html_url'];
+        
+        _showSnackBar('✅ Pull Request #$prNumber created successfully!');
+      } else {
+        throw Exception('Failed to create pull request');
+      }
+      
+    } catch (e) {
+      _showSnackBar('❌ Pull request creation failed: $e');
+    }
+    
+    setState(() => _isLoading = false);
+  }
+  
+  // Show snackbar message
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(fontSize: 12)),
+        backgroundColor: Colors.white,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        elevation: 8,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
   
   // Scroll to bottom of task list
@@ -823,9 +1092,12 @@ Only return the code, no explanations.
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
-              itemCount: _tasks.length + (_showFollowUp ? 1 : 0),
+              itemCount: _tasks.length + (_showGitOptions ? 1 : 0) + (_showFollowUp ? 1 : 0),
               itemBuilder: (context, index) {
-                if (index == _tasks.length && _showFollowUp) {
+                if (_showGitOptions && index == _tasks.length) {
+                  return _buildGitCard();
+                }
+                if (_showFollowUp && index == _tasks.length + (_showGitOptions ? 1 : 0)) {
                   return _buildFollowUpCard();
                 }
                 return _buildTaskCard(_tasks[index]);
@@ -1009,6 +1281,320 @@ Only return the code, no explanations.
     );
   }
   
+  Widget _buildGitCard() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF48BB78)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF0FFF4),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
+              ),
+            ),
+            child: Row(
+              children: [
+                const FaIcon(FontAwesomeIcons.codeBranch, size: 12, color: Color(0xFF48BB78)),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Git Operations',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2D3748),
+                    ),
+                  ),
+                ),
+                if (_hasUncommittedChanges)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFECC94B),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${_modifiedFiles.length} changes',
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Git Status
+                if (_gitStatus.isNotEmpty) ...[
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A202C),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            FaIcon(FontAwesomeIcons.terminal, size: 10, color: Color(0xFF9CA3AF)),
+                            SizedBox(width: 6),
+                            Text(
+                              'git status',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Color(0xFF9CA3AF),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _gitStatus,
+                          style: const TextStyle(
+                            fontSize: 9,
+                            color: Color(0xFFE5E7EB),
+                            fontFamily: 'Courier',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                
+                // Git Actions
+                if (_hasUncommittedChanges) ...[
+                  const Text(
+                    'Commit Changes',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2D3748),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFAFAFA),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: TextField(
+                      controller: _commitMessageController,
+                      decoration: InputDecoration(
+                        hintText: 'feat: ${_tasks.isNotEmpty ? _tasks.first.description.toLowerCase() : 'update files'}',
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(10),
+                        hintStyle: const TextStyle(color: Color(0xFFA0AEC0), fontSize: 11),
+                      ),
+                      style: const TextStyle(fontSize: 11),
+                      maxLines: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  
+                  // Action Buttons
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildGitButton(
+                        'Commit & Push',
+                        FontAwesomeIcons.upload,
+                        const Color(0xFF48BB78),
+                        () {
+                          final message = _commitMessageController.text.trim();
+                          if (message.isEmpty) {
+                            _commitMessageController.text = 'feat: ${_tasks.isNotEmpty ? _tasks.first.description.toLowerCase() : 'update files'}';
+                          }
+                          if (_tasks.isNotEmpty) {
+                            _commitChanges(_tasks.first, _commitMessageController.text);
+                          }
+                        },
+                      ),
+                      _buildGitButton(
+                        'New Branch',
+                        FontAwesomeIcons.codeBranch,
+                        const Color(0xFF4299E1),
+                        () => _showCreateBranchDialog(),
+                      ),
+                      _buildGitButton(
+                        'Pull Request',
+                        FontAwesomeIcons.codeCompare,
+                        const Color(0xFF9F7AEA),
+                        () => _showCreatePRDialog(),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  const Text(
+                    '✅ All changes committed',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF48BB78),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildGitButton(String label, IconData icon, Color color, VoidCallback onPressed) {
+    return ElevatedButton.icon(
+      onPressed: _isLoading ? null : onPressed,
+      icon: FaIcon(icon, size: 10, color: Colors.white),
+      label: Text(label, style: const TextStyle(fontSize: 10, color: Colors.white)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        minimumSize: Size.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      ),
+    );
+  }
+  
+  // Show create branch dialog
+  void _showCreateBranchDialog() {
+    final branchController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text(
+          'Create New Branch',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: branchController,
+              decoration: InputDecoration(
+                hintText: 'feature/new-feature',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                contentPadding: const EdgeInsets.all(10),
+              ),
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(fontSize: 12)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (branchController.text.isNotEmpty && _tasks.isNotEmpty) {
+                Navigator.pop(context);
+                _createBranch(_tasks.first, branchController.text);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4299E1)),
+            child: const Text('Create', style: TextStyle(fontSize: 12, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // Show create PR dialog
+  void _showCreatePRDialog() {
+    final titleController = TextEditingController();
+    final bodyController = TextEditingController();
+    
+    // Pre-fill with task info
+    if (_tasks.isNotEmpty) {
+      titleController.text = _tasks.first.description;
+      bodyController.text = '''## Changes Made
+${_modifiedFiles.keys.map((file) => '- Modified `$file`').join('\n')}
+
+## Task Description
+${_tasks.first.description}
+
+Generated by AhamAI Coder
+''';
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text(
+          'Create Pull Request',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: InputDecoration(
+                  labelText: 'Title',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                  contentPadding: const EdgeInsets.all(10),
+                ),
+                style: const TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: bodyController,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                  contentPadding: const EdgeInsets.all(10),
+                ),
+                style: const TextStyle(fontSize: 12),
+                maxLines: 6,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(fontSize: 12)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (titleController.text.isNotEmpty && _tasks.isNotEmpty) {
+                Navigator.pop(context);
+                _createPullRequest(_tasks.first, titleController.text, bodyController.text, 'main');
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9F7AEA)),
+            child: const Text('Create PR', style: TextStyle(fontSize: 12, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFollowUpCard() {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
