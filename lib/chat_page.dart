@@ -340,7 +340,7 @@ class ChatPageState extends State<ChatPage> {
         'content': '''You are AhamAI, an intelligent assistant with access to external tools and image generation capabilities. You can execute tools to help users with various tasks.
 
 🎨 IMAGE GENERATION CAPABILITY:
-When users request image generation (photos, artwork, illustrations, creative images), you should activate image generation mode by saying "Let me switch to image generation mode for you" and then guide them to use the built-in image generator with model selection (Flux, Turbo) and follow-up options.
+This app has a built-in image generator with model selection (Flux, Turbo) and follow-up options for consistent style. Users can access it through the attachment button or you can mention this feature when relevant.
 
 Available External Tools:
 $toolsInfo
@@ -1460,19 +1460,7 @@ $priceChart
     final messageText = text ?? _controller.text.trim();
     if (messageText.isEmpty || _awaitingReply) return;
 
-    // Check if user is requesting image generation
-    if (!_isImageGenerationMode && _shouldTriggerImageGeneration(messageText)) {
-      _enableImageGenerationMode();
-      
-      // Add AI response suggesting image generation mode
-      setState(() {
-        _messages.add(Message.user(messageText));
-        _messages.add(Message.bot('🎨 I can help you generate images! I\'ve switched to image generation mode. You can now:\n\n• Select a model (Flux or Turbo)\n• Toggle follow-up mode if you want consistent style\n• Enter your image prompt and generate\n\nWhat would you like me to create?'));
-      });
-      
-      _scrollToBottom();
-      return;
-    }
+
 
     final isEditing = _editingMessageId != null;
     if (isEditing) {
@@ -1787,28 +1775,7 @@ $priceChart
     });
   }
 
-  bool _shouldTriggerImageGeneration(String message) {
-    final imageKeywords = [
-      'generate image', 'create image', 'make image', 'draw image',
-      'generate picture', 'create picture', 'make picture', 'draw picture', 
-      'generate photo', 'create photo', 'make photo', 'draw photo',
-      'generate artwork', 'create artwork', 'make artwork', 'draw artwork',
-      'generate illustration', 'create illustration', 'make illustration',
-      'show me', 'can you draw', 'can you create', 'can you generate',
-      'image of', 'picture of', 'photo of', 'artwork of', 'illustration of',
-      'paint', 'sketch', 'design', 'visualize', 'render',
-      'make a', 'create a', 'generate a', 'draw a', 'show a',
-      'image for', 'picture for', 'photo for', 'visual',
-      'i want image', 'i want picture', 'i need image', 'i need picture',
-      'make me', 'create me', 'generate me', 'draw me'
-    ];
-    
-    final lowerMessage = message.toLowerCase();
-    print('🔍 Checking message for image generation: "$message"');
-    final shouldTrigger = imageKeywords.any((keyword) => lowerMessage.contains(keyword));
-    print('🎨 Should trigger image generation: $shouldTrigger');
-    return shouldTrigger;
-  }
+
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -2295,10 +2262,10 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
           final bytes = base64Decode(base64Data);
           image = SvgPicture.memory(bytes, fit: BoxFit.contain);
         } else {
-          // Use CachedImageWidget for base64 images too
+          // Use CachedImageWidget for base64 images too with proper fitting
           image = CachedImageWidget(
             imageUrl: url,
-            fit: BoxFit.contain,
+            fit: BoxFit.cover,
           );
         }
       } else {
@@ -2310,10 +2277,10 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
                 const Center(child: CircularProgressIndicator()),
           );
         } else {
-          // Use CachedImageWidget for network images
+          // Use CachedImageWidget for network images with proper fitting
           image = CachedImageWidget(
             imageUrl: url,
-            fit: BoxFit.contain,
+            fit: BoxFit.cover,
           );
         }
       }
@@ -2321,27 +2288,22 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20), // More rounded for generated images
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 300, maxWidth: double.infinity),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20), // Double clipping for guaranteed rounding
-                  child: image,
-                ),
-              ),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 300, maxWidth: double.infinity),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: image,
             ),
           ),
-          // Save button for generated images
-          if (url.startsWith('data:image') || url.contains('generated'))
+          // Save button for ALL images (temporary for testing)
+          // if (url.startsWith('data:image') || url.contains('generated') || url.contains('?generated'))
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: ElevatedButton.icon(
-                onPressed: () => widget.onSaveImage?.call(url),
+                onPressed: () => widget.onSaveImage?.call(url.split('?').first), // Remove query params for saving
                 icon: const FaIcon(FontAwesomeIcons.download, size: 14),
                 label: const Text('Save to Device'),
                 style: ElevatedButton.styleFrom(
