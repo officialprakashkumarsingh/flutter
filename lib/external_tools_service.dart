@@ -43,18 +43,7 @@ class ExternalToolsService extends ChangeNotifier {
   Map<String, dynamic> get lastResult => Map.unmodifiable(_lastResult);
 
   void _initializeTools() {
-    // Screenshot tool - takes screenshots of webpages using WordPress preview
-    _tools['screenshot'] = ExternalTool(
-      name: 'screenshot',
-      description: 'Takes a screenshot of any webpage using WordPress preview service. Can capture single or multiple URLs. The AI can use this tool to visually understand websites, capture content, or help users with visual tasks.',
-      parameters: {
-        'url': {'type': 'string', 'description': 'The URL to take screenshot of', 'required': false},
-        'urls': {'type': 'array', 'description': 'Multiple URLs to take screenshots of', 'required': false},
-        'width': {'type': 'integer', 'description': 'Screenshot width in pixels (default: 1200)', 'default': 1200},
-        'height': {'type': 'integer', 'description': 'Screenshot height in pixels (default: 800)', 'default': 800},
-      },
-      execute: _executeScreenshot,
-    );
+    // Screenshot tool removed - not needed for core functionality
 
     // AI Models fetcher - dynamically fetches available AI models
     _tools['fetch_ai_models'] = ExternalTool(
@@ -82,18 +71,7 @@ class ExternalToolsService extends ChangeNotifier {
 
 
 
-    // Image collage tool - creates collages from multiple images
-    _tools['create_image_collage'] = ExternalTool(
-      name: 'create_image_collage',
-      description: 'Creates a collage from multiple images for easier analysis. Useful when you have multiple screenshots or images that need to be analyzed together.',
-      parameters: {
-        'image_urls': {'type': 'array', 'description': 'Array of image URLs to combine into a collage', 'required': true},
-        'layout': {'type': 'string', 'description': 'Layout type (grid, horizontal, vertical)', 'default': 'grid'},
-        'max_width': {'type': 'integer', 'description': 'Maximum width of the collage in pixels', 'default': 1200},
-        'max_height': {'type': 'integer', 'description': 'Maximum height of the collage in pixels', 'default': 800},
-      },
-      execute: _createImageCollage,
-    );
+    // Image collage tool removed - not needed for core functionality
 
     // Enhanced PlantUML diagram generation - create professional high-quality diagrams using PlantUML
     _tools['plantuml_chart'] = ExternalTool(
@@ -160,13 +138,7 @@ class ExternalToolsService extends ChangeNotifier {
       execute: _getCryptoTrending,
     );
 
-    // Get Local IP - Network utility tool (keeping as it's useful for Python tools too)
-    _tools['get_local_ip'] = ExternalTool(
-      name: 'get_local_ip',
-      description: 'Get the local IP address of this device for network connections',
-      parameters: {},
-      execute: _getLocalIP,
-    );
+    // Get Local IP tool removed - not needed for core functionality
   }
 
 

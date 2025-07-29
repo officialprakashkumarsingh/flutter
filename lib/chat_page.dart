@@ -366,17 +366,14 @@ chart = execute_tool('plantuml_chart', diagram='User -> API: Request\\nAPI -> Da
 ```
 
 🎯 WHEN TO USE TOOLS:
-- **screenshot**: Capture single/multiple webpages visually (supports urls array for batch)
-
-
 - **plantuml_chart**: Generate technical diagrams ONLY - use for flowcharts, UML diagrams, system architecture, process flows
-
-- **create_image_collage**: Combine multiple images into one collage for easier analysis
 - **crypto_market_data**: Get real-time crypto prices, market cap, volume, and 24h changes (automatically converts symbols like BTC→bitcoin, ETH→ethereum, ADA→cardano)
 - **crypto_price_history**: Get historical crypto data with charts over different time periods (use coin IDs like bitcoin, ethereum, cardano)
 - **crypto_global_stats**: Get global market statistics and DeFi data
 - **crypto_trending**: Get trending coins, top gainers/losers, and market sentiment
-- **get_local_ip**: Get local IP address for network connections
+
+🎨 FOR IMAGE GENERATION:
+When users want to create images, photos, artwork, or illustrations, guide them to use the attachment button (📎) to access the built-in image generator. Say something like: "I can help you create images! Please click the attachment button (📎) and select 'Generate Image' to access our image generator with different models like Flux and Turbo."
 
 ⚠️ CRITICAL EXECUTION RULES:
 1. **SEQUENTIAL ONLY**: Execute tools ONE BY ONE, never simultaneously
@@ -886,31 +883,7 @@ Be conversational and helpful!'''
   String _formatToolResult(String toolName, Map<String, dynamic> result) {
     if (result['success'] == true) {
       switch (toolName) {
-        case 'screenshot':
-          // Handle multiple screenshots if they exist
-          if (result.containsKey('screenshots') && result['screenshots'] is List) {
-            final screenshots = result['screenshots'] as List;
-            String screenshotImages = '';
-            for (int i = 0; i < screenshots.length; i++) {
-              final shot = screenshots[i] as Map;
-              screenshotImages += '![Screenshot ${i + 1}](${shot['preview_url']})\n\n';
-            }
-            return '''**🖼️ Multiple Screenshots Captured Successfully**
 
-$screenshotImages**Service:** ${result['service']}
-
-✅ All screenshots captured and available for viewing!''';
-          } else {
-            return '''**🖼️ Screenshot Tool Executed Successfully**
-
-**URL:** ${result['url']}
-**Dimensions:** ${result['width']}x${result['height']}
-**Service:** ${result['service']}
-
-![Screenshot](${result['preview_url']})
-
-✅ Screenshot captured and available for viewing!''';
-          }
 
         case 'fetch_ai_models':
           final models = result['models'] as List;
@@ -935,14 +908,7 @@ $screenshotImages**Service:** ${result['service']}
 
 
 
-        case 'screenshot_vision':
-          return '''**👁️ Screenshot Vision Analysis Completed**
 
-**Question:** ${result['question']}
-**Model:** ${result['model']}
-**Analysis:** ${result['answer']}
-
-          ✅ Screenshot analyzed successfully using vision AI!''';
 
         case 'plantuml_chart':
           // For PlantUML charts, show clean diagram without technical details
@@ -1904,14 +1870,8 @@ $priceChart
           _messages.add(promptMessage);
         });
 
-        // Add generated image message with save marker
-        final imageMessage = Message.bot('''**🎨 Image Generated Successfully**
-
-![Generated Image](${result['image_url']}?generated=true)
-
-**Model:** ${result['model'].toString().toUpperCase()}
-**Size:** ${result['size_kb']}KB
-${_followUpMode ? '\n*Following previous style*' : ''}''');
+        // Add generated image message using same format as external tools
+        final imageMessage = Message.bot('''![Generated Image](${result['image_url']})''');
         
         setState(() {
           _messages.add(imageMessage);
@@ -2298,8 +2258,8 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
               child: image,
             ),
           ),
-          // Save button for generated images only
-          if (url.startsWith('data:image') || url.contains('generated') || url.contains('?generated'))
+          // Save button for generated images (base64 or from image generation service)
+          if (url.startsWith('data:image') || url.contains('ahamai-api.officialprakashkrsingh.workers.dev'))
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: Align(
