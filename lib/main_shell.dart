@@ -140,11 +140,19 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFFEAE9E5),
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Color(0xFF2D3748), // Dark text for visibility
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        backgroundColor: Colors.white, // White background for visibility
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
+        elevation: 8, // Add shadow for better visibility
+        duration: const Duration(seconds: 3), // Show longer for better UX
       ),
     );
   }

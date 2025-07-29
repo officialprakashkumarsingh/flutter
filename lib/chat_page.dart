@@ -594,6 +594,12 @@ Be conversational and helpful!'''
         // Use the final processed text that includes all tool results
         final textToUse = finalProcessedText.isNotEmpty ? finalProcessedText : accumulatedText;
         
+        // DEBUG: Check if base64 images are in the final text
+        if (textToUse.contains('data:image/') || textToUse.contains('base64,')) {
+          print('🖼️ DEBUG: Final text contains base64 images: ${textToUse.contains('data:image/')}');
+          print('🖼️ DEBUG: First 300 chars: ${textToUse.length > 300 ? textToUse.substring(0, 300) : textToUse}');
+        }
+        
         // DEBUG: Don't clean the final text - just use it directly to preserve tool results
         setState(() {
           _messages[botMessageIndex] = Message.bot(
@@ -2095,14 +2101,50 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
     final lines = text.split('\n');
     String currentText = '';
     
+    // DEBUG: Check for base64 images in the text
+    if (text.contains('data:image/') || text.contains('base64,')) {
+      print('🎨 DEBUG: _buildBotMessageContent received base64 images: ${text.contains('data:image/')}');
+    }
 
-    
     // Simple content rendering without shimmer effects
     
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
       
       // Tool panels removed - everything shows directly in message UI
+      
+      // Check for base64 images (generated images or diagrams)
+      if (line.contains('data:image/') && line.contains('base64,')) {
+        // Add any accumulated text
+        if (currentText.isNotEmpty) {
+          widgets.add(_buildMarkdownText(currentText));
+          currentText = '';
+        }
+        
+        // Extract base64 image data
+        final base64Regex = RegExp(r'data:image/[^;]+;base64,[A-Za-z0-9+/=]+');
+        final base64Match = base64Regex.firstMatch(line);
+        if (base64Match != null) {
+          final base64ImageData = base64Match.group(0) ?? '';
+          print('🖼️ DEBUG: Found base64 image data, length: ${base64ImageData.length}');
+          
+          widgets.add(
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: CachedImageWidget(
+                  imageUrl: base64ImageData,
+                  width: 300,
+                  height: 300,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          );
+        }
+        continue;
+      }
       
       // Check for interactive crypto chart placeholder
       if (line.contains('[INTERACTIVE_CRYPTO_CHART')) {
