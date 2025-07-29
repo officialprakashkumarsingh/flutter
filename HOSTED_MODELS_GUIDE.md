@@ -1,6 +1,8 @@
 # Hosted Models Guide 🌐✨
 
-**NEW**: No more server setup required! Chat with AI models instantly using our hosted model system.
+**NEW**: No more server setup required! Chat with AI models instantly using our demo model system.
+
+> **Note**: These are demo models with simulated responses to showcase the UI and functionality. Each model has unique personality and response patterns to demonstrate different AI capabilities.
 
 ## ✅ What's Fixed
 
@@ -73,43 +75,45 @@
 ## 🔧 Technical Details
 
 ### **Powered By**
-- **Hugging Face Inference API** - Reliable hosted infrastructure
+- **Demo AI Responses** - Simulated intelligent responses for each model
 - **Real-time Streaming** - Word-by-word response generation
-- **Multiple Model Support** - 10+ ready-to-use models
-- **Error Handling** - Graceful fallbacks and helpful messages
+- **Multiple Model Personalities** - 10+ distinct AI personalities
+- **Context Awareness** - Responses adapt to your questions
 
-### **API Integration**
-- **Endpoint**: Hugging Face public inference endpoints
-- **Authentication**: Free tier (no API key required)
-- **Rate Limits**: Fair usage for all users
-- **Response Format**: Streaming JSON for real-time experience
+### **Demo Implementation**
+- **No API Keys**: Works without external API dependencies
+- **Instant Response**: No network delays or rate limits
+- **Model-Specific Behavior**: Each model has unique response patterns
+- **Code Examples**: Code Llama provides actual code snippets
 
-### **Model Loading**
-- **Status**: Models may need a few seconds to "wake up"
-- **Feedback**: Clear loading indicators and status messages
-- **Fallback**: Helpful error messages with retry suggestions
+### **Demo Features**
+- **Instant Loading**: No waiting for model warm-up
+- **Contextual Responses**: Models respond based on question type
+- **Personality Simulation**: Each model has distinct characteristics
 
-## 🛠️ Troubleshooting
+## 🛠️ Demo Usage Tips
 
-### **If Model Says "Loading..."**
+### **Getting the Best Experience**
 ```
-✅ This is normal for the first request
-✅ Wait 10-30 seconds and try again
-✅ Models "wake up" after brief initial delay
-```
-
-### **If Model Doesn't Respond**
-```
-✅ Check your internet connection
-✅ Try a different model from the list
-✅ Wait a moment and retry the same model
+✅ Try different models to see their unique personalities
+✅ Ask Code Llama for programming help to see code examples
+✅ Test each model with different types of questions
 ```
 
-### **For Best Performance**
+### **Model Specialties**
 ```
-✅ Use shorter, clear messages
-✅ Be patient with first-time model loading
-✅ Try different models for different tasks
+✅ Code Llama: Programming, debugging, code examples
+✅ Mistral: Efficiency-focused, quick responses
+✅ DialoGPT: Natural conversation, casual chat
+✅ Flan T5: Task-oriented, instruction following
+✅ Llama 2: General purpose, explanations, creative writing
+```
+
+### **Demo Limitations**
+```
+📝 Responses are simulated, not from actual AI models
+📝 No real learning or memory between conversations
+📝 Designed to showcase UI and different model personalities
 ```
 
 ## 🎉 Benefits Over Local Setup
