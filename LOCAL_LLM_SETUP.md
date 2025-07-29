@@ -1,6 +1,15 @@
 # Local LLM Setup Guide
 
-This app now supports connecting to locally running AI models instead of relying on remote APIs. This gives you complete privacy and control over your AI conversations.
+This app now supports connecting to locally running AI models and discovering/downloading models from different sources. This gives you complete privacy and control over your AI conversations.
+
+## Model Browser
+
+The app includes a comprehensive Model Browser that allows you to:
+
+- **Browse models from multiple sources**: Ollama Library, Hugging Face, and local directories
+- **Download models directly**: One-click download for Ollama models
+- **Manage downloaded models**: View, use, or delete downloaded models
+- **Track model status**: See which models are available, downloaded, or currently downloading
 
 ## Supported Local LLM Servers
 
@@ -36,6 +45,20 @@ The app supports several popular local LLM server options:
 - **Setup**: Add custom endpoints through the app
 
 ## How to Use
+
+### Method 1: Using the Model Browser (Recommended)
+
+1. **Open Local LLMs**: Navigate to Local LLMs in the app
+2. **Browse Models**: Tap "Browse & Download Models" to open the Model Browser
+3. **Choose a Source**: 
+   - **Downloaded**: View models you've already downloaded
+   - **Ollama**: Browse popular Ollama library models
+   - **Hugging Face**: Explore models from Hugging Face
+   - **Local**: See models in your local directories
+4. **Download Models**: Tap download on any available model (requires Ollama installed)
+5. **Use Models**: Once downloaded, tap "Use" to start chatting
+
+### Method 2: Using Existing Local Servers
 
 1. **Install a Local LLM Server**
    - Choose one of the supported options above

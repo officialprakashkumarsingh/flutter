@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'local_llm_service.dart';
+import 'model_browser_page.dart';
 
 class LocalLLMPage extends StatefulWidget {
   const LocalLLMPage({super.key});
@@ -297,32 +298,46 @@ class _LocalLLMPageState extends State<LocalLLMPage> {
             color: const Color(0xFF000000),
           ),
         ),
-        actions: [
-          IconButton(
-            onPressed: _llmService.isScanning ? null : _scanForLLMs,
-            icon: _llmService.isScanning
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Color(0xFF000000),
-                    ),
-                  )
-                : const Icon(
-                    Icons.refresh_rounded,
-                    color: Color(0xFF000000),
-                  ),
-          ),
-          IconButton(
-            onPressed: _showAddCustomLLMDialog,
-            icon: const Icon(
-              Icons.add_rounded,
-              color: Color(0xFF000000),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
+                 actions: [
+           IconButton(
+             onPressed: () {
+               Navigator.push(
+                 context,
+                 MaterialPageRoute(
+                   builder: (context) => const ModelBrowserPage(),
+                 ),
+               );
+             },
+             icon: const Icon(
+               Icons.explore_rounded,
+               color: Color(0xFF000000),
+             ),
+           ),
+           IconButton(
+             onPressed: _llmService.isScanning ? null : _scanForLLMs,
+             icon: _llmService.isScanning
+                 ? const SizedBox(
+                     width: 20,
+                     height: 20,
+                     child: CircularProgressIndicator(
+                       strokeWidth: 2,
+                       color: Color(0xFF000000),
+                     ),
+                   )
+                 : const Icon(
+                     Icons.refresh_rounded,
+                     color: Color(0xFF000000),
+                   ),
+           ),
+           IconButton(
+             onPressed: _showAddCustomLLMDialog,
+             icon: const Icon(
+               Icons.add_rounded,
+               color: Color(0xFF000000),
+             ),
+           ),
+           const SizedBox(width: 8),
+         ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,13 +356,34 @@ class _LocalLLMPageState extends State<LocalLLMPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'Connect to locally running AI models like Ollama, LM Studio, and more.',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    color: const Color(0xFFA3A3A3),
-                  ),
-                ),
+                                 Text(
+                   'Connect to locally running AI models like Ollama, LM Studio, and more.',
+                   style: GoogleFonts.inter(
+                     fontSize: 16,
+                     color: const Color(0xFFA3A3A3),
+                   ),
+                 ),
+                 const SizedBox(height: 16),
+                 ElevatedButton.icon(
+                   onPressed: () {
+                     Navigator.push(
+                       context,
+                       MaterialPageRoute(
+                         builder: (context) => const ModelBrowserPage(),
+                       ),
+                     );
+                   },
+                   icon: const Icon(Icons.explore_rounded, size: 20),
+                   label: const Text('Browse & Download Models'),
+                   style: ElevatedButton.styleFrom(
+                     backgroundColor: const Color(0xFF3B82F6),
+                     foregroundColor: Colors.white,
+                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                     shape: RoundedRectangleBorder(
+                       borderRadius: BorderRadius.circular(12),
+                     ),
+                   ),
+                 ),
               ],
             ),
           ),

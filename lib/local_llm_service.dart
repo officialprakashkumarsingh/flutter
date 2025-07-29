@@ -3,6 +3,55 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+class LocalLLMModel {
+  final String id;
+  final String name;
+  final String size;
+  final String format;
+  final String source;
+  final bool isDownloaded;
+  final bool isAvailable;
+  final Map<String, dynamic> metadata;
+
+  LocalLLMModel({
+    required this.id,
+    required this.name,
+    required this.size,
+    required this.format,
+    required this.source,
+    this.isDownloaded = false,
+    this.isAvailable = false,
+    this.metadata = const {},
+  });
+
+  factory LocalLLMModel.fromJson(Map<String, dynamic> json) {
+    return LocalLLMModel(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      size: json['size'] ?? '',
+      format: json['format'] ?? '',
+      source: json['source'] ?? '',
+      isDownloaded: json['isDownloaded'] ?? false,
+      isAvailable: json['isAvailable'] ?? false,
+      metadata: json['metadata'] ?? {},
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'size': size,
+      'format': format,
+      'source': source,
+      'isDownloaded': isDownloaded,
+      'isAvailable': isAvailable,
+      'metadata': metadata,
+    };
+  }
+}
 
 class LocalLLM {
   final String id;
@@ -11,6 +60,7 @@ class LocalLLM {
   final String endpoint;
   final bool isAvailable;
   final Map<String, dynamic> config;
+  final List<LocalLLMModel> models;
 
   LocalLLM({
     required this.id,
@@ -19,9 +69,14 @@ class LocalLLM {
     required this.endpoint,
     this.isAvailable = false,
     this.config = const {},
+    this.models = const [],
   });
 
   factory LocalLLM.fromJson(Map<String, dynamic> json) {
+    final modelsList = (json['models'] as List<dynamic>?)
+        ?.map((model) => LocalLLMModel.fromJson(model as Map<String, dynamic>))
+        .toList() ?? [];
+    
     return LocalLLM(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
@@ -29,6 +84,7 @@ class LocalLLM {
       endpoint: json['endpoint'] ?? '',
       isAvailable: json['isAvailable'] ?? false,
       config: json['config'] ?? {},
+      models: modelsList,
     );
   }
 
@@ -40,6 +96,7 @@ class LocalLLM {
       'endpoint': endpoint,
       'isAvailable': isAvailable,
       'config': config,
+      'models': models.map((model) => model.toJson()).toList(),
     };
   }
 }
@@ -48,20 +105,56 @@ class LocalLLMService extends ChangeNotifier {
   static final LocalLLMService _instance = LocalLLMService._internal();
   factory LocalLLMService() => _instance;
   LocalLLMService._internal() {
-    _initializeDefaultLLMs();
+    _initializeService();
   }
 
   final List<LocalLLM> _localLLMs = [];
+  final List<LocalLLMModel> _availableModels = [];
   LocalLLM? _selectedLLM;
+  String? _selectedModel;
   bool _isInitialized = false;
   bool _isScanning = false;
+  bool _isDownloading = false;
 
   List<LocalLLM> get localLLMs => List.unmodifiable(_localLLMs);
+  List<LocalLLMModel> get availableModels => List.unmodifiable(_availableModels);
   LocalLLM? get selectedLLM => _selectedLLM;
+  String? get selectedModel => _selectedModel;
   bool get isInitialized => _isInitialized;
   bool get isScanning => _isScanning;
+  bool get isDownloading => _isDownloading;
 
-  void _initializeDefaultLLMs() {
+  Future<void> _initializeService() async {
+    await _loadSavedLLMs();
+    await _initializeDefaultLLMs();
+    await _loadAvailableModels();
+  }
+
+  Future<void> _loadSavedLLMs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedLLMs = prefs.getStringList('saved_llms') ?? [];
+      
+      for (final llmJson in savedLLMs) {
+        final llm = LocalLLM.fromJson(json.decode(llmJson));
+        _localLLMs.add(llm);
+      }
+    } catch (e) {
+      debugPrint('Error loading saved LLMs: $e');
+    }
+  }
+
+  Future<void> _saveLLMs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final llmStrings = _localLLMs.map((llm) => json.encode(llm.toJson())).toList();
+      await prefs.setStringList('saved_llms', llmStrings);
+    } catch (e) {
+      debugPrint('Error saving LLMs: $e');
+    }
+  }
+
+  Future<void> _initializeDefaultLLMs() async {
     _localLLMs.clear();
     
     // Add common local LLM configurations
@@ -125,6 +218,134 @@ class LocalLLMService extends ChangeNotifier {
     
     _isInitialized = true;
     notifyListeners();
+  }
+
+  Future<void> _loadAvailableModels() async {
+    try {
+      // Load models from Hugging Face
+      await _loadHuggingFaceModels();
+      
+      // Load models from Ollama library
+      await _loadOllamaLibraryModels();
+      
+      // Load local models
+      await _loadLocalModels();
+      
+    } catch (e) {
+      debugPrint('Error loading available models: $e');
+    }
+  }
+
+  Future<void> _loadHuggingFaceModels() async {
+    try {
+      // Popular LLM models from Hugging Face
+      final popularModels = [
+        {'name': 'microsoft/DialoGPT-medium', 'size': '350MB', 'format': 'GGUF'},
+        {'name': 'microsoft/DialoGPT-large', 'size': '775MB', 'format': 'GGUF'},
+        {'name': 'gpt2', 'size': '548MB', 'format': 'GGUF'},
+        {'name': 'gpt2-medium', 'size': '1.5GB', 'format': 'GGUF'},
+        {'name': 'gpt2-large', 'size': '3.1GB', 'format': 'GGUF'},
+        {'name': 'microsoft/CodeBERT-base', 'size': '500MB', 'format': 'GGUF'},
+        {'name': 'codellama/CodeLlama-7b-hf', 'size': '3.8GB', 'format': 'GGUF'},
+        {'name': 'codellama/CodeLlama-13b-hf', 'size': '7.3GB', 'format': 'GGUF'},
+        {'name': 'meta-llama/Llama-2-7b-chat-hf', 'size': '3.5GB', 'format': 'GGUF'},
+        {'name': 'meta-llama/Llama-2-13b-chat-hf', 'size': '7.0GB', 'format': 'GGUF'},
+      ];
+
+      for (final model in popularModels) {
+        _availableModels.add(LocalLLMModel(
+          id: model['name']!,
+          name: model['name']!,
+          size: model['size']!,
+          format: model['format']!,
+          source: 'Hugging Face',
+          isDownloaded: false,
+          isAvailable: false,
+        ));
+      }
+    } catch (e) {
+      debugPrint('Error loading Hugging Face models: $e');
+    }
+  }
+
+  Future<void> _loadOllamaLibraryModels() async {
+    try {
+      // Popular Ollama models
+      final ollamaModels = [
+        {'name': 'llama2', 'size': '3.8GB', 'format': 'GGUF'},
+        {'name': 'llama2:13b', 'size': '7.3GB', 'format': 'GGUF'},
+        {'name': 'llama2:70b', 'size': '39GB', 'format': 'GGUF'},
+        {'name': 'codellama', 'size': '3.8GB', 'format': 'GGUF'},
+        {'name': 'codellama:13b', 'size': '7.3GB', 'format': 'GGUF'},
+        {'name': 'codellama:34b', 'size': '19GB', 'format': 'GGUF'},
+        {'name': 'mistral', 'size': '4.1GB', 'format': 'GGUF'},
+        {'name': 'mixtral', 'size': '26GB', 'format': 'GGUF'},
+        {'name': 'neural-chat', 'size': '4.1GB', 'format': 'GGUF'},
+        {'name': 'starcode', 'size': '4.3GB', 'format': 'GGUF'},
+        {'name': 'vicuna', 'size': '3.8GB', 'format': 'GGUF'},
+        {'name': 'wizardcoder', 'size': '3.8GB', 'format': 'GGUF'},
+      ];
+
+      for (final model in ollamaModels) {
+        _availableModels.add(LocalLLMModel(
+          id: model['name']!,
+          name: model['name']!,
+          size: model['size']!,
+          format: model['format']!,
+          source: 'Ollama Library',
+          isDownloaded: false,
+          isAvailable: false,
+        ));
+      }
+    } catch (e) {
+      debugPrint('Error loading Ollama library models: $e');
+    }
+  }
+
+  Future<void> _loadLocalModels() async {
+    try {
+      // Check for local model directories
+      final commonPaths = [
+        '~/.ollama/models',
+        '~/models',
+        '/usr/local/share/ollama/models',
+        '/opt/ollama/models',
+      ];
+
+      for (final path in commonPaths) {
+        await _scanLocalDirectory(path);
+      }
+    } catch (e) {
+      debugPrint('Error loading local models: $e');
+    }
+  }
+
+  Future<void> _scanLocalDirectory(String path) async {
+    try {
+      final directory = Directory(path);
+      if (await directory.exists()) {
+        await for (final entity in directory.list()) {
+          if (entity is File && entity.path.endsWith('.gguf')) {
+            final fileName = entity.path.split('/').last;
+            final stats = await entity.stat();
+            final size = '${(stats.size / (1024 * 1024)).round()}MB';
+            
+            _availableModels.add(LocalLLMModel(
+              id: fileName,
+              name: fileName.replaceAll('.gguf', ''),
+              size: size,
+              format: 'GGUF',
+              source: 'Local Directory',
+              isDownloaded: true,
+              isAvailable: true,
+              metadata: {'path': entity.path},
+            ));
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error scanning directory $path: $e');
+    }
   }
 
   Future<void> scanForAvailableLLMs() async {
@@ -333,6 +554,147 @@ class LocalLLMService extends ChangeNotifier {
     return buffer.toString();
   }
 
+  Future<void> downloadModel(String modelId) async {
+    if (_isDownloading) return;
+
+    final modelIndex = _availableModels.indexWhere((m) => m.id == modelId);
+    if (modelIndex == -1) return;
+
+    final model = _availableModels[modelIndex];
+    
+    _isDownloading = true;
+    notifyListeners();
+
+    try {
+      if (model.source == 'Ollama Library') {
+        await _downloadOllamaModel(model);
+      } else if (model.source == 'Hugging Face') {
+        await _downloadHuggingFaceModel(model);
+      }
+      
+      // Update model status
+      _availableModels[modelIndex] = LocalLLMModel(
+        id: model.id,
+        name: model.name,
+        size: model.size,
+        format: model.format,
+        source: model.source,
+        isDownloaded: true,
+        isAvailable: true,
+        metadata: model.metadata,
+      );
+    } catch (e) {
+      debugPrint('Error downloading model $modelId: $e');
+      rethrow;
+    } finally {
+      _isDownloading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _downloadOllamaModel(LocalLLMModel model) async {
+    // Check if Ollama is available
+    final ollamaLLM = _localLLMs.firstWhere(
+      (llm) => llm.id == 'ollama',
+      orElse: () => throw Exception('Ollama not available'),
+    );
+
+    if (!ollamaLLM.isAvailable) {
+      throw Exception('Ollama server not running');
+    }
+
+    // Use Ollama's pull command via API
+    final uri = Uri.parse('${ollamaLLM.endpoint}/api/pull');
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'name': model.id}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to download model: ${response.statusCode}');
+    }
+  }
+
+  Future<void> _downloadHuggingFaceModel(LocalLLMModel model) async {
+    // For Hugging Face models, we'll simulate download
+    // In a real implementation, this would download from Hugging Face
+    await Future.delayed(const Duration(seconds: 2));
+    // throw Exception('Hugging Face model download not yet implemented');
+  }
+
+  Future<void> deleteModel(String modelId) async {
+    final modelIndex = _availableModels.indexWhere((m) => m.id == modelId);
+    if (modelIndex == -1) return;
+
+    final model = _availableModels[modelIndex];
+    
+    try {
+      if (model.source == 'Ollama Library') {
+        await _deleteOllamaModel(model);
+      } else if (model.source == 'Local Directory') {
+        await _deleteLocalModel(model);
+      }
+      
+      // Update model status
+      _availableModels[modelIndex] = LocalLLMModel(
+        id: model.id,
+        name: model.name,
+        size: model.size,
+        format: model.format,
+        source: model.source,
+        isDownloaded: false,
+        isAvailable: false,
+        metadata: model.metadata,
+      );
+    } catch (e) {
+      debugPrint('Error deleting model $modelId: $e');
+      rethrow;
+    }
+    
+    notifyListeners();
+  }
+
+  Future<void> _deleteOllamaModel(LocalLLMModel model) async {
+    final ollamaLLM = _localLLMs.firstWhere(
+      (llm) => llm.id == 'ollama',
+      orElse: () => throw Exception('Ollama not available'),
+    );
+
+    final uri = Uri.parse('${ollamaLLM.endpoint}/api/delete');
+    final response = await http.delete(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'name': model.id}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete model: ${response.statusCode}');
+    }
+  }
+
+  Future<void> _deleteLocalModel(LocalLLMModel model) async {
+    final path = model.metadata['path'] as String?;
+    if (path != null) {
+      final file = File(path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    }
+  }
+
+  List<LocalLLMModel> getModelsBySource(String source) {
+    return _availableModels.where((model) => model.source == source).toList();
+  }
+
+  List<LocalLLMModel> getDownloadedModels() {
+    return _availableModels.where((model) => model.isDownloaded).toList();
+  }
+
+  List<LocalLLMModel> getAvailableModelsForDownload() {
+    return _availableModels.where((model) => !model.isDownloaded).toList();
+  }
+
   void addCustomLLM(String name, String endpoint) {
     final customLLM = LocalLLM(
       id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
@@ -347,6 +709,7 @@ class LocalLLMService extends ChangeNotifier {
     );
     
     _localLLMs.add(customLLM);
+    _saveLLMs();
     notifyListeners();
   }
 
@@ -355,6 +718,14 @@ class LocalLLMService extends ChangeNotifier {
     if (_selectedLLM?.id == id) {
       _selectedLLM = null;
     }
+    _saveLLMs();
+    notifyListeners();
+  }
+
+  Future<void> refreshModels() async {
+    _availableModels.clear();
+    await _loadAvailableModels();
+    await scanForAvailableLLMs();
     notifyListeners();
   }
 }
