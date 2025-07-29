@@ -43,6 +43,7 @@ class _CoderPageState extends State<CoderPage> {
   // Task Management
   List<CoderTask> _tasks = [];
   bool _isProcessingTask = false;
+  String? _expandedTaskId; // Track which task is expanded
   
   // File Management
   Map<String, String> _fileContents = {};
@@ -355,7 +356,7 @@ class _CoderPageState extends State<CoderPage> {
     await Future.delayed(const Duration(milliseconds: 500));
   }
   
-  // Get repository context for AI
+  // Get repository context for AI with project type detection
   Future<Map<String, dynamic>> _getRepositoryContext(CoderTask task) async {
     try {
       final response = await http.get(
@@ -370,49 +371,168 @@ class _CoderPageState extends State<CoderPage> {
         final List<dynamic> files = json.decode(response.body);
         final fileCount = files.length;
         final languages = <String>{};
+        final fileNames = <String>[];
         
-        // Analyze file types
+        // Analyze file types and names
         for (final file in files) {
           final name = file['name'] as String;
+          fileNames.add(name.toLowerCase());
           final ext = path.extension(name);
           if (ext.isNotEmpty) {
             languages.add(ext);
           }
         }
         
+        // Detect project type and technologies
+        final projectType = _detectProjectType(fileNames);
+        final technologies = _getProjectTechnologies(fileNames, languages.toList());
+        
         return {
           'fileCount': fileCount,
           'languages': languages.toList(),
-          'files': files.take(20).map((f) => f['name']).toList(), // First 20 files
+          'files': files.take(20).map((f) => f['name']).toList(),
+          'projectType': projectType,
+          'technologies': technologies,
+          'fileNames': fileNames,
         };
       }
       
-      return {'fileCount': 0, 'languages': [], 'files': []};
+      return {'fileCount': 0, 'languages': [], 'files': [], 'projectType': 'Unknown', 'technologies': []};
     } catch (e) {
-      return {'fileCount': 0, 'languages': [], 'files': []};
+      return {'fileCount': 0, 'languages': [], 'files': [], 'projectType': 'Unknown', 'technologies': []};
+    }
+  }
+  
+  // Detect project type from file names
+  String _detectProjectType(List<String> fileNames) {
+    if (fileNames.any((f) => f.contains('package.json'))) return 'Node.js/JavaScript';
+    if (fileNames.any((f) => f.contains('pubspec.yaml'))) return 'Flutter/Dart';
+    if (fileNames.any((f) => f.contains('requirements.txt') || f.contains('setup.py') || f.contains('pyproject.toml'))) return 'Python';
+    if (fileNames.any((f) => f.contains('pom.xml') || f.contains('build.gradle'))) return 'Java';
+    if (fileNames.any((f) => f.contains('cargo.toml'))) return 'Rust';
+    if (fileNames.any((f) => f.contains('go.mod'))) return 'Go';
+    if (fileNames.any((f) => f.contains('composer.json'))) return 'PHP';
+    if (fileNames.any((f) => f.contains('gemfile'))) return 'Ruby';
+    if (fileNames.any((f) => f.endsWith('.html') || f.endsWith('.css') || f.endsWith('.js'))) return 'Web Development';
+    if (fileNames.any((f) => f.endsWith('.py'))) return 'Python';
+    if (fileNames.any((f) => f.endsWith('.java'))) return 'Java';
+    if (fileNames.any((f) => f.endsWith('.cpp') || f.endsWith('.c') || f.endsWith('.h'))) return 'C/C++';
+    if (fileNames.any((f) => f.endsWith('.cs'))) return 'C#';
+    if (fileNames.any((f) => f.endsWith('.swift'))) return 'Swift';
+    if (fileNames.any((f) => f.endsWith('.kt'))) return 'Kotlin';
+    return 'General';
+  }
+  
+  // Get project technologies
+  List<String> _getProjectTechnologies(List<String> fileNames, List<String> extensions) {
+    List<String> techs = [];
+    
+    // Frontend technologies
+    if (extensions.contains('.html')) techs.add('HTML');
+    if (extensions.contains('.css')) techs.add('CSS');
+    if (extensions.contains('.js')) techs.add('JavaScript');
+    if (extensions.contains('.ts')) techs.add('TypeScript');
+    if (extensions.contains('.jsx')) techs.add('React');
+    if (extensions.contains('.tsx')) techs.add('React+TypeScript');
+    if (extensions.contains('.vue')) techs.add('Vue.js');
+    
+    // Backend technologies
+    if (extensions.contains('.py')) techs.add('Python');
+    if (extensions.contains('.java')) techs.add('Java');
+    if (extensions.contains('.cpp') || extensions.contains('.c')) techs.add('C/C++');
+    if (extensions.contains('.cs')) techs.add('C#');
+    if (extensions.contains('.php')) techs.add('PHP');
+    if (extensions.contains('.rb')) techs.add('Ruby');
+    if (extensions.contains('.go')) techs.add('Go');
+    if (extensions.contains('.rs')) techs.add('Rust');
+    if (extensions.contains('.dart')) techs.add('Dart');
+    if (extensions.contains('.swift')) techs.add('Swift');
+    if (extensions.contains('.kt')) techs.add('Kotlin');
+    
+    // Framework detection
+    if (fileNames.any((f) => f.contains('react'))) techs.add('React');
+    if (fileNames.any((f) => f.contains('angular'))) techs.add('Angular');
+    if (fileNames.any((f) => f.contains('vue'))) techs.add('Vue');
+    if (fileNames.any((f) => f.contains('next'))) techs.add('Next.js');
+    if (fileNames.any((f) => f.contains('nuxt'))) techs.add('Nuxt.js');
+    if (fileNames.any((f) => f.contains('express'))) techs.add('Express.js');
+    if (fileNames.any((f) => f.contains('flask'))) techs.add('Flask');
+    if (fileNames.any((f) => f.contains('django'))) techs.add('Django');
+    
+    return techs.isEmpty ? ['Unknown'] : techs;
+  }
+  
+  // Get file extension rules for project type
+  String _getFileExtensionRules(String projectType) {
+    switch (projectType) {
+      case 'Web Development':
+        return '''- HTML files: .html (index.html, about.html)
+- CSS files: .css (style.css, main.css)
+- JavaScript files: .js (script.js, app.js, main.js)
+- JSON files: .json (package.json, config.json)''';
+      case 'Node.js/JavaScript':
+        return '''- JavaScript files: .js (app.js, server.js, index.js)
+- TypeScript files: .ts (if using TypeScript)
+- JSON files: .json (package.json, config.json)
+- Markdown files: .md (README.md)''';
+      case 'Python':
+        return '''- Python files: .py (main.py, app.py, utils.py)
+- Requirements: requirements.txt
+- Config files: .yaml, .json, .toml
+- Jupyter notebooks: .ipynb''';
+      case 'Flutter/Dart':
+        return '''- Dart files: .dart (main.dart, app.dart)
+- YAML files: pubspec.yaml
+- Config files: .yaml, .json''';
+      case 'Java':
+        return '''- Java files: .java (Main.java, App.java)
+- XML files: .xml (pom.xml)
+- Properties files: .properties''';
+      case 'C/C++':
+        return '''- C++ files: .cpp, .cc, .cxx
+- C files: .c
+- Header files: .h, .hpp
+- Makefile: Makefile (no extension)''';
+      default:
+        return '''- Use appropriate extensions for the language
+- Follow naming conventions
+- Include proper file types for the project''';
     }
   }
   
   // Generate AI plan using real AI model
   Future<Map<String, dynamic>> _generateAIPlan(CoderTask task, Map<String, dynamic> context) async {
     try {
+      final projectType = context['projectType'] ?? 'Unknown';
+      final technologies = (context['technologies'] as List? ?? []).join(', ');
+      
       final prompt = '''
-Repository: ${task.repository.name} (${task.repository.language})
+You are an expert ${projectType} developer working on: ${task.repository.name}
+Repository: ${task.repository.fullName}
 Branch: ${task.branch}
-Files: ${context['fileCount']} files
-Languages: ${context['languages'].join(', ')}
-Key files: ${context['files'].join(', ')}
-
 Task: ${task.description}
 
-As an expert developer, create a detailed implementation plan for this task.
-Provide specific file paths, code changes, and step-by-step instructions.
-Focus on the most relevant files for this task.
+PROJECT CONTEXT:
+- Project Type: ${projectType}
+- Technologies: ${technologies}
+- File count: ${context['fileCount']}
+- Languages: ${context['languages'].join(', ')}
+- Sample files: ${context['files'].join(', ')}
 
-Respond with a structured plan including:
-1. Files to modify
-2. Specific changes needed
-3. Implementation steps
+CRITICAL FILE EXTENSION RULES:
+${_getFileExtensionRules(projectType)}
+
+Create a detailed implementation plan for this ${projectType} project.
+Consider file operations: CREATE, MODIFY, or DELETE files as needed.
+Provide specific file paths with CORRECT extensions, code changes, and step-by-step instructions.
+
+Include in your response:
+1. Specific files to create/modify/delete with proper extensions
+2. Detailed implementation steps 
+3. Code structure and organization
+4. Any dependencies or setup needed
+
+Be very specific about file names and use the correct file extensions for ${projectType}.
 ''';
 
       final aiResponse = await _callAIModel(prompt);
@@ -454,13 +574,24 @@ Only return the code, no explanations or markdown blocks.
 
         final modifiedContent = await _callAIModel(modificationPrompt);
         
-        // Store modification and operation type
-        _modifiedFiles[filePath] = modifiedContent;
-        _fileContents[filePath] = currentContent;
-        _fileOperations[filePath] = operation.toLowerCase();
-        
-        final operationText = isNewFile ? 'Created' : 'Modified';
-        await _updateTaskStep(task, '$operationText $filePath (${modifiedContent.length} chars)', TaskStatus.executing);
+        // Check if AI wants to delete the file
+        if (modifiedContent.toLowerCase().contains('delete this file') || 
+            modifiedContent.toLowerCase().contains('remove this file') ||
+            modifiedContent.toLowerCase().contains('file should be deleted')) {
+          
+          await _deleteFile(task, filePath);
+          _fileOperations[filePath] = 'deleted';
+          await _updateTaskStep(task, 'Deleted $filePath', TaskStatus.executing);
+          
+        } else {
+          // Store modification and operation type
+          _modifiedFiles[filePath] = modifiedContent;
+          _fileContents[filePath] = currentContent;
+          _fileOperations[filePath] = operation.toLowerCase();
+          
+          final operationText = isNewFile ? 'Created' : 'Modified';
+          await _updateTaskStep(task, '$operationText $filePath (${modifiedContent.length} chars)', TaskStatus.executing);
+        }
         
         // Small delay for streaming effect
         await Future.delayed(const Duration(milliseconds: 800));
@@ -531,6 +662,46 @@ Only return the code, no explanations or markdown blocks.
     }
   }
   
+  // Delete file from repository
+  Future<void> _deleteFile(CoderTask task, String filePath) async {
+    try {
+      // First get the file to get its SHA
+      final getResponse = await http.get(
+        Uri.parse('https://api.github.com/repos/${task.repository.fullName}/contents/$filePath?ref=${task.branch}'),
+        headers: {
+          'Authorization': 'Bearer $_githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      );
+      
+      if (getResponse.statusCode == 200) {
+        final fileData = json.decode(getResponse.body);
+        final sha = fileData['sha'];
+        
+        // Delete the file
+        final deleteResponse = await http.delete(
+          Uri.parse('https://api.github.com/repos/${task.repository.fullName}/contents/$filePath'),
+          headers: {
+            'Authorization': 'Bearer $_githubToken',
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json',
+          },
+          body: json.encode({
+            'message': 'Delete $filePath',
+            'sha': sha,
+            'branch': task.branch,
+          }),
+        );
+        
+        if (deleteResponse.statusCode != 200) {
+          throw Exception('Failed to delete file: ${deleteResponse.statusCode}');
+        }
+      }
+    } catch (e) {
+      throw Exception('Error deleting file $filePath: $e');
+    }
+  }
+  
   // Extract file paths from AI plan with better extension detection
   List<String> _extractFilesFromPlan(String plan) {
     // Enhanced pattern to catch more file types including HTML, CSS, JS
@@ -576,6 +747,11 @@ Only return the code, no explanations or markdown blocks.
   // Generate AI summary of completed task
   Future<void> _generateTaskSummary(CoderTask task) async {
     try {
+      if (_modifiedFiles.isEmpty && _fileOperations.isEmpty) {
+        await _updateTaskStep(task, 'Task completed - no files were modified.', TaskStatus.completed);
+        return;
+      }
+
       final fileOperationsText = _fileOperations.entries.map((entry) {
         return '• ${entry.value.capitalize()} ${entry.key}';
       }).join('\n');
@@ -589,17 +765,23 @@ Files processed:
 $fileOperationsText
 
 Provide a concise summary of what was accomplished in this task. 
-Focus on the actual implementation and files created/modified.
-Keep it under 100 words and be specific about what was built.
+Focus on the actual implementation and files created/modified/deleted.
+Keep it under 80 words and be specific about what was built.
+Start with "✅ Task completed: " and then describe what was done.
 ''';
 
       final summary = await _callAIModel(summaryPrompt);
       
-      await _updateTaskStep(task, 'Summary: $summary', TaskStatus.completed);
+      // Ensure summary starts with success indicator
+      final cleanSummary = summary.trim();
+      final finalSummary = cleanSummary.startsWith('✅') ? cleanSummary : '✅ Task completed: $cleanSummary';
+      
+      await _updateTaskStep(task, finalSummary, TaskStatus.completed);
       
     } catch (e) {
-      // If summary generation fails, just add a simple completion message
-      await _updateTaskStep(task, 'Task completed successfully!', TaskStatus.completed);
+      // If summary generation fails, add a completion message with file count
+      final fileCount = _modifiedFiles.length + _fileOperations.values.where((op) => op == 'deleted').length;
+      await _updateTaskStep(task, '✅ Task completed successfully! Processed $fileCount files.', TaskStatus.completed);
     }
   }
   
@@ -666,16 +848,32 @@ no changes added to commit (use "git add ." or "git commit -a")
       final commitData = json.decode(commitResponse.body);
       final treeSha = commitData['tree']['sha'];
       
-      // Create new tree with modified files
+      // Create new tree with modified/deleted files
       final treeItems = <Map<String, dynamic>>[];
       
+      // Add modified/created files
       for (final entry in _modifiedFiles.entries) {
-        treeItems.add({
-          'path': entry.key,
-          'mode': '100644',
-          'type': 'blob',
-          'content': entry.value,
-        });
+        final operation = _fileOperations[entry.key] ?? 'modified';
+        if (operation != 'deleted') {
+          treeItems.add({
+            'path': entry.key,
+            'mode': '100644',
+            'type': 'blob',
+            'content': entry.value,
+          });
+        }
+      }
+      
+      // Add deleted files (null content means deletion)
+      for (final entry in _fileOperations.entries) {
+        if (entry.value == 'deleted') {
+          treeItems.add({
+            'path': entry.key,
+            'mode': '100644',
+            'type': 'blob',
+            'sha': null, // This will delete the file
+          });
+        }
       }
       
       final newTreeResponse = await http.post(
@@ -1165,6 +1363,8 @@ no changes added to commit (use "git add ." or "git commit -a")
   }
   
   Widget _buildTaskCard(CoderTask task) {
+    final isExpanded = _expandedTaskId == task.id;
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -1175,54 +1375,123 @@ no changes added to commit (use "git add ." or "git commit -a")
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Task Header
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFFAFAFA),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(8),
-                topRight: Radius.circular(8),
+          // Clickable Task Header
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _expandedTaskId = isExpanded ? null : task.id;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFAFAFA),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  topRight: Radius.circular(8),
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                _buildStatusIcon(task.status),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    task.description,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2D3748),
+              child: Row(
+                children: [
+                  _buildStatusIcon(task.status),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      task.description,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2D3748),
+                      ),
                     ),
                   ),
-                ),
-                Text(
-                  _formatTime(task.createdAt),
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: Color(0xFF718096),
+                  Text(
+                    _formatTime(task.createdAt),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF718096),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    size: 16,
+                    color: const Color(0xFF718096),
+                  ),
+                ],
+              ),
             ),
           ),
           
-          // Task Steps
-          if (task.steps.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: task.steps.map((step) => _buildTaskStep(step)).toList(),
+          // Expandable Task Details
+          if (isExpanded) ...[
+            // Task Steps
+            if (task.steps.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Task Progress:',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF2D3748),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...task.steps.map((step) => _buildTaskStep(step)).toList(),
+                  ],
+                ),
               ),
-            ),
-          
-          // Modified Files Display
-          if (_modifiedFiles.isNotEmpty && task.status == TaskStatus.completed)
-            _buildModifiedFilesSection(),
+            
+            // Modified Files Display
+            if (_modifiedFiles.isNotEmpty && task.status == TaskStatus.completed)
+              Container(
+                decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+                child: _buildModifiedFilesSection(),
+              ),
+          ] else ...[
+            // Collapsed view - show only latest step and summary
+            if (task.steps.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: const BoxDecoration(
+                  border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+                child: Row(
+                  children: [
+                    _buildStatusIcon(task.steps.last.status),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        task.steps.last.description,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF4A5568),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (_modifiedFiles.isNotEmpty && task.status == TaskStatus.completed)
+                      Text(
+                        '${_modifiedFiles.length} files',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Color(0xFF718096),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+          ],
         ],
       ),
     );
@@ -1303,7 +1572,9 @@ no changes added to commit (use "git add ." or "git commit -a")
                   decoration: BoxDecoration(
                     color: _fileOperations[fileName] == 'creating' 
                         ? const Color(0xFF48BB78) 
-                        : const Color(0xFF4299E1),
+                        : _fileOperations[fileName] == 'deleted'
+                            ? const Color(0xFFE53E3E)
+                            : const Color(0xFF4299E1),
                     borderRadius: BorderRadius.circular(2),
                   ),
                   child: Text(
