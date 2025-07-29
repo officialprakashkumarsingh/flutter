@@ -603,24 +603,126 @@ class LocalLLMService extends ChangeNotifier {
       throw Exception('Ollama server not running');
     }
 
-    // Use Ollama's pull command via API
+    // Use Ollama's pull command via API with real streaming
     final uri = Uri.parse('${ollamaLLM.endpoint}/api/pull');
-    final response = await http.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'name': model.id}),
-    );
+    final request = http.Request('POST', uri);
+    request.headers['Content-Type'] = 'application/json';
+    request.body = json.encode({'name': model.id});
 
-    if (response.statusCode != 200) {
-      throw Exception('Failed to download model: ${response.statusCode}');
+    final streamedResponse = await http.Client().send(request);
+    
+    if (streamedResponse.statusCode != 200) {
+      throw Exception('Failed to download model: ${streamedResponse.statusCode}');
+    }
+
+    // Listen to the stream for REAL progress updates
+    await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
+      try {
+        final lines = chunk.split('\n');
+        for (final line in lines) {
+          if (line.trim().isNotEmpty) {
+            final data = json.decode(line);
+            final status = data['status'] as String?;
+            
+            if (status != null) {
+              debugPrint('Real download progress: $status');
+              
+              // Check if download is complete
+              if (status.contains('success') || status.contains('complete')) {
+                break;
+              }
+              
+              // Handle errors
+              if (data.containsKey('error')) {
+                throw Exception(data['error']);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        if (e is FormatException) {
+          continue; // Skip malformed JSON lines
+        }
+        rethrow;
+      }
     }
   }
 
   Future<void> _downloadHuggingFaceModel(LocalLLMModel model) async {
-    // For Hugging Face models, we'll simulate download
-    // In a real implementation, this would download from Hugging Face
-    await Future.delayed(const Duration(seconds: 2));
-    // throw Exception('Hugging Face model download not yet implemented');
+    // For now, we'll download Hugging Face models through Ollama
+    // This is the most practical approach since Ollama can pull many HF models
+    final ollamaLLM = _localLLMs.firstWhere(
+      (llm) => llm.id == 'ollama',
+      orElse: () => throw Exception('Ollama not available. Install Ollama to download Hugging Face models.'),
+    );
+
+    if (!ollamaLLM.isAvailable) {
+      throw Exception('Ollama server not running. Start Ollama to download models.');
+    }
+
+    // Convert Hugging Face model names to Ollama format if needed
+    String ollamaModelName = model.id;
+    
+    // Map common HF models to Ollama equivalents
+    final hfToOllamaMap = {
+      'gpt2': 'gpt2',
+      'gpt2-medium': 'gpt2:medium',
+      'gpt2-large': 'gpt2:large',
+      'microsoft/DialoGPT-medium': 'dialogpt:medium',
+      'microsoft/DialoGPT-large': 'dialogpt:large',
+      'codellama/CodeLlama-7b-hf': 'codellama:7b',
+      'codellama/CodeLlama-13b-hf': 'codellama:13b',
+      'meta-llama/Llama-2-7b-chat-hf': 'llama2:7b-chat',
+      'meta-llama/Llama-2-13b-chat-hf': 'llama2:13b-chat',
+    };
+    
+    if (hfToOllamaMap.containsKey(model.id)) {
+      ollamaModelName = hfToOllamaMap[model.id]!;
+    }
+
+    // Use Ollama's pull command to download the model
+    final uri = Uri.parse('${ollamaLLM.endpoint}/api/pull');
+    final request = http.Request('POST', uri);
+    request.headers['Content-Type'] = 'application/json';
+    request.body = json.encode({'name': ollamaModelName});
+
+    final streamedResponse = await http.Client().send(request);
+    
+    if (streamedResponse.statusCode != 200) {
+      throw Exception('Failed to download model: ${streamedResponse.statusCode}');
+    }
+
+    // Listen to the stream for REAL progress updates
+    await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
+      try {
+        final lines = chunk.split('\n');
+        for (final line in lines) {
+          if (line.trim().isNotEmpty) {
+            final data = json.decode(line);
+            final status = data['status'] as String?;
+            
+            if (status != null) {
+              debugPrint('Real HF download progress: $status');
+              
+              // Check if download is complete
+              if (status.contains('success') || status.contains('complete')) {
+                break;
+              }
+              
+              // Handle errors
+              if (data.containsKey('error')) {
+                throw Exception(data['error']);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        if (e is FormatException) {
+          continue; // Skip malformed JSON lines
+        }
+        rethrow;
+      }
+    }
   }
 
   Future<void> deleteModel(String modelId) async {
