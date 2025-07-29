@@ -110,6 +110,10 @@ fixnum
 3.1
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/fixnum-1.1.1/
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/fixnum-1.1.1/lib/
+flutter_gemma
+3.4
+file:///home/ubuntu/.pub-cache/hosted/pub.dev/flutter_gemma-0.10.1/
+file:///home/ubuntu/.pub-cache/hosted/pub.dev/flutter_gemma-0.10.1/lib/
 flutter_lints
 2.19
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/flutter_lints-2.0.3/
@@ -222,6 +226,10 @@ jwt_decode
 2.12
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/jwt_decode-0.3.1/
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/jwt_decode-0.3.1/lib/
+large_file_handler
+3.5
+file:///home/ubuntu/.pub-cache/hosted/pub.dev/large_file_handler-0.3.1/
+file:///home/ubuntu/.pub-cache/hosted/pub.dev/large_file_handler-0.3.1/lib/
 leak_tracker
 3.2
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/leak_tracker-10.0.5/

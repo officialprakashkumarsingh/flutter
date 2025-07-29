@@ -176,6 +176,12 @@
       "languageVersion": "3.3"
     },
     {
+      "name": "flutter_gemma",
+      "rootUri": "file:///home/ubuntu/.pub-cache/hosted/pub.dev/flutter_gemma-0.10.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "flutter_lints",
       "rootUri": "file:///home/ubuntu/.pub-cache/hosted/pub.dev/flutter_lints-2.0.3",
       "packageUri": "lib/",
@@ -354,6 +360,12 @@
       "rootUri": "file:///home/ubuntu/.pub-cache/hosted/pub.dev/jwt_decode-0.3.1",
       "packageUri": "lib/",
       "languageVersion": "2.12"
+    },
+    {
+      "name": "large_file_handler",
+      "rootUri": "file:///home/ubuntu/.pub-cache/hosted/pub.dev/large_file_handler-0.3.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
     },
     {
       "name": "leak_tracker",
@@ -854,7 +866,7 @@
       "languageVersion": "3.1"
     }
   ],
-  "generated": "2025-07-28T09:39:45.497505Z",
+  "generated": "2025-07-29T04:31:38.480073Z",
   "generator": "pub",
   "generatorVersion": "3.5.4",
   "flutterRoot": "file:///workspace/flutter",

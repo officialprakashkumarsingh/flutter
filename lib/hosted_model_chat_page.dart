@@ -47,7 +47,7 @@ class _HostedModelChatPageState extends State<HostedModelChatPage> {
   void _addWelcomeMessage() {
     setState(() {
       _messages.add(Message.bot(
-        'Hello! I\'m ${widget.modelName}, a hosted AI model. I\'m ready to chat with you right away - no setup required! How can I help you today?',
+        'Hello! I\'m ${widget.modelName}, Google\'s on-device AI model. I run locally on your device for complete privacy and offline capabilities. How can I help you today?',
       ));
     });
   }
@@ -74,7 +74,7 @@ class _HostedModelChatPageState extends State<HostedModelChatPage> {
               })
           .toList();
 
-      final stream = await _llmService.chatWithHostedModel(
+      final stream = await _llmService.chatWithGemmaModel(
         widget.modelId,
         chatMessages,
       );
@@ -175,14 +175,14 @@ class _HostedModelChatPageState extends State<HostedModelChatPage> {
                 color: const Color(0xFF000000),
               ),
             ),
-            Text(
-              'Hosted Model • Ready to Chat',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: const Color(0xFF10B981),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+                         Text(
+               'Google Gemma • On-Device AI',
+               style: GoogleFonts.inter(
+                 fontSize: 12,
+                 color: const Color(0xFF4285F4),
+                 fontWeight: FontWeight.w500,
+               ),
+             ),
           ],
         ),
         actions: [

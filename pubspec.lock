@@ -230,6 +230,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_gemma:
+    dependency: "direct main"
+    description:
+      name: flutter_gemma
+      sha256: bf3e1e76bf63aabe6bf92ea46e4f362ae6173eeeeb8be34764da467c80e7c42d
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.10.1"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -461,6 +469,14 @@ packages:
     description:
       name: jwt_decode
       sha256: d2e9f68c052b2225130977429d30f187aa1981d789c76ad104a32243cfdebfbb
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.1"
+  large_file_handler:
+    dependency: transitive
+    description:
+      name: large_file_handler
+      sha256: c2ecaf552e8039119bbe3a094d15aecbafe833899f30b2dcfbb513eddf76b36f
       url: "https://pub.dev"
     source: hosted
     version: "0.3.1"
@@ -1118,5 +1134,5 @@ packages:
     source: hosted
     version: "2.1.0"
 sdks:
-  dart: ">=3.5.0 <4.0.0"
+  dart: ">=3.5.3 <4.0.0"
   flutter: ">=3.24.0"

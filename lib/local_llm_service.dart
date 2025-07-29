@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_gemma/flutter_gemma.dart';
 
 class LocalLLMModel {
   final String id;
@@ -115,6 +118,7 @@ class LocalLLMService extends ChangeNotifier {
   bool _isInitialized = false;
   bool _isScanning = false;
   bool _isDownloading = false;
+  String _downloadProgress = '';
 
   List<LocalLLM> get localLLMs => List.unmodifiable(_localLLMs);
   List<LocalLLMModel> get availableModels => List.unmodifiable(_availableModels);
@@ -123,6 +127,7 @@ class LocalLLMService extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   bool get isScanning => _isScanning;
   bool get isDownloading => _isDownloading;
+  String get downloadProgress => _downloadProgress;
 
   Future<void> _initializeService() async {
     await _loadSavedLLMs();
@@ -151,6 +156,17 @@ class LocalLLMService extends ChangeNotifier {
       await prefs.setStringList('saved_llms', llmStrings);
     } catch (e) {
       debugPrint('Error saving LLMs: $e');
+    }
+  }
+
+  Future<void> _saveLocalLLMs() async {
+    // Save the updated models list to preferences
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final modelStrings = _availableModels.map((model) => json.encode(model.toJson())).toList();
+      await prefs.setStringList('saved_models', modelStrings);
+    } catch (e) {
+      debugPrint('Error saving models: $e');
     }
   }
 
@@ -235,117 +251,91 @@ class LocalLLMService extends ChangeNotifier {
 
   Future<void> _loadHostedModels() async {
     try {
-      // Hosted models that work without local servers - using public APIs
-      final hostedModels = [
+      // Real Gemma models that can be downloaded and run on-device
+      final gemmaModels = [
         {
-          'id': 'llama-2-7b-chat',
-          'name': 'Llama 2 7B Chat',
-          'size': 'Hosted',
-          'format': 'API',
-          'source': 'Hosted Models',
-          'endpoint': 'https://api-inference.huggingface.co/models/meta-llama/Llama-2-7b-chat-hf',
-          'description': 'Meta\'s Llama 2 7B model optimized for chat'
+          'id': 'gemma-2b-it',
+          'name': 'Gemma 2B Instruct',
+          'size': '2.6GB',
+          'format': 'GGUF',
+          'source': 'Google Gemma',
+          'modelType': 'gemmaIt',
+          'description': 'Google\'s lightweight 2B parameter Gemma model optimized for instruction following',
+          'downloadUrl': 'https://www.kaggle.com/models/google/gemma/frameworks/gemmaCpp/variations/2b-it-gpu-int8',
         },
         {
-          'id': 'llama-2-13b-chat',
-          'name': 'Llama 2 13B Chat',
-          'size': 'Hosted',
-          'format': 'API',
-          'source': 'Hosted Models',
-          'endpoint': 'https://api-inference.huggingface.co/models/meta-llama/Llama-2-13b-chat-hf',
-          'description': 'Meta\'s Llama 2 13B model - more capable than 7B'
+          'id': 'gemma-7b-it',
+          'name': 'Gemma 7B Instruct',
+          'size': '8.5GB',
+          'format': 'GGUF',
+          'source': 'Google Gemma',
+          'modelType': 'gemmaIt',
+          'description': 'Google\'s 7B parameter Gemma model with enhanced capabilities',
+          'downloadUrl': 'https://www.kaggle.com/models/google/gemma/frameworks/gemmaCpp/variations/7b-it-gpu-int8',
         },
         {
-          'id': 'codellama-7b',
-          'name': 'Code Llama 7B',
-          'size': 'Hosted',
-          'format': 'API',
-          'source': 'Hosted Models',
-          'endpoint': 'https://api-inference.huggingface.co/models/codellama/CodeLlama-7b-hf',
-          'description': 'Meta\'s specialized coding model'
+          'id': 'codegemma-2b',
+          'name': 'CodeGemma 2B',
+          'size': '2.8GB',
+          'format': 'GGUF',
+          'source': 'Google Gemma',
+          'modelType': 'codeGemma',
+          'description': 'Google\'s specialized coding model for programming tasks',
+          'downloadUrl': 'https://www.kaggle.com/models/google/codegemma/frameworks/gemmaCpp/variations/2b-pt-gpu-int8',
         },
         {
-          'id': 'codellama-13b',
-          'name': 'Code Llama 13B',
-          'size': 'Hosted',
-          'format': 'API',
-          'source': 'Hosted Models',
-          'endpoint': 'https://api-inference.huggingface.co/models/codellama/CodeLlama-13b-hf',
-          'description': 'Larger Code Llama for complex coding tasks'
+          'id': 'codegemma-7b-it',
+          'name': 'CodeGemma 7B Instruct',
+          'size': '8.7GB',
+          'format': 'GGUF',
+          'source': 'Google Gemma',
+          'modelType': 'codeGemma',
+          'description': 'Advanced coding model with instruction tuning for complex programming tasks',
+          'downloadUrl': 'https://www.kaggle.com/models/google/codegemma/frameworks/gemmaCpp/variations/7b-it-gpu-int8',
         },
         {
-          'id': 'mistral-7b',
-          'name': 'Mistral 7B',
-          'size': 'Hosted',
-          'format': 'API',
-          'source': 'Hosted Models',
-          'endpoint': 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-v0.1',
-          'description': 'Mistral AI\'s efficient 7B parameter model'
+          'id': 'gemma-3n-e2b',
+          'name': 'Gemma 3 Nano E2B',
+          'size': '1.5GB',
+          'format': 'Task',
+          'source': 'Google Gemma',
+          'modelType': 'gemma3Nano',
+          'description': 'Latest Gemma 3 Nano with vision capabilities - optimized for mobile',
+          'downloadUrl': 'https://huggingface.co/google/gemma-3n-E2B-it-litert-preview/resolve/main/gemma-3n-E2B-it-int4.task',
+          'supportsVision': true,
         },
         {
-          'id': 'flan-t5-large',
-          'name': 'Flan T5 Large',
-          'size': 'Hosted',
-          'format': 'API',
-          'source': 'Hosted Models',
-          'endpoint': 'https://api-inference.huggingface.co/models/google/flan-t5-large',
-          'description': 'Google\'s instruction-tuned T5 model'
-        },
-        {
-          'id': 'flan-t5-xl',
-          'name': 'Flan T5 XL',
-          'size': 'Hosted',
-          'format': 'API',
-          'source': 'Hosted Models',
-          'endpoint': 'https://api-inference.huggingface.co/models/google/flan-t5-xl',
-          'description': 'Larger version of Flan T5 for better performance'
-        },
-        {
-          'id': 'dialogpt-medium',
-          'name': 'DialoGPT Medium',
-          'size': 'Hosted',
-          'format': 'API',
-          'source': 'Hosted Models',
-          'endpoint': 'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium',
-          'description': 'Microsoft\'s conversational AI model'
-        },
-        {
-          'id': 'gpt2-large',
-          'name': 'GPT-2 Large',
-          'size': 'Hosted',
-          'format': 'API',
-          'source': 'Hosted Models',
-          'endpoint': 'https://api-inference.huggingface.co/models/gpt2-large',
-          'description': 'OpenAI\'s GPT-2 Large model'
-        },
-        {
-          'id': 'vicuna-7b',
-          'name': 'Vicuna 7B',
-          'size': 'Hosted',
-          'format': 'API',
-          'source': 'Hosted Models',
-          'endpoint': 'https://api-inference.huggingface.co/models/lmsys/vicuna-7b-v1.5',
-          'description': 'LMSYS Vicuna 7B - fine-tuned from Llama'
+          'id': 'gemma-3n-e4b',
+          'name': 'Gemma 3 Nano E4B',
+          'size': '1.8GB',
+          'format': 'Task',
+          'source': 'Google Gemma',
+          'modelType': 'gemma3Nano',
+          'description': 'Enhanced Gemma 3 Nano with improved vision and text capabilities',
+          'downloadUrl': 'https://huggingface.co/google/gemma-3n-E4B-it-litert-preview/resolve/main/gemma-3n-E4B-it-int4.task',
+          'supportsVision': true,
         }
       ];
 
-      for (final model in hostedModels) {
+      for (final model in gemmaModels) {
         _availableModels.add(LocalLLMModel(
-          id: model['id']!,
-          name: model['name']!,
-          size: model['size']!,
-          format: model['format']!,
-          source: model['source']!,
-          isDownloaded: true, // Hosted models are always "available"
-          isAvailable: true,   // No download needed
+          id: model['id'] as String,
+          name: model['name'] as String,
+          size: model['size'] as String,
+          format: model['format'] as String,
+          source: model['source'] as String,
+          isDownloaded: false, // Need to download first
+          isAvailable: true,   // Available for download
           metadata: {
-            'endpoint': model['endpoint']!,
-            'description': model['description']!,
+            'description': model['description'] as String,
+            'downloadUrl': model['downloadUrl'] as String,
+            'modelType': model['modelType'] as String,
+            'supportsVision': (model['supportsVision'] as bool?) ?? false,
           },
         ));
       }
     } catch (e) {
-      debugPrint('Error loading hosted models: $e');
+      debugPrint('Error loading Gemma models: $e');
     }
   }
 
@@ -481,8 +471,8 @@ class LocalLLMService extends ChangeNotifier {
     return controller.stream;
   }
 
-  // New method for hosted models
-  Future<Stream<String>> chatWithHostedModel(
+  // New method for Gemma models
+  Future<Stream<String>> chatWithGemmaModel(
     String modelId,
     List<Map<String, dynamic>> messages,
   ) async {
@@ -494,12 +484,15 @@ class LocalLLMService extends ChangeNotifier {
         orElse: () => throw Exception('Model not found'),
       );
       
-      if (model.source != 'Hosted Models') {
-        throw Exception('This method is only for hosted models');
+      if (model.source != 'Google Gemma') {
+        throw Exception('This method is only for Gemma models');
       }
       
-      final endpoint = model.metadata['endpoint'] as String;
-      await _chatWithHuggingFaceAPI(endpoint, messages, controller);
+      if (!model.isDownloaded) {
+        throw Exception('Model not downloaded. Please download the model first.');
+      }
+      
+      await _chatWithGemmaModel(model, messages, controller);
     } catch (e) {
       controller.addError('Error: $e');
     }
@@ -507,32 +500,86 @@ class LocalLLMService extends ChangeNotifier {
     return controller.stream;
   }
 
-  Future<void> _chatWithHuggingFaceAPI(
-    String endpoint,
+  Future<void> _chatWithGemmaModel(
+    LocalLLMModel model,
     List<Map<String, dynamic>> messages,
     StreamController<String> controller,
   ) async {
-    // For now, we'll simulate AI responses to provide a working demo
-    // In a production app, you would use proper API keys or alternative APIs
+    try {
+      // For now, provide demo responses that match the model type
+      // TODO: Integrate real flutter_gemma once properly configured
+      
+      final lastMessage = messages.isNotEmpty ? messages.last['content'] as String : '';
+      final modelType = model.metadata['modelType'] as String;
+      
+      // Simulate thinking time
+      await Future.delayed(const Duration(milliseconds: 800));
+      
+      // Generate model-specific responses
+      final response = _generateGemmaResponse(model.name, modelType, lastMessage);
+      
+      // Stream the response word by word for better UX
+      final words = response.split(' ');
+      for (int i = 0; i < words.length; i++) {
+        controller.add(words[i] + (i < words.length - 1 ? ' ' : ''));
+        await Future.delayed(const Duration(milliseconds: 60));
+      }
+      
+    } catch (e) {
+      debugPrint('Error in Gemma chat: $e');
+      controller.addError('Failed to generate response: $e');
+    } finally {
+      controller.close();
+    }
+  }
+
+  String _generateGemmaResponse(String modelName, String modelType, String userInput) {
+    final input = userInput.toLowerCase();
     
-    final prompt = _convertMessagesToPrompt(messages);
-    final lastMessage = messages.isNotEmpty ? messages.last['content'] as String : '';
-    
-    // Simulate thinking time
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    // Generate contextual responses based on the model type and user input
-    final modelName = _getModelNameFromEndpoint(endpoint);
-    final response = _generateContextualResponse(modelName, lastMessage, prompt);
-    
-    // Stream the response word by word for better UX
-    final words = response.split(' ');
-    for (int i = 0; i < words.length; i++) {
-      controller.add(words[i] + (i < words.length - 1 ? ' ' : ''));
-      await Future.delayed(const Duration(milliseconds: 80));
+    if (modelType == 'codeGemma') {
+      if (input.contains('code') || input.contains('function') || input.contains('programming')) {
+        return '''Hello! I'm $modelName, Google's specialized coding AI model. Here's a sample Flutter function:
+
+```dart
+class GemmaModel {
+  final String name;
+  final String version;
+  
+  GemmaModel({required this.name, required this.version});
+  
+  void introduce() {
+    print('I am \$name, running on-device with Google AI!');
+  }
+}
+
+// Usage
+final model = GemmaModel(name: '$modelName', version: '1.0');
+model.introduce();
+```
+
+I can help with Flutter, Dart, Python, JavaScript, and many other programming languages. What would you like to build?''';
+      }
+      return "Hello! I'm $modelName, Google's coding-specialized AI model. I excel at programming tasks, code review, debugging, and explaining complex algorithms. I can work with Flutter, Dart, Python, JavaScript, and many other languages. What coding challenge can I help you solve?";
     }
     
-    controller.close();
+    if (modelType == 'gemma3Nano') {
+      return "Hi there! I'm $modelName, Google's latest compact AI model with vision capabilities. I'm optimized for mobile devices and can process both text and images efficiently. I run completely on your device for maximum privacy and offline functionality. How can I assist you today?";
+    }
+    
+    // Default Gemma response
+    if (input.contains('hello') || input.contains('hi') || input.isEmpty) {
+      return "Hello! I'm $modelName, Google's Gemma AI model running locally on your device. I provide private, offline AI assistance with no data sent to external servers. I'm designed to be helpful, accurate, and respectful. What would you like to explore together?";
+    }
+    
+    if (input.contains('explain') || input.contains('what is') || input.contains('how')) {
+      return "I'd be happy to explain! As $modelName, I'm built with Google's advanced AI research but designed to run entirely on your device. This means faster responses, complete privacy, and no internet dependency. Could you be more specific about what you'd like me to explain?";
+    }
+    
+    if (input.contains('code') || input.contains('programming')) {
+      return "While I can discuss programming concepts, for specialized coding tasks I'd recommend using CodeGemma models which are specifically optimized for programming. As $modelName, I can still help with general coding questions, explanations, and basic examples. What programming topic interests you?";
+    }
+    
+    return "Thank you for your message! I'm $modelName, Google's on-device AI assistant. I'm designed to provide helpful, accurate information while keeping all our conversations completely private on your device. I can assist with explanations, creative writing, problem-solving, and general questions. How can I help you today?";
   }
 
   String _getModelNameFromEndpoint(String endpoint) {
@@ -751,6 +798,8 @@ This function demonstrates basic Python syntax. Code Llama can help with various
   }
 
   Future<void> downloadModel(String modelId) async {
+    if (_isDownloading) return;
+
     final modelIndex = _availableModels.indexWhere((m) => m.id == modelId);
     if (modelIndex == -1) {
       throw Exception('Model not found');
@@ -758,13 +807,61 @@ This function demonstrates basic Python syntax. Code Llama can help with various
 
     final model = _availableModels[modelIndex];
     
-    if (model.source == 'Hosted Models') {
-      // Hosted models are always ready - no download needed
-      debugPrint('Hosted model ${model.name} is ready to use!');
-      return;
+    if (model.source == 'Google Gemma') {
+      _isDownloading = true;
+      notifyListeners();
+      
+      try {
+        await _downloadGemmaModel(model);
+        
+        // Update model as downloaded
+        _availableModels[modelIndex] = LocalLLMModel(
+          id: model.id,
+          name: model.name,
+          size: model.size,
+          format: model.format,
+          source: model.source,
+          isDownloaded: true,
+          isAvailable: true,
+          metadata: model.metadata,
+        );
+        
+        await _saveLocalLLMs();
+      } catch (e) {
+        debugPrint('Error downloading model: $e');
+        rethrow;
+      } finally {
+        _isDownloading = false;
+        notifyListeners();
+      }
+    } else {
+      throw Exception('Download not supported for ${model.source} models.');
     }
-    
-    throw Exception('Download not supported for ${model.source} models. Use hosted models for instant access.');
+  }
+
+  Future<void> _downloadGemmaModel(LocalLLMModel model) async {
+    try {
+      final gemma = FlutterGemmaPlugin.instance;
+      final modelManager = gemma.modelManager;
+      
+      final downloadUrl = model.metadata['downloadUrl'] as String;
+      
+      // Listen to download progress
+      final progressStream = modelManager.downloadModelFromNetworkWithProgress(downloadUrl);
+      
+      await for (final progress in progressStream) {
+        _downloadProgress = 'Downloading: ${progress.toStringAsFixed(1)}%';
+        notifyListeners();
+        debugPrint('Download progress: $progress%');
+      }
+      
+      _downloadProgress = 'Download completed successfully';
+      notifyListeners();
+      
+    } catch (e) {
+      debugPrint('Error downloading Gemma model: $e');
+      throw Exception('Failed to download model: $e');
+    }
   }
 
   Future<void> _downloadOllamaModel(LocalLLMModel model) async {

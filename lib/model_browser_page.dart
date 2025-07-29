@@ -204,10 +204,10 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
             const SizedBox(height: 16),
             Row(
               children: [
-                if (model.source == 'Hosted Models')
+                if (model.source == 'Google Gemma' && model.isDownloaded)
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => _chatWithHostedModel(model),
+                      onPressed: () => _chatWithGemmaModel(model),
                       icon: const Icon(Icons.chat, size: 16),
                       label: const Text('Chat Now'),
                       style: ElevatedButton.styleFrom(
@@ -217,6 +217,44 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
+                    ),
+                  )
+                else if (model.source == 'Google Gemma' && !model.isDownloaded)
+                  Expanded(
+                    child: Column(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _llmService.isDownloading ? null : () => _downloadModel(model),
+                          icon: _llmService.isDownloading
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Icon(Icons.download, size: 16),
+                          label: Text(_llmService.isDownloading ? 'Downloading...' : 'Download'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4285F4),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                        if (_llmService.isDownloading && _llmService.downloadProgress.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              _llmService.downloadProgress,
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                color: const Color(0xFFA3A3A3),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
                     ),
                   )
                 else if (!model.isDownloaded && model.source != 'Local Directory')
@@ -283,7 +321,7 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
     );
   }
 
-  void _chatWithHostedModel(LocalLLMModel model) {
+  void _chatWithGemmaModel(LocalLLMModel model) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -297,8 +335,8 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
 
   Color _getSourceColor(String source) {
     switch (source) {
-      case 'Hosted Models':
-        return const Color(0xFF10B981);
+      case 'Google Gemma':
+        return const Color(0xFF4285F4);
       case 'Ollama Library':
         return const Color(0xFF3B82F6);
       case 'Hugging Face':
@@ -312,8 +350,8 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
 
   IconData _getSourceIcon(String source) {
     switch (source) {
-      case 'Hosted Models':
-        return Icons.cloud;
+      case 'Google Gemma':
+        return Icons.auto_awesome;
       case 'Ollama Library':
         return Icons.local_library;
       case 'Hugging Face':
@@ -431,7 +469,7 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
             fontWeight: FontWeight.w400,
           ),
                       tabs: const [
-              Tab(text: 'Hosted Models'),
+              Tab(text: 'Google Gemma'),
               Tab(text: 'Local'),
             ],
         ),
@@ -439,8 +477,8 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Hosted models
-          _buildTabContent('Hosted Models'),
+          // Google Gemma models
+          _buildTabContent('Google Gemma'),
           _buildTabContent('Local Directory'),
         ],
       ),
