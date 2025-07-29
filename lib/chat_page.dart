@@ -56,6 +56,10 @@ class ChatPageState extends State<ChatPage> {
   String _selectedImageModel = 'flux';
   List<String> _availableImageModels = ['flux', 'turbo'];
   bool _isGeneratingImage = false;
+  
+  // Image generation memory and follow-up
+  List<String> _imagePromptMemory = [];
+  bool _followUpMode = false;
 
   // Add memory system for general chat
   List<String> _conversationMemory = [];
@@ -1768,22 +1772,36 @@ $priceChart
     final prompt = _controller.text.trim();
     if (prompt.isEmpty) return;
 
+    // Build enhanced prompt with memory if follow-up mode is enabled
+    String enhancedPrompt = prompt;
+    if (_followUpMode && _imagePromptMemory.isNotEmpty) {
+      final previousPrompts = _imagePromptMemory.take(3).join(', ');
+      enhancedPrompt = '$prompt, following style of: $previousPrompts';
+    }
+
     setState(() {
       _isGeneratingImage = true;
     });
 
     final result = await ImageGenerationService.generateImage(
-      prompt: prompt,
+      prompt: enhancedPrompt,
       model: _selectedImageModel,
     );
 
     if (mounted) {
       setState(() {
         _isGeneratingImage = false;
-        _isImageGenerationMode = false;
+        // Keep image generation mode active after generation
+        // _isImageGenerationMode = false; // Removed this line
       });
 
       if (result['success']) {
+        // Store prompt in memory
+        _imagePromptMemory.insert(0, prompt);
+        if (_imagePromptMemory.length > 5) {
+          _imagePromptMemory.removeLast();
+        }
+
         // Add user prompt message
         final promptMessage = Message.user("🎨 Generate image: $prompt");
         setState(() {
@@ -1796,7 +1814,8 @@ $priceChart
 ![Generated Image](${result['image_url']})
 
 **Model:** ${result['model'].toString().toUpperCase()}
-**Size:** ${result['size_kb']}KB''');
+**Size:** ${result['size_kb']}KB
+${_followUpMode ? '\n*Following previous style*' : ''}''');
         
         setState(() {
           _messages.add(imageMessage);
@@ -1973,6 +1992,8 @@ $priceChart
               onImageModelChanged: (model) => setState(() => _selectedImageModel = model),
               onCancelImageGeneration: _disableImageGenerationMode,
               isGeneratingImage: _isGeneratingImage,
+              followUpMode: _followUpMode,
+              onToggleFollowUp: () => setState(() => _followUpMode = !_followUpMode),
             ),
           ),
         ],
@@ -2819,37 +2840,82 @@ class _InputBar extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 8),
-                  ...availableImageModels.map((model) => Container(
-                    margin: EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        onImageModelChanged(model);
-                      },
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: selectedImageModel == model 
-                              ? Color(0xFF2D3748) 
-                              : Color(0xFF2D3748).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Color(0xFF2D3748).withOpacity(0.3),
-                          ),
-                        ),
-                        child: Text(
-                          model.toUpperCase(),
-                          style: TextStyle(
-                            color: selectedImageModel == model 
-                                ? Colors.white 
-                                : Color(0xFF2D3748),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                  )).toList(),
+                                     ...availableImageModels.map((model) => Container(
+                     margin: EdgeInsets.only(right: 8),
+                     child: GestureDetector(
+                       onTap: () {
+                         HapticFeedback.lightImpact();
+                         onImageModelChanged(model);
+                       },
+                       child: Container(
+                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                         decoration: BoxDecoration(
+                           color: selectedImageModel == model 
+                               ? Color(0xFF2D3748) 
+                               : Color(0xFF2D3748).withOpacity(0.1),
+                           borderRadius: BorderRadius.circular(16),
+                           border: Border.all(
+                             color: Color(0xFF2D3748).withOpacity(0.3),
+                           ),
+                         ),
+                         child: Text(
+                           model.toUpperCase(),
+                           style: TextStyle(
+                             color: selectedImageModel == model 
+                                 ? Colors.white 
+                                 : Color(0xFF2D3748),
+                             fontWeight: FontWeight.w600,
+                             fontSize: 12,
+                           ),
+                         ),
+                       ),
+                     ),
+                   )).toList(),
+                   
+                   Spacer(),
+                   
+                   // Follow-up toggle
+                   GestureDetector(
+                     onTap: () {
+                       HapticFeedback.lightImpact();
+                       setState(() => _followUpMode = !_followUpMode);
+                     },
+                     child: Container(
+                       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                       decoration: BoxDecoration(
+                         color: _followUpMode 
+                             ? Color(0xFF2D3748) 
+                             : Color(0xFF2D3748).withOpacity(0.1),
+                         borderRadius: BorderRadius.circular(16),
+                         border: Border.all(
+                           color: Color(0xFF2D3748).withOpacity(0.3),
+                         ),
+                       ),
+                       child: Row(
+                         mainAxisSize: MainAxisSize.min,
+                         children: [
+                           FaIcon(
+                             FontAwesomeIcons.link,
+                             size: 10,
+                             color: _followUpMode 
+                                 ? Colors.white 
+                                 : Color(0xFF2D3748),
+                           ),
+                           SizedBox(width: 4),
+                           Text(
+                             'Follow-up',
+                             style: TextStyle(
+                               color: _followUpMode 
+                                   ? Colors.white 
+                                   : Color(0xFF2D3748),
+                               fontWeight: FontWeight.w600,
+                               fontSize: 12,
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                   ),
                 ],
               ),
             ),
