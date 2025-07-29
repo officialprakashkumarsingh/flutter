@@ -258,7 +258,7 @@ class _ImageGenerationDialogState extends State<ImageGenerationDialog> {
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          FaIcon(FontAwesomeIcons.wand, size: 16),
+                          FaIcon(FontAwesomeIcons.magic, size: 16),
                           SizedBox(width: 8),
                           Text('Generate Image'),
                         ],
