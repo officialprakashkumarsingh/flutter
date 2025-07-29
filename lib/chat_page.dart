@@ -57,9 +57,9 @@ class ChatPageState extends State<ChatPage> {
   List<String> _availableImageModels = ['flux', 'turbo'];
   bool _isGeneratingImage = false;
   
-  // Image generation memory and follow-up
+  // Image generation memory and follow-up (default OFF)
   List<String> _imagePromptMemory = [];
-  bool _followUpMode = false;
+  bool _followUpMode = false; // Default OFF - user can enable if needed
 
   // Add memory system for general chat
   List<String> _conversationMemory = [];
@@ -2717,6 +2717,8 @@ class _InputBar extends StatelessWidget {
     required this.onImageModelChanged,
     required this.onCancelImageGeneration,
     required this.isGeneratingImage,
+    required this.followUpMode,
+    required this.onToggleFollowUp,
   });
 
   final TextEditingController controller;
@@ -2735,6 +2737,8 @@ class _InputBar extends StatelessWidget {
   final Function(String) onImageModelChanged;
   final VoidCallback onCancelImageGeneration;
   final bool isGeneratingImage;
+  final bool followUpMode;
+  final VoidCallback onToggleFollowUp;
 
   @override
   Widget build(BuildContext context) {
