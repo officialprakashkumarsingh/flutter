@@ -265,6 +265,18 @@ class _CoderPageState extends State<CoderPage> {
       _isProcessingTask = true;
     });
     
+    // SMART TASK CLASSIFICATION - Check if this is actually a coding task
+    final isCodeTask = await _isCodeRelatedTask(taskDescription);
+    
+    if (!isCodeTask) {
+      // Handle as general conversation, not a coding task
+      await _handleGeneralConversation(taskDescription);
+      setState(() {
+        _isProcessingTask = false;
+      });
+      return;
+    }
+    
     // Create new task
     final task = CoderTask(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -289,6 +301,112 @@ class _CoderPageState extends State<CoderPage> {
     setState(() {
       _isProcessingTask = false;
     });
+  }
+  
+  // Determine if user input is a coding task or general conversation
+  Future<bool> _isCodeRelatedTask(String input) async {
+    // Quick keyword detection for obvious coding tasks
+    final codingKeywords = [
+      'create', 'build', 'implement', 'develop', 'code', 'write', 'function',
+      'class', 'method', 'api', 'database', 'frontend', 'backend', 'website',
+      'app', 'application', 'component', 'module', 'library', 'framework',
+      'fix', 'debug', 'optimize', 'refactor', 'test', 'deploy', 'install',
+      'configure', 'setup', 'add feature', 'remove', 'update', 'modify',
+      'algorithm', 'data structure', 'schema', 'model', 'view', 'controller'
+    ];
+    
+    final generalKeywords = [
+      'hello', 'hi', 'thanks', 'thank you', 'how are you', 'what is',
+      'explain', 'tell me', 'describe', 'what does', 'how does', 'why',
+      'when', 'where', 'who', 'help', 'question', 'advice', 'suggest'
+    ];
+    
+    final lowerInput = input.toLowerCase();
+    
+    // Check for obvious general conversation
+    if (generalKeywords.any((keyword) => lowerInput.contains(keyword)) && 
+        !codingKeywords.any((keyword) => lowerInput.contains(keyword))) {
+      return false;
+    }
+    
+    // Check for obvious coding tasks
+    if (codingKeywords.any((keyword) => lowerInput.contains(keyword))) {
+      return true;
+    }
+    
+    // For ambiguous cases, use AI to determine
+    try {
+      final classificationPrompt = '''
+Analyze this user input and determine if it's a coding/development task or general conversation.
+
+User input: "$input"
+
+Respond with ONLY "CODING" or "CONVERSATION".
+
+CODING examples:
+- "Create a login system"
+- "Build a todo app"
+- "Fix the navigation bug"
+- "Add dark mode"
+- "Write a function to calculate..."
+
+CONVERSATION examples:
+- "Hello, how are you?"
+- "What is React?"
+- "Explain how databases work"
+- "Thanks for the help"
+- "Tell me about programming"
+''';
+
+      final response = await _callAIModel(classificationPrompt);
+      return response.toUpperCase().contains('CODING');
+    } catch (e) {
+      // Default to coding task if classification fails
+      return true;
+    }
+  }
+  
+  // Handle general conversation without coding workflow
+  Future<void> _handleGeneralConversation(String message) async {
+    try {
+      final conversationPrompt = '''
+You are AhamAI, a helpful AI assistant integrated into a coding environment.
+
+The user said: "$message"
+
+Provide a helpful, concise response. If they're asking about programming concepts, explain clearly. 
+If it's a greeting or general question, respond appropriately.
+Keep responses under 200 words and be friendly but professional.
+''';
+
+      final response = await _callAIModel(conversationPrompt);
+      
+      // Create a simple conversation task to display the response
+      final conversationTask = CoderTask(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        description: message,
+        repository: _selectedRepo!,
+        branch: _selectedBranch!,
+        status: TaskStatus.completed,
+        steps: [
+          TaskStep(
+            description: response,
+            timestamp: DateTime.now(),
+            status: TaskStatus.completed,
+          )
+        ],
+        createdAt: DateTime.now(),
+      );
+      
+      setState(() {
+        _tasks.insert(0, conversationTask);
+        _taskController.clear();
+      });
+      
+      _scrollToBottom();
+    } catch (e) {
+      _showSnackBar('❌ Failed to process message: $e');
+    }
   }
   
   // Execute AI workflow steps with REAL functionality
@@ -383,8 +501,8 @@ class _CoderPageState extends State<CoderPage> {
           }
         }
         
-        // Detect project type and technologies
-        final projectType = _detectProjectType(fileNames);
+        // Enhanced project type detection with user context
+        final projectType = _detectProjectTypeWithUserContext(fileNames, task.description);
         final technologies = _getProjectTechnologies(fileNames, languages.toList());
         
         return {
@@ -397,9 +515,27 @@ class _CoderPageState extends State<CoderPage> {
         };
       }
       
-      return {'fileCount': 0, 'languages': [], 'files': [], 'projectType': 'Unknown', 'technologies': []};
+      // If no repository info, analyze user request only
+      final userProjectType = _analyzeUserRequestForLanguage(task.description);
+      return {
+        'fileCount': 0, 
+        'languages': [], 
+        'files': [], 
+        'projectType': userProjectType != 'Unknown' ? userProjectType : 'General',
+        'technologies': [userProjectType != 'Unknown' ? userProjectType : 'General'],
+        'fileNames': [],
+      };
     } catch (e) {
-      return {'fileCount': 0, 'languages': [], 'files': [], 'projectType': 'Unknown', 'technologies': []};
+      // Fallback to user request analysis
+      final userProjectType = _analyzeUserRequestForLanguage(task.description);
+      return {
+        'fileCount': 0, 
+        'languages': [], 
+        'files': [], 
+        'projectType': userProjectType != 'Unknown' ? userProjectType : 'General',
+        'technologies': [userProjectType != 'Unknown' ? userProjectType : 'General'],
+        'fileNames': [],
+      };
     }
   }
   
@@ -421,6 +557,99 @@ class _CoderPageState extends State<CoderPage> {
     if (fileNames.any((f) => f.endsWith('.swift'))) return 'Swift';
     if (fileNames.any((f) => f.endsWith('.kt'))) return 'Kotlin';
     return 'General';
+  }
+  
+  // Enhanced project type detection with user request analysis
+  String _detectProjectTypeWithUserContext(List<String> fileNames, String userRequest) {
+    // First try repository-based detection
+    String repoType = _detectProjectType(fileNames);
+    
+    // If repository doesn't provide clear info, analyze user request
+    if (repoType == 'General' || repoType == 'Web Development') {
+      String userType = _analyzeUserRequestForLanguage(userRequest);
+      if (userType != 'Unknown') {
+        return userType;
+      }
+    }
+    
+    // Remove default web development fallback - be explicit about unknown types
+    return repoType == 'General' ? 'Unknown' : repoType;
+  }
+  
+  // Analyze user request to detect programming language/framework intent
+  String _analyzeUserRequestForLanguage(String request) {
+    final lowerRequest = request.toLowerCase();
+    
+    // Python indicators
+    if (lowerRequest.contains('python') || lowerRequest.contains('django') || 
+        lowerRequest.contains('flask') || lowerRequest.contains('fastapi') ||
+        lowerRequest.contains('pandas') || lowerRequest.contains('numpy')) {
+      return 'Python';
+    }
+    
+    // JavaScript/Node.js indicators
+    if (lowerRequest.contains('javascript') || lowerRequest.contains('node') ||
+        lowerRequest.contains('express') || lowerRequest.contains('npm') ||
+        lowerRequest.contains('js ') || lowerRequest.contains('.js')) {
+      return 'Node.js/JavaScript';
+    }
+    
+    // React/Frontend indicators
+    if (lowerRequest.contains('react') || lowerRequest.contains('vue') ||
+        lowerRequest.contains('angular') || lowerRequest.contains('frontend') ||
+        lowerRequest.contains('website') || lowerRequest.contains('web app')) {
+      return 'Frontend/React';
+    }
+    
+    // Mobile development indicators  
+    if (lowerRequest.contains('flutter') || lowerRequest.contains('dart') ||
+        lowerRequest.contains('mobile app') || lowerRequest.contains('android') ||
+        lowerRequest.contains('ios')) {
+      return 'Flutter/Dart';
+    }
+    
+    // Java indicators
+    if (lowerRequest.contains('java') || lowerRequest.contains('spring') ||
+        lowerRequest.contains('maven') || lowerRequest.contains('gradle')) {
+      return 'Java';
+    }
+    
+    // C/C++ indicators
+    if (lowerRequest.contains('c++') || lowerRequest.contains('cpp') ||
+        lowerRequest.contains(' c ') || lowerRequest.contains('cmake')) {
+      return 'C/C++';
+    }
+    
+    // Go indicators
+    if (lowerRequest.contains('golang') || lowerRequest.contains(' go ') ||
+        lowerRequest.contains('go module')) {
+      return 'Go';
+    }
+    
+    // Rust indicators
+    if (lowerRequest.contains('rust') || lowerRequest.contains('cargo')) {
+      return 'Rust';
+    }
+    
+    // PHP indicators
+    if (lowerRequest.contains('php') || lowerRequest.contains('laravel') ||
+        lowerRequest.contains('composer')) {
+      return 'PHP';
+    }
+    
+    // C# indicators
+    if (lowerRequest.contains('c#') || lowerRequest.contains('csharp') ||
+        lowerRequest.contains('.net') || lowerRequest.contains('dotnet')) {
+      return 'C#';
+    }
+    
+    // Database/Backend indicators
+    if (lowerRequest.contains('database') || lowerRequest.contains('sql') ||
+        lowerRequest.contains('api') || lowerRequest.contains('backend')) {
+      return 'Backend';
+    }
+    
+    return 'Unknown';
   }
   
   // Get project technologies
@@ -470,29 +699,67 @@ class _CoderPageState extends State<CoderPage> {
 - CSS files: .css (style.css, main.css)
 - JavaScript files: .js (script.js, app.js, main.js)
 - JSON files: .json (package.json, config.json)''';
+      case 'Frontend/React':
+        return '''- JavaScript files: .js, .jsx (App.js, components/*.jsx)
+- TypeScript files: .ts, .tsx (if using TypeScript)
+- CSS files: .css, .scss (styles.css, components/*.module.css)
+- JSON files: .json (package.json, tsconfig.json)
+- HTML files: .html (public/index.html)''';
       case 'Node.js/JavaScript':
         return '''- JavaScript files: .js (app.js, server.js, index.js)
 - TypeScript files: .ts (if using TypeScript)
 - JSON files: .json (package.json, config.json)
-- Markdown files: .md (README.md)''';
+- Markdown files: .md (README.md)
+- Environment files: .env''';
       case 'Python':
         return '''- Python files: .py (main.py, app.py, utils.py)
 - Requirements: requirements.txt
 - Config files: .yaml, .json, .toml
-- Jupyter notebooks: .ipynb''';
+- Jupyter notebooks: .ipynb
+- Environment files: .env''';
       case 'Flutter/Dart':
         return '''- Dart files: .dart (main.dart, app.dart)
 - YAML files: pubspec.yaml
-- Config files: .yaml, .json''';
+- Config files: .yaml, .json
+- Assets: images/, fonts/''';
       case 'Java':
         return '''- Java files: .java (Main.java, App.java)
 - XML files: .xml (pom.xml)
-- Properties files: .properties''';
+- Properties files: .properties
+- Gradle files: build.gradle''';
       case 'C/C++':
         return '''- C++ files: .cpp, .cc, .cxx
 - C files: .c
 - Header files: .h, .hpp
-- Makefile: Makefile (no extension)''';
+- Makefile: Makefile (no extension)
+- CMake files: CMakeLists.txt''';
+      case 'Go':
+        return '''- Go files: .go (main.go, handlers.go)
+- Module files: go.mod, go.sum
+- Config files: .yaml, .json''';
+      case 'Rust':
+        return '''- Rust files: .rs (main.rs, lib.rs)
+- Cargo files: Cargo.toml, Cargo.lock
+- Config files: .toml''';
+      case 'PHP':
+        return '''- PHP files: .php (index.php, app.php)
+- Composer files: composer.json, composer.lock
+- Config files: .json, .yaml''';
+      case 'C#':
+        return '''- C# files: .cs (Program.cs, Models/*.cs)
+- Project files: .csproj, .sln
+- Config files: appsettings.json''';
+      case 'Backend':
+        return '''- Choose appropriate backend language:
+- Python: .py, requirements.txt
+- Node.js: .js, package.json
+- Java: .java, pom.xml
+- Go: .go, go.mod
+- PHP: .php, composer.json''';
+      case 'Unknown':
+        return '''- Analyze task requirements to determine file types
+- Use conventional extensions for the chosen language
+- Follow best practices for project structure''';
       default:
         return '''- Use appropriate extensions for the language
 - Follow naming conventions
@@ -506,39 +773,55 @@ class _CoderPageState extends State<CoderPage> {
       final projectType = context['projectType'] ?? 'Unknown';
       final technologies = (context['technologies'] as List? ?? []).join(', ');
       
+      // Cursor AI-style comprehensive system prompt
       final prompt = '''
-You are an expert ${projectType} developer working on: ${task.repository.name}
-Repository: ${task.repository.fullName}
-Branch: ${task.branch}
-Task: ${task.description}
+You are an AI coding assistant, powered by advanced language models. You operate in an integrated development environment.
 
-PROJECT CONTEXT:
+You are pair programming with a USER to solve their coding task. Each time the USER sends a message, we automatically attach information about their current state, such as what files they have open, where their cursor is, recently viewed files, edit history in their session so far, linter errors, and more.
+
+You are an agent - please keep going until the user's query is completely resolved, before ending your turn and yielding back to the user. Only terminate your turn when you are sure that the problem is solved. Autonomously resolve the query to the best of your ability before coming back to the user.
+
+REPOSITORY CONTEXT:
+- Repository: ${task.repository.fullName}
+- Branch: ${task.branch}  
 - Project Type: ${projectType}
 - Technologies: ${technologies}
 - File count: ${context['fileCount']}
 - Languages: ${context['languages'].join(', ')}
-- Sample files: ${context['files'].join(', ')}
+- Key files: ${context['files'].join(', ')}
+
+USER TASK: ${task.description}
 
 CRITICAL FILE EXTENSION RULES:
 ${_getFileExtensionRules(projectType)}
 
-Create a detailed implementation plan for this ${projectType} project.
+AUTONOMOUS EXECUTION GUIDELINES:
+1. Be THOROUGH when gathering information. Make sure you have the FULL picture before implementing.
+2. TRACE every symbol back to its definitions and usages so you fully understand it.
+3. Look past the first seemingly relevant result. EXPLORE alternative implementations, edge cases, and varied search terms until you have COMPREHENSIVE coverage.
+4. If you've performed an edit that may partially fulfill the USER's query, but you're not confident, gather more information before ending your turn.
+5. Bias towards not asking the user for help if you can find the answer yourself.
+
+IMPLEMENTATION STRATEGY:
+As an expert ${projectType} developer, create a detailed implementation plan for this task.
 Consider file operations: CREATE, MODIFY, or DELETE files as needed.
 Provide specific file paths with CORRECT extensions, code changes, and step-by-step instructions.
 
-Include in your response:
-1. Specific files to create/modify/delete with proper extensions
-2. Detailed implementation steps 
-3. Code structure and organization
-4. Any dependencies or setup needed
+Your response must be a structured plan that includes:
+1. Analysis of the task requirements
+2. Specific files to create/modify/delete with proper extensions
+3. Detailed implementation steps with code snippets
+4. Dependencies and setup requirements
+5. Testing and verification steps
 
 Be very specific about file names and use the correct file extensions for ${projectType}.
+Focus on creating production-ready, maintainable code that follows best practices.
 ''';
 
       final aiResponse = await _callAIModel(prompt);
       
       return {
-        'summary': 'Implementation plan for ${task.description}',
+        'summary': 'Autonomous implementation plan for ${task.description}',
         'response': aiResponse,
         'files_to_modify': _extractFilesFromPlan(aiResponse),
       };
@@ -547,7 +830,64 @@ Be very specific about file names and use the correct file extensions for ${proj
     }
   }
   
-  // Execute AI plan with real file operations
+  // Enhanced AI model call with Cursor AI-style system prompt
+  Future<String> _callAIModel(String prompt) async {
+    try {
+      final response = await _httpClient.post(
+        Uri.parse('https://ahamai-api.officialprakashkrsingh.workers.dev/v1/chat/completions'),
+        headers: {
+          'Authorization': 'Bearer ahamaibyprakash25',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'model': widget.selectedModel,
+          'messages': [
+            {
+              'role': 'system',
+              'content': '''You are an expert software developer and AI coding assistant.
+
+CORE PRINCIPLES:
+- You operate autonomously and thoroughly
+- You solve problems completely before stopping
+- You follow best practices and write production-ready code
+- You are thorough in gathering context and understanding requirements
+- You provide detailed, actionable implementations
+- You consider edge cases and potential issues
+
+COMMUNICATION STYLE:
+- Be precise and practical in your solutions
+- Provide complete code implementations
+- Explain your reasoning when helpful
+- Focus on solving the user's specific problem
+- Use appropriate file extensions and naming conventions
+- Write clean, maintainable, well-documented code
+
+You have access to repository information and can create, modify, or delete files as needed.
+Always ensure your implementations are complete and ready to run.''',
+            },
+            {
+              'role': 'user',
+              'content': prompt,
+            },
+          ],
+          'max_tokens': 3000,
+          'temperature': 0.2,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['choices'][0]['message']['content'] ?? 'No response from AI';
+      } else {
+        final errorBody = response.body;
+        throw Exception('AI API error (${response.statusCode}): $errorBody');
+      }
+    } catch (e) {
+      throw Exception('Failed to call AI model: $e');
+    }
+  }
+  
+  // Execute AI plan with enhanced file operations
   Future<void> _executeAIPlan(CoderTask task, Map<String, dynamic> plan) async {
     final filesToModify = plan['files_to_modify'] as List<String>;
     
@@ -560,16 +900,32 @@ Be very specific about file names and use the correct file extensions for ${proj
         final operation = isNewFile ? 'Creating' : 'Modifying';
         await _updateTaskStep(task, '$operation $filePath...', TaskStatus.executing);
         
-        // Get AI suggestions for this specific file
+        // Enhanced AI prompt for file-specific modifications
         final modificationPrompt = '''
+AUTONOMOUS FILE OPERATION
+
+Repository: ${task.repository.fullName}
+Branch: ${task.branch}
 File: $filePath
+Operation: ${isNewFile ? 'CREATE' : 'MODIFY'}
+
 ${isNewFile ? 'This is a NEW file to be created.' : 'Current content:\n```\n$currentContent\n```'}
 
-Task: ${task.description}
-Plan: ${plan['response']}
+Original Task: ${task.description}
+Implementation Plan: ${plan['response']}
 
+INSTRUCTIONS:
 ${isNewFile ? 'Create the COMPLETE file content for this new file.' : 'Provide the COMPLETE modified file content for this file.'}
-Only return the code, no explanations or markdown blocks.
+
+REQUIREMENTS:
+- Follow best practices for the detected project type
+- Use proper file structure and organization
+- Include necessary imports and dependencies
+- Add appropriate comments and documentation
+- Ensure code is production-ready and maintainable
+- Handle edge cases and error conditions
+
+OUTPUT ONLY THE COMPLETE FILE CONTENT - no explanations, no markdown blocks, just the raw code/content.
 ''';
 
         final modifiedContent = await _callAIModel(modificationPrompt);
@@ -599,43 +955,6 @@ Only return the code, no explanations or markdown blocks.
       } catch (e) {
         await _updateTaskStep(task, 'Failed to process $filePath: $e', TaskStatus.executing);
       }
-    }
-  }
-  
-  // Call AI model using the selected model
-  Future<String> _callAIModel(String prompt) async {
-    try {
-      final response = await _httpClient.post(
-        Uri.parse('https://ahamai-api.officialprakashkrsingh.workers.dev/v1/chat/completions'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ahamaibyprakash25',
-        },
-        body: json.encode({
-          'model': widget.selectedModel,
-          'messages': [
-            {
-              'role': 'system',
-              'content': 'You are an expert software developer. Provide precise, practical code solutions.',
-            },
-            {
-              'role': 'user',
-              'content': prompt,
-            },
-          ],
-          'max_tokens': 2000,
-          'temperature': 0.3,
-        }),
-      );
-      
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data['choices'][0]['message']['content'] ?? 'No response from AI';
-      } else {
-        throw Exception('AI API error: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Failed to call AI model: $e');
     }
   }
   
@@ -811,7 +1130,10 @@ no changes added to commit (use "git add ." or "git commit -a")
   
   // Commit changes via GitHub API
   Future<void> _commitChanges(CoderTask task, String commitMessage) async {
-    if (_modifiedFiles.isEmpty) return;
+    if (_modifiedFiles.isEmpty && _fileOperations.values.where((op) => op == 'deleted').isEmpty) {
+      _showSnackBar('❌ No changes to commit');
+      return;
+    }
     
     setState(() => _isLoading = true);
     
@@ -826,7 +1148,8 @@ no changes added to commit (use "git add ." or "git commit -a")
       );
       
       if (branchResponse.statusCode != 200) {
-        throw Exception('Failed to get branch info');
+        final errorBody = branchResponse.body;
+        throw Exception('Failed to get branch info (${branchResponse.statusCode}): $errorBody');
       }
       
       final branchData = json.decode(branchResponse.body);
@@ -842,7 +1165,8 @@ no changes added to commit (use "git add ." or "git commit -a")
       );
       
       if (commitResponse.statusCode != 200) {
-        throw Exception('Failed to get current commit');
+        final errorBody = commitResponse.body;
+        throw Exception('Failed to get current commit (${commitResponse.statusCode}): $errorBody');
       }
       
       final commitData = json.decode(commitResponse.body);
@@ -864,16 +1188,19 @@ no changes added to commit (use "git add ." or "git commit -a")
         }
       }
       
-      // Add deleted files (null content means deletion)
+      // Handle deleted files properly - remove them from tree
       for (final entry in _fileOperations.entries) {
         if (entry.value == 'deleted') {
-          treeItems.add({
-            'path': entry.key,
-            'mode': '100644',
-            'type': 'blob',
-            'sha': null, // This will delete the file
-          });
+          // For GitHub API, deleted files are simply not included in the new tree
+          // No need to explicitly add them with null SHA
+          continue; 
         }
+      }
+      
+      if (treeItems.isEmpty) {
+        _showSnackBar('❌ No valid file operations to commit');
+        setState(() => _isLoading = false);
+        return;
       }
       
       final newTreeResponse = await http.post(
@@ -890,7 +1217,8 @@ no changes added to commit (use "git add ." or "git commit -a")
       );
       
       if (newTreeResponse.statusCode != 201) {
-        throw Exception('Failed to create new tree');
+        final errorBody = newTreeResponse.body;
+        throw Exception('Failed to create new tree (${newTreeResponse.statusCode}): $errorBody');
       }
       
       final newTreeData = json.decode(newTreeResponse.body);
@@ -912,7 +1240,8 @@ no changes added to commit (use "git add ." or "git commit -a")
       );
       
       if (newCommitResponse.statusCode != 201) {
-        throw Exception('Failed to create commit');
+        final errorBody = newCommitResponse.body;
+        throw Exception('Failed to create commit (${newCommitResponse.statusCode}): $errorBody');
       }
       
       final newCommitData = json.decode(newCommitResponse.body);
@@ -932,16 +1261,20 @@ no changes added to commit (use "git add ." or "git commit -a")
       );
       
       if (updateRefResponse.statusCode != 200) {
-        throw Exception('Failed to update branch');
+        final errorBody = updateRefResponse.body;
+        throw Exception('Failed to update branch (${updateRefResponse.statusCode}): $errorBody');
       }
       
-      // Success!
+      // Success! Clear the modified files
+      final totalFiles = _modifiedFiles.length + _fileOperations.values.where((op) => op == 'deleted').length;
       setState(() {
         _hasUncommittedChanges = false;
         _gitStatus = 'On branch ${task.branch}\nnothing to commit, working tree clean';
+        _modifiedFiles.clear();
+        _fileOperations.clear();
       });
       
-      _showSnackBar('✅ Successfully committed and pushed ${_modifiedFiles.length} files!');
+      _showSnackBar('✅ Successfully committed and pushed $totalFiles files!');
       _commitMessageController.clear();
       
     } catch (e) {
@@ -956,6 +1289,18 @@ no changes added to commit (use "git add ." or "git commit -a")
     setState(() => _isLoading = true);
     
     try {
+      // Validate branch name
+      if (branchName.trim().isEmpty) {
+        throw Exception('Branch name cannot be empty');
+      }
+      
+      final cleanBranchName = branchName.trim().replaceAll(' ', '-').toLowerCase();
+      
+      // Check if branch already exists
+      if (_branches.contains(cleanBranchName)) {
+        throw Exception('Branch "$cleanBranchName" already exists');
+      }
+      
       // Get current commit SHA
       final branchResponse = await http.get(
         Uri.parse('https://api.github.com/repos/${task.repository.fullName}/git/refs/heads/${task.branch}'),
@@ -966,7 +1311,8 @@ no changes added to commit (use "git add ." or "git commit -a")
       );
       
       if (branchResponse.statusCode != 200) {
-        throw Exception('Failed to get current branch');
+        final errorBody = branchResponse.body;
+        throw Exception('Failed to get current branch (${branchResponse.statusCode}): $errorBody');
       }
       
       final branchData = json.decode(branchResponse.body);
@@ -981,23 +1327,22 @@ no changes added to commit (use "git add ." or "git commit -a")
           'Content-Type': 'application/json',
         },
         body: json.encode({
-          'ref': 'refs/heads/$branchName',
+          'ref': 'refs/heads/$cleanBranchName',
           'sha': currentCommitSha,
         }),
       );
       
       if (newBranchResponse.statusCode == 201) {
-        // Switch to new branch
+        // Switch to new branch and refresh branches list
+        await _fetchBranches(_selectedRepo!);
         setState(() {
-          _selectedBranch = branchName;
-          if (!_branches.contains(branchName)) {
-            _branches.add(branchName);
-          }
+          _selectedBranch = cleanBranchName;
         });
         
-        _showSnackBar('✅ Created and switched to branch: $branchName');
+        _showSnackBar('✅ Created and switched to branch: $cleanBranchName');
       } else {
-        throw Exception('Failed to create branch');
+        final errorBody = newBranchResponse.body;
+        throw Exception('Failed to create branch (${newBranchResponse.statusCode}): $errorBody');
       }
       
     } catch (e) {
@@ -1012,6 +1357,15 @@ no changes added to commit (use "git add ." or "git commit -a")
     setState(() => _isLoading = true);
     
     try {
+      // Validate inputs
+      if (title.trim().isEmpty) {
+        throw Exception('Pull request title cannot be empty');
+      }
+      
+      if (task.branch == baseBranch) {
+        throw Exception('Cannot create PR: head and base branches are the same');
+      }
+      
       final prResponse = await http.post(
         Uri.parse('https://api.github.com/repos/${task.repository.fullName}/pulls'),
         headers: {
@@ -1020,8 +1374,8 @@ no changes added to commit (use "git add ." or "git commit -a")
           'Content-Type': 'application/json',
         },
         body: json.encode({
-          'title': title,
-          'body': body,
+          'title': title.trim(),
+          'body': body.trim().isEmpty ? 'Created via AhamAI Coder' : body.trim(),
           'head': task.branch,
           'base': baseBranch,
         }),
@@ -1034,7 +1388,8 @@ no changes added to commit (use "git add ." or "git commit -a")
         
         _showSnackBar('✅ Pull Request #$prNumber created successfully!');
       } else {
-        throw Exception('Failed to create pull request');
+        final errorBody = prResponse.body;
+        throw Exception('Failed to create pull request (${prResponse.statusCode}): $errorBody');
       }
       
     } catch (e) {
