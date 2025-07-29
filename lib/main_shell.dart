@@ -597,7 +597,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                         const SizedBox(width: 16),
                         const Expanded(
                           child: Text(
-                            'AI Coder',
+                            'Coder',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,

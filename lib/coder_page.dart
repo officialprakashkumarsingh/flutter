@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
+import 'external_tools_service.dart';
 
 class CoderPage extends StatefulWidget {
   const CoderPage({super.key});
@@ -36,16 +37,34 @@ class _CoderPageState extends State<CoderPage> with TickerProviderStateMixin {
   bool _isLoading = false;
   bool _isTokenValid = false;
   String _statusMessage = '';
+  bool _hasUnsavedChanges = false;
   
   // Layout
   late TabController _tabController;
   int _selectedIndex = 0;
   
+  // AI Integration
+  late ExternalToolsService _toolsService;
+  
+  // Git State
+  Map<String, dynamic> _gitStatus = {};
+  List<String> _gitCommits = [];
+  
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _toolsService = ExternalToolsService();
     _loadGitHubToken();
+    
+    // Listen for text changes to track unsaved changes
+    _codeController.addListener(() {
+      if (_selectedFile != null) {
+        setState(() {
+          _hasUnsavedChanges = true;
+        });
+      }
+    });
   }
   
   @override
@@ -257,7 +276,7 @@ class _CoderPageState extends State<CoderPage> with TickerProviderStateMixin {
         backgroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          'AI Coder',
+          'Coder',
           style: TextStyle(
             color: Color(0xFF2D3748),
             fontSize: 18,
