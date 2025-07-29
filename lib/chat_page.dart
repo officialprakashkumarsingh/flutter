@@ -2100,6 +2100,14 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
     final lines = text.split('\n');
     String currentText = '';
     
+    // DEBUG: Check for image/diagram save buttons
+    if (text.contains('IMAGE_SAVE_BUTTON') || text.contains('DIAGRAM_SAVE_BUTTON')) {
+      print('🖼️ DEBUG: Message contains save buttons:');
+      print('IMAGE_SAVE_BUTTON found: ${text.contains('[IMAGE_SAVE_BUTTON:')}');
+      print('DIAGRAM_SAVE_BUTTON found: ${text.contains('[DIAGRAM_SAVE_BUTTON:')}');
+      print('First 500 chars: ${text.length > 500 ? text.substring(0, 500) : text}');
+    }
+    
     // Simple content rendering without shimmer effects
     
     for (int i = 0; i < lines.length; i++) {
@@ -2151,6 +2159,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
       
       // Check for diagram save button placeholder
       if (line.contains('[DIAGRAM_SAVE_BUTTON:')) {
+        print('🔧 DEBUG: Found DIAGRAM_SAVE_BUTTON line: $line');
         // Add any accumulated text
         if (currentText.isNotEmpty) {
           widgets.add(_buildMarkdownText(currentText));
@@ -2162,18 +2171,22 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
         final match = regex.firstMatch(line);
         if (match != null) {
           final imageUrl = match.group(1) ?? '';
+          print('🔧 DEBUG: Extracted diagram URL: $imageUrl');
           widgets.add(
             DiagramSaveWidget(
               imageUrl: imageUrl,
               diagramType: 'plantuml',
             ),
           );
+        } else {
+          print('🔧 DEBUG: No regex match for DIAGRAM_SAVE_BUTTON');
         }
         continue;
       }
       
       // Check for image save button placeholder
       if (line.contains('[IMAGE_SAVE_BUTTON:')) {
+        print('🎨 DEBUG: Found IMAGE_SAVE_BUTTON line: $line');
         // Add any accumulated text
         if (currentText.isNotEmpty) {
           widgets.add(_buildMarkdownText(currentText));
@@ -2185,12 +2198,15 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
         final match = regex.firstMatch(line);
         if (match != null) {
           final imageUrl = match.group(1) ?? '';
+          print('🎨 DEBUG: Extracted image URL: $imageUrl');
           widgets.add(
             DiagramSaveWidget(
               imageUrl: imageUrl,
               diagramType: 'generated_image',
             ),
           );
+        } else {
+          print('🎨 DEBUG: No regex match for IMAGE_SAVE_BUTTON');
         }
         continue;
       }
