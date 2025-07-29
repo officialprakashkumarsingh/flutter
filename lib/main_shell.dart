@@ -13,6 +13,7 @@ import 'models.dart';
 import 'auth_service.dart';
 import 'auth_and_profile_pages.dart';
 import 'external_tools_service.dart';
+import 'coder_page.dart';
 
 /* ----------------------------------------------------------
    MAIN SHELL (Tab Navigation)
@@ -542,6 +543,61 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                         const Expanded(
                           child: Text(
                             'Characters',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF000000),
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFA3A3A3), size: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            
+            // AI Coder option
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              child: Material(
+                color: const Color(0xFFEAE9E5),
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            const CoderPage(),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          return SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(1.0, 0.0),
+                              end: Offset.zero,
+                            ).animate(CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOutCubic,
+                            )),
+                            child: child,
+                          );
+                        },
+                        transitionDuration: const Duration(milliseconds: 300),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    child: Row(
+                      children: [
+                        const FaIcon(FontAwesomeIcons.code, color: Color(0xFF000000), size: 20),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Text(
+                            'AI Coder',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
