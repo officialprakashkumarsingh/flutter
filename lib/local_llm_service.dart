@@ -1,261 +1,273 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-// TODO: Re-enable when Gradle compatibility issues are resolved
-// import 'package:flutter_gemma/flutter_gemma.dart';
+import 'package:ollama_dart/ollama_dart.dart';
 import 'models.dart';
 
 class LocalLLMService extends ChangeNotifier {
   List<Map<String, dynamic>> _availableModels = [];
   String _downloadProgress = '';
-  
-  // Flutter Gemma instances (simulated for now due to Gradle compatibility)
-  // InferenceModel? _currentInferenceModel;
-  // final Map<String, InferenceModel> _modelInstances = {};
+  OllamaClient? _ollamaClient;
+  bool _isOllamaConnected = false;
+  String _ollamaStatus = 'Checking Ollama connection...';
 
   List<Map<String, dynamic>> get availableModels => _availableModels;
   String get downloadProgress => _downloadProgress;
+  bool get isOllamaConnected => _isOllamaConnected;
+  String get ollamaStatus => _ollamaStatus;
 
   LocalLLMService() {
     _initializeService();
   }
 
   Future<void> _initializeService() async {
-    await _loadGemmaModels();
-    await _loadPersistedModels();
+    await _initializeOllamaClient();
+    await _loadAvailableModels();
+    await _checkOllamaConnection();
     notifyListeners();
   }
 
-  Future<void> _loadGemmaModels() async {
+  Future<void> _initializeOllamaClient() async {
+    try {
+      _ollamaClient = OllamaClient(
+        baseUrl: 'http://localhost:11434/api',
+      );
+    } catch (e) {
+      debugPrint('Error initializing Ollama client: $e');
+    }
+  }
+
+  Future<void> _checkOllamaConnection() async {
+    if (_ollamaClient == null) {
+      _ollamaStatus = 'Ollama client not initialized';
+      _isOllamaConnected = false;
+      notifyListeners();
+      return;
+    }
+
+    try {
+      final version = await _ollamaClient!.getVersion();
+      _ollamaStatus = 'Connected to Ollama v${version.version}';
+      _isOllamaConnected = true;
+      await _refreshInstalledModels();
+    } catch (e) {
+      _ollamaStatus = 'Ollama not running. Please start Ollama server.';
+      _isOllamaConnected = false;
+      debugPrint('Ollama connection error: $e');
+    }
+    notifyListeners();
+  }
+
+  Future<void> _loadAvailableModels() async {
     _availableModels = [
       {
-        'id': 'gemma-3n-e2b-it',
-        'name': 'Gemma 3 Nano E2B (1.5B)',
-        'description': 'Compact multimodal model for vision + text',
-        'source': 'Google Gemma',
-        'downloadUrl': 'https://huggingface.co/google/gemma-3n-E2B-it-litert-preview/resolve/main/gemma-3n-E2B-it-int4.task',
-        'filename': 'gemma-3n-E2B-it-int4.task',
-        'modelType': 'gemmaIt',
-        'supportImage': true,
+        'id': 'llama3.2:1b',
+        'name': 'Llama 3.2 1B',
+        'description': 'Fast and efficient 1B parameter model',
+        'size': '1.3 GB',
+        'source': 'Meta',
         'isDownloaded': false,
-        'size': '1.2 GB'
+        'isInstalling': false,
+        'family': 'llama'
       },
       {
-        'id': 'gemma-3n-e4b-it',
-        'name': 'Gemma 3 Nano E4B (1.5B)',
-        'description': 'Advanced multimodal model for vision + text',
-        'source': 'Google Gemma',
-        'downloadUrl': 'https://huggingface.co/google/gemma-3n-E4B-it-litert-preview/resolve/main/gemma-3n-E4B-it-int4.task',
-        'filename': 'gemma-3n-E4B-it-int4.task',
-        'modelType': 'gemmaIt',
-        'supportImage': true,
+        'id': 'llama3.2:3b',
+        'name': 'Llama 3.2 3B',
+        'description': 'Balanced performance 3B parameter model',
+        'size': '2.0 GB',
+        'source': 'Meta',
         'isDownloaded': false,
-        'size': '1.2 GB'
+        'isInstalling': false,
+        'family': 'llama'
       },
       {
-        'id': 'gemma-3-1b-it',
-        'name': 'Gemma 3 1B',
-        'description': 'Lightweight text-only model',
-        'source': 'Google Gemma',
-        'downloadUrl': 'https://huggingface.co/google/gemma-3-1b-it-litert-preview/resolve/main/gemma-3-1b-it-int4.task',
-        'filename': 'gemma-3-1b-it-int4.task',
-        'modelType': 'gemmaIt',
-        'supportImage': false,
+        'id': 'gemma2:2b',
+        'name': 'Gemma 2 2B',
+        'description': 'Google\'s efficient 2B parameter model',
+        'size': '1.6 GB',
+        'source': 'Google',
         'isDownloaded': false,
-        'size': '800 MB'
+        'isInstalling': false,
+        'family': 'gemma'
+      },
+      {
+        'id': 'phi3.5:3.8b',
+        'name': 'Phi-3.5 3.8B',
+        'description': 'Microsoft\'s compact yet powerful model',
+        'size': '2.2 GB',
+        'source': 'Microsoft',
+        'isDownloaded': false,
+        'isInstalling': false,
+        'family': 'phi'
+      },
+      {
+        'id': 'qwen2.5:1.5b',
+        'name': 'Qwen2.5 1.5B',
+        'description': 'Alibaba\'s multilingual model',
+        'size': '1.0 GB',
+        'source': 'Alibaba',
+        'isDownloaded': false,
+        'isInstalling': false,
+        'family': 'qwen'
+      },
+      {
+        'id': 'mistral:7b',
+        'name': 'Mistral 7B',
+        'description': 'High-quality 7B parameter model',
+        'size': '4.1 GB',
+        'source': 'Mistral AI',
+        'isDownloaded': false,
+        'isInstalling': false,
+        'family': 'mistral'
       },
     ];
-    notifyListeners();
   }
 
-  Future<void> _loadPersistedModels() async {
-    final prefs = await SharedPreferences.getInstance();
-    final modelsJson = prefs.getString('downloaded_models');
-    if (modelsJson != null) {
-      final downloadedModels = Map<String, bool>.from(jsonDecode(modelsJson));
+  Future<void> _refreshInstalledModels() async {
+    if (!_isOllamaConnected || _ollamaClient == null) return;
+
+    try {
+      final models = await _ollamaClient!.listModels();
+      final installedModelNames = models.models?.map((m) => m.model).toSet() ?? {};
+
       for (var model in _availableModels) {
-        model['isDownloaded'] = downloadedModels[model['id']] ?? false;
+        model['isDownloaded'] = installedModelNames.contains(model['id']);
       }
       notifyListeners();
+    } catch (e) {
+      debugPrint('Error refreshing installed models: $e');
     }
   }
-
-  Future<void> _saveLocalLLMs() async {
-    final prefs = await SharedPreferences.getInstance();
-    final downloadedModels = <String, bool>{};
-    for (var model in _availableModels) {
-      downloadedModels[model['id'] as String] = model['isDownloaded'] as bool;
-    }
-    await prefs.setString('downloaded_models', jsonEncode(downloadedModels));
-  }
-
-  // TODO: Re-enable when flutter_gemma is properly integrated
-  // ModelType _getModelType(String modelTypeString) {
-  //   switch (modelTypeString) {
-  //     case 'gemmaIt':
-  //       return ModelType.gemmaIt;
-  //     case 'deepSeek':
-  //       return ModelType.deepSeek;
-  //     case 'phi':
-  //       return ModelType.phi;
-  //     default:
-  //       return ModelType.gemmaIt;
-  //   }
-  // }
-
-  // Future<InferenceModel> _getOrCreateInferenceModel(String modelId) async {
-  //   if (_modelInstances.containsKey(modelId)) {
-  //     return _modelInstances[modelId]!;
-  //   }
-
-  //   final model = _availableModels.firstWhere((m) => m['id'] == modelId);
-  //   final gemma = FlutterGemmaPlugin.instance;
-
-  //   final inferenceModel = await gemma.createModel(
-  //     modelType: _getModelType(model['modelType'] as String),
-  //     preferredBackend: PreferredBackend.gpu,
-  //     maxTokens: model['supportImage'] as bool ? 4096 : 2048,
-  //     supportImage: model['supportImage'] as bool,
-  //     maxNumImages: 1,
-  //   );
-
-  //   _modelInstances[modelId] = inferenceModel;
-  //   return inferenceModel;
-  // }
 
   Future<void> downloadModel(String modelId) async {
+    if (!_isOllamaConnected || _ollamaClient == null) {
+      throw Exception('Ollama is not connected. Please start Ollama server.');
+    }
+
+    final model = _availableModels.firstWhere((m) => m['id'] == modelId);
+    model['isInstalling'] = true;
+    _downloadProgress = 'Starting download...';
+    notifyListeners();
+
     try {
-      final model = _availableModels.firstWhere((m) => m['id'] == modelId);
-      
-      // TODO: Replace with real flutter_gemma implementation once Gradle is fixed
-      // final gemma = FlutterGemmaPlugin.instance;
-      // final modelManager = gemma.modelManager;
+      final stream = _ollamaClient!.pullModelStream(
+        request: PullModelRequest(model: modelId),
+      );
 
-      _downloadProgress = 'Preparing download...';
-      notifyListeners();
-
-      // Simulated download with realistic progress and timing
-      final random = Random();
-      for (int i = 0; i <= 100; i += random.nextInt(8) + 3) {
-        if (i > 100) i = 100;
-        await Future.delayed(Duration(milliseconds: 200 + random.nextInt(300)));
-        _downloadProgress = 'Downloading ${model['name']}... ${i}%';
-        notifyListeners();
+      await for (final response in stream) {
+        final status = response.status ?? '';
         
-        // Simulate occasional slower progress for large models
-        if (i > 30 && i < 70 && random.nextBool()) {
-          await Future.delayed(Duration(milliseconds: 500));
+        if (response.completed != null && response.total != null) {
+          final progress = (response.completed! / response.total!) * 100;
+          _downloadProgress = 'Downloading ${model['name']}: ${progress.toStringAsFixed(1)}%';
+        } else {
+          _downloadProgress = 'Downloading ${model['name']}: $status';
+        }
+        notifyListeners();
+
+        if (status.toLowerCase().contains('success') || 
+            status.toLowerCase().contains('complete')) {
+          break;
         }
       }
 
-      // Final processing step
-      _downloadProgress = 'Processing model...';
-      notifyListeners();
-      await Future.delayed(const Duration(milliseconds: 800));
-
-      // TODO: Real implementation would be:
-      // await for (final progress in modelManager.downloadModelFromNetworkWithProgress(
-      //   model['downloadUrl'] as String,
-      // )) {
-      //   _downloadProgress = 'Downloading... ${progress.toStringAsFixed(1)}%';
-      //   notifyListeners();
-      // }
-
-      // Mark as downloaded
       model['isDownloaded'] = true;
+      model['isInstalling'] = false;
       _downloadProgress = '';
-      await _saveLocalLLMs();
       notifyListeners();
 
     } catch (e) {
+      model['isInstalling'] = false;
       _downloadProgress = '';
       notifyListeners();
-      throw Exception('Failed to download model: $e');
+      throw Exception('Failed to download $modelId: $e');
     }
   }
 
   Future<void> deleteModel(String modelId) async {
+    if (!_isOllamaConnected || _ollamaClient == null) {
+      throw Exception('Ollama is not connected. Please start Ollama server.');
+    }
+
     try {
-      final model = _availableModels.firstWhere((m) => m['id'] == modelId);
+      await _ollamaClient!.deleteModel(model: modelId);
       
-      // TODO: Replace with real flutter_gemma implementation
-      // final gemma = FlutterGemmaPlugin.instance;
-      // final modelManager = gemma.modelManager;
-      // await modelManager.deleteModel();
-
-      // Simulate deletion process
-      await Future.delayed(const Duration(milliseconds: 800));
-
-      // TODO: Close any existing inference model for this model
-      // if (_modelInstances.containsKey(modelId)) {
-      //   await _modelInstances[modelId]!.close();
-      //   _modelInstances.remove(modelId);
-      // }
-
+      final model = _availableModels.firstWhere((m) => m['id'] == modelId);
       model['isDownloaded'] = false;
-      await _saveLocalLLMs();
       notifyListeners();
     } catch (e) {
-      throw Exception('Failed to delete model: $e');
+      throw Exception('Failed to delete $modelId: $e');
     }
   }
 
-  Stream<String> chatWithGemmaModel(String modelId, List<Message> messages) async* {
-    try {
-      final inferenceModel = await _getOrCreateInferenceModel(modelId);
-      final model = _availableModels.firstWhere((m) => m['id'] == modelId);
-      final supportImage = model['supportImage'] as bool;
+  Stream<String> chatWithOllamaModel(String modelId, List<Message> messages) async* {
+    if (!_isOllamaConnected || _ollamaClient == null) {
+      yield 'Error: Ollama is not connected. Please start Ollama server.';
+      return;
+    }
 
-      // Create chat instance
-      final chat = await inferenceModel.createChat(
-        temperature: 0.8,
-        randomSeed: 1,
-        topK: 1,
-        supportImage: supportImage,
+    try {
+      // Convert our messages to Ollama format
+      final ollamaMessages = messages.map((msg) {
+        return ollama_dart.Message(
+          role: msg.isUser ? MessageRole.user : MessageRole.assistant,
+          content: msg.content,
+        );
+      }).toList();
+
+      // Generate chat completion stream
+      final stream = _ollamaClient!.generateChatCompletionStream(
+        request: GenerateChatCompletionRequest(
+          model: modelId,
+          messages: ollamaMessages,
+          stream: true,
+        ),
       );
 
-      // Convert and add messages to chat
-      for (final message in messages) {
-        if (message.isUser) {
-          Message gemmaMessage;
-          if (message.imageBytes != null && supportImage) {
-            gemmaMessage = Message.withImage(
-              text: message.content,
-              imageBytes: message.imageBytes!,
-              isUser: true,
-            );
-          } else {
-            gemmaMessage = Message.text(
-              text: message.content,
-              isUser: true,
-            );
-          }
-          await chat.addQueryChunk(gemmaMessage);
+      await for (final response in stream) {
+        final content = response.message?.content;
+        if (content != null && content.isNotEmpty) {
+          yield content;
         }
       }
-
-      // Generate response stream
-      await for (final response in chat.generateChatResponseAsync()) {
-        if (response is TextResponse) {
-          yield response.token;
-        }
-      }
-
     } catch (e) {
-      yield 'Error: ${e.toString()}';
+      yield 'Error: Failed to generate response: $e';
+    }
+  }
+
+  Future<void> refreshConnection() async {
+    _ollamaStatus = 'Reconnecting...';
+    notifyListeners();
+    await _checkOllamaConnection();
+  }
+
+  Future<List<Map<String, dynamic>>> getRunningModels() async {
+    if (!_isOllamaConnected || _ollamaClient == null) {
+      return [];
+    }
+
+    try {
+      final response = await _ollamaClient!.listRunningModels();
+      return response.models?.map((model) => {
+        'name': model.name ?? '',
+        'model': model.model ?? '',
+        'size': model.size ?? 0,
+        'digest': model.digest ?? '',
+        'details': model.details?.toJson() ?? {},
+        'expires_at': model.expiresAt?.toIso8601String() ?? '',
+        'size_vram': model.sizeVram ?? 0,
+      }).toList() ?? [];
+    } catch (e) {
+      debugPrint('Error getting running models: $e');
+      return [];
     }
   }
 
   @override
   void dispose() {
-    // Close all model instances
-    for (final model in _modelInstances.values) {
-      model.close();
-    }
-    _modelInstances.clear();
-    _currentInferenceModel?.close();
+    _ollamaClient = null;
     super.dispose();
   }
 }
