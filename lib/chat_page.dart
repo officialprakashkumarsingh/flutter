@@ -317,13 +317,8 @@ class ChatPageState extends State<ChatPage> {
     final base64ImagePattern = RegExp(r'data:image/[^;]+;base64,[A-Za-z0-9+/=]{100,}');
     cleanedAiResponse = cleanedAiResponse.replaceAll(base64ImagePattern, '[IMAGE_GENERATED]');
     
-    // Also remove any IMAGE_SAVE_BUTTON patterns that contain URLs
-    final imageSavePattern = RegExp(r'\[IMAGE_SAVE_BUTTON:[^\]]+\]');
-    cleanedAiResponse = cleanedAiResponse.replaceAll(imageSavePattern, '[IMAGE_SAVE_BUTTON]');
-    
-    // Remove any DIAGRAM_SAVE_BUTTON patterns that contain URLs  
-    final diagramSavePattern = RegExp(r'\[DIAGRAM_SAVE_BUTTON:[^\]]+\]');
-    cleanedAiResponse = cleanedAiResponse.replaceAll(diagramSavePattern, '[DIAGRAM_SAVE_BUTTON]');
+    // Note: Keep IMAGE_SAVE_BUTTON and DIAGRAM_SAVE_BUTTON patterns with URLs intact
+    // for proper UI display - these are needed for the save functionality
     
     // Remove any INTERACTIVE_CRYPTO_CHART patterns that contain large data
     final cryptoChartPattern = RegExp(r'\[INTERACTIVE_CRYPTO_CHART:[^\]]+\]');
@@ -2100,13 +2095,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
     final lines = text.split('\n');
     String currentText = '';
     
-    // DEBUG: Check for image/diagram save buttons
-    if (text.contains('IMAGE_SAVE_BUTTON') || text.contains('DIAGRAM_SAVE_BUTTON')) {
-      print('🖼️ DEBUG: Message contains save buttons:');
-      print('IMAGE_SAVE_BUTTON found: ${text.contains('[IMAGE_SAVE_BUTTON:')}');
-      print('DIAGRAM_SAVE_BUTTON found: ${text.contains('[DIAGRAM_SAVE_BUTTON:')}');
-      print('First 500 chars: ${text.length > 500 ? text.substring(0, 500) : text}');
-    }
+
     
     // Simple content rendering without shimmer effects
     
@@ -2159,7 +2148,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
       
       // Check for diagram save button placeholder
       if (line.contains('[DIAGRAM_SAVE_BUTTON:')) {
-        print('🔧 DEBUG: Found DIAGRAM_SAVE_BUTTON line: $line');
+
         // Add any accumulated text
         if (currentText.isNotEmpty) {
           widgets.add(_buildMarkdownText(currentText));
@@ -2171,7 +2160,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
         final match = regex.firstMatch(line);
         if (match != null) {
           final imageUrl = match.group(1) ?? '';
-          print('🔧 DEBUG: Extracted diagram URL: $imageUrl');
+
           widgets.add(
             DiagramSaveWidget(
               imageUrl: imageUrl,
@@ -2186,7 +2175,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
       
       // Check for image save button placeholder
       if (line.contains('[IMAGE_SAVE_BUTTON:')) {
-        print('🎨 DEBUG: Found IMAGE_SAVE_BUTTON line: $line');
+
         // Add any accumulated text
         if (currentText.isNotEmpty) {
           widgets.add(_buildMarkdownText(currentText));
@@ -2198,7 +2187,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
         final match = regex.firstMatch(line);
         if (match != null) {
           final imageUrl = match.group(1) ?? '';
-          print('🎨 DEBUG: Extracted image URL: $imageUrl');
+
           widgets.add(
             DiagramSaveWidget(
               imageUrl: imageUrl,
