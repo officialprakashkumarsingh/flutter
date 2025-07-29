@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'local_llm_service.dart';
+import 'hosted_model_chat_page.dart';
 
 class ModelBrowserPage extends StatefulWidget {
   const ModelBrowserPage({super.key});
@@ -19,7 +20,7 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _llmService.addListener(_onServiceChanged);
   }
 
@@ -203,7 +204,22 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
             const SizedBox(height: 16),
             Row(
               children: [
-                if (!model.isDownloaded && model.source != 'Local Directory')
+                if (model.source == 'Hosted Models')
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _chatWithHostedModel(model),
+                      icon: const Icon(Icons.chat, size: 16),
+                      label: const Text('Chat Now'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  )
+                else if (!model.isDownloaded && model.source != 'Local Directory')
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: _llmService.isDownloading ? null : () => _downloadModel(model),
@@ -267,8 +283,22 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
     );
   }
 
+  void _chatWithHostedModel(LocalLLMModel model) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HostedModelChatPage(
+          modelId: model.id,
+          modelName: model.name,
+        ),
+      ),
+    );
+  }
+
   Color _getSourceColor(String source) {
     switch (source) {
+      case 'Hosted Models':
+        return const Color(0xFF10B981);
       case 'Ollama Library':
         return const Color(0xFF3B82F6);
       case 'Hugging Face':
@@ -282,6 +312,8 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
 
   IconData _getSourceIcon(String source) {
     switch (source) {
+      case 'Hosted Models':
+        return Icons.cloud;
       case 'Ollama Library':
         return Icons.local_library;
       case 'Hugging Face':
@@ -398,65 +430,17 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
             fontSize: 14,
             fontWeight: FontWeight.w400,
           ),
-          tabs: const [
-            Tab(text: 'Downloaded'),
-            Tab(text: 'Ollama'),
-            Tab(text: 'Hugging Face'),
-            Tab(text: 'Local'),
-          ],
+                      tabs: const [
+              Tab(text: 'Hosted Models'),
+              Tab(text: 'Local'),
+            ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Downloaded models
-          Builder(
-            builder: (context) {
-              final downloadedModels = _llmService.getDownloadedModels();
-              
-              if (downloadedModels.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.download_rounded,
-                        size: 64,
-                        color: const Color(0xFFA3A3A3),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No Downloaded Models',
-                        style: GoogleFonts.inter(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFFA3A3A3),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Download models from other tabs',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: const Color(0xFFA3A3A3),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.all(20),
-                itemCount: downloadedModels.length,
-                itemBuilder: (context, index) {
-                  return _buildModelCard(downloadedModels[index]);
-                },
-              );
-            },
-          ),
-          _buildTabContent('Ollama Library'),
-          _buildTabContent('Hugging Face'),
+          // Hosted models
+          _buildTabContent('Hosted Models'),
           _buildTabContent('Local Directory'),
         ],
       ),

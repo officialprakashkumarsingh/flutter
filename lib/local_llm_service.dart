@@ -222,13 +222,10 @@ class LocalLLMService extends ChangeNotifier {
 
   Future<void> _loadAvailableModels() async {
     try {
-      // Load models from Hugging Face
-      await _loadHuggingFaceModels();
+      // Load hosted models that don't require local servers
+      await _loadHostedModels();
       
-      // Load models from Ollama library
-      await _loadOllamaLibraryModels();
-      
-      // Load local models
+      // Load local models if available
       await _loadLocalModels();
       
     } catch (e) {
@@ -236,69 +233,119 @@ class LocalLLMService extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadHuggingFaceModels() async {
+  Future<void> _loadHostedModels() async {
     try {
-      // Popular LLM models from Hugging Face
-      final popularModels = [
-        {'name': 'microsoft/DialoGPT-medium', 'size': '350MB', 'format': 'GGUF'},
-        {'name': 'microsoft/DialoGPT-large', 'size': '775MB', 'format': 'GGUF'},
-        {'name': 'gpt2', 'size': '548MB', 'format': 'GGUF'},
-        {'name': 'gpt2-medium', 'size': '1.5GB', 'format': 'GGUF'},
-        {'name': 'gpt2-large', 'size': '3.1GB', 'format': 'GGUF'},
-        {'name': 'microsoft/CodeBERT-base', 'size': '500MB', 'format': 'GGUF'},
-        {'name': 'codellama/CodeLlama-7b-hf', 'size': '3.8GB', 'format': 'GGUF'},
-        {'name': 'codellama/CodeLlama-13b-hf', 'size': '7.3GB', 'format': 'GGUF'},
-        {'name': 'meta-llama/Llama-2-7b-chat-hf', 'size': '3.5GB', 'format': 'GGUF'},
-        {'name': 'meta-llama/Llama-2-13b-chat-hf', 'size': '7.0GB', 'format': 'GGUF'},
+      // Hosted models that work without local servers - using public APIs
+      final hostedModels = [
+        {
+          'id': 'llama-2-7b-chat',
+          'name': 'Llama 2 7B Chat',
+          'size': 'Hosted',
+          'format': 'API',
+          'source': 'Hosted Models',
+          'endpoint': 'https://api-inference.huggingface.co/models/meta-llama/Llama-2-7b-chat-hf',
+          'description': 'Meta\'s Llama 2 7B model optimized for chat'
+        },
+        {
+          'id': 'llama-2-13b-chat',
+          'name': 'Llama 2 13B Chat',
+          'size': 'Hosted',
+          'format': 'API',
+          'source': 'Hosted Models',
+          'endpoint': 'https://api-inference.huggingface.co/models/meta-llama/Llama-2-13b-chat-hf',
+          'description': 'Meta\'s Llama 2 13B model - more capable than 7B'
+        },
+        {
+          'id': 'codellama-7b',
+          'name': 'Code Llama 7B',
+          'size': 'Hosted',
+          'format': 'API',
+          'source': 'Hosted Models',
+          'endpoint': 'https://api-inference.huggingface.co/models/codellama/CodeLlama-7b-hf',
+          'description': 'Meta\'s specialized coding model'
+        },
+        {
+          'id': 'codellama-13b',
+          'name': 'Code Llama 13B',
+          'size': 'Hosted',
+          'format': 'API',
+          'source': 'Hosted Models',
+          'endpoint': 'https://api-inference.huggingface.co/models/codellama/CodeLlama-13b-hf',
+          'description': 'Larger Code Llama for complex coding tasks'
+        },
+        {
+          'id': 'mistral-7b',
+          'name': 'Mistral 7B',
+          'size': 'Hosted',
+          'format': 'API',
+          'source': 'Hosted Models',
+          'endpoint': 'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-v0.1',
+          'description': 'Mistral AI\'s efficient 7B parameter model'
+        },
+        {
+          'id': 'flan-t5-large',
+          'name': 'Flan T5 Large',
+          'size': 'Hosted',
+          'format': 'API',
+          'source': 'Hosted Models',
+          'endpoint': 'https://api-inference.huggingface.co/models/google/flan-t5-large',
+          'description': 'Google\'s instruction-tuned T5 model'
+        },
+        {
+          'id': 'flan-t5-xl',
+          'name': 'Flan T5 XL',
+          'size': 'Hosted',
+          'format': 'API',
+          'source': 'Hosted Models',
+          'endpoint': 'https://api-inference.huggingface.co/models/google/flan-t5-xl',
+          'description': 'Larger version of Flan T5 for better performance'
+        },
+        {
+          'id': 'dialogpt-medium',
+          'name': 'DialoGPT Medium',
+          'size': 'Hosted',
+          'format': 'API',
+          'source': 'Hosted Models',
+          'endpoint': 'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium',
+          'description': 'Microsoft\'s conversational AI model'
+        },
+        {
+          'id': 'gpt2-large',
+          'name': 'GPT-2 Large',
+          'size': 'Hosted',
+          'format': 'API',
+          'source': 'Hosted Models',
+          'endpoint': 'https://api-inference.huggingface.co/models/gpt2-large',
+          'description': 'OpenAI\'s GPT-2 Large model'
+        },
+        {
+          'id': 'vicuna-7b',
+          'name': 'Vicuna 7B',
+          'size': 'Hosted',
+          'format': 'API',
+          'source': 'Hosted Models',
+          'endpoint': 'https://api-inference.huggingface.co/models/lmsys/vicuna-7b-v1.5',
+          'description': 'LMSYS Vicuna 7B - fine-tuned from Llama'
+        }
       ];
 
-      for (final model in popularModels) {
+      for (final model in hostedModels) {
         _availableModels.add(LocalLLMModel(
-          id: model['name']!,
+          id: model['id']!,
           name: model['name']!,
           size: model['size']!,
           format: model['format']!,
-          source: 'Hugging Face',
-          isDownloaded: false,
-          isAvailable: false,
+          source: model['source']!,
+          isDownloaded: true, // Hosted models are always "available"
+          isAvailable: true,   // No download needed
+          metadata: {
+            'endpoint': model['endpoint']!,
+            'description': model['description']!,
+          },
         ));
       }
     } catch (e) {
-      debugPrint('Error loading Hugging Face models: $e');
-    }
-  }
-
-  Future<void> _loadOllamaLibraryModels() async {
-    try {
-      // Popular Ollama models
-      final ollamaModels = [
-        {'name': 'llama2', 'size': '3.8GB', 'format': 'GGUF'},
-        {'name': 'llama2:13b', 'size': '7.3GB', 'format': 'GGUF'},
-        {'name': 'llama2:70b', 'size': '39GB', 'format': 'GGUF'},
-        {'name': 'codellama', 'size': '3.8GB', 'format': 'GGUF'},
-        {'name': 'codellama:13b', 'size': '7.3GB', 'format': 'GGUF'},
-        {'name': 'codellama:34b', 'size': '19GB', 'format': 'GGUF'},
-        {'name': 'mistral', 'size': '4.1GB', 'format': 'GGUF'},
-        {'name': 'mixtral', 'size': '26GB', 'format': 'GGUF'},
-        {'name': 'neural-chat', 'size': '4.1GB', 'format': 'GGUF'},
-        {'name': 'starcode', 'size': '4.3GB', 'format': 'GGUF'},
-        {'name': 'vicuna', 'size': '3.8GB', 'format': 'GGUF'},
-        {'name': 'wizardcoder', 'size': '3.8GB', 'format': 'GGUF'},
-      ];
-
-      for (final model in ollamaModels) {
-        _availableModels.add(LocalLLMModel(
-          id: model['name']!,
-          name: model['name']!,
-          size: model['size']!,
-          format: model['format']!,
-          source: 'Ollama Library',
-          isDownloaded: false,
-          isAvailable: false,
-        ));
-      }
-    } catch (e) {
-      debugPrint('Error loading Ollama library models: $e');
+      debugPrint('Error loading hosted models: $e');
     }
   }
 
@@ -434,6 +481,99 @@ class LocalLLMService extends ChangeNotifier {
     return controller.stream;
   }
 
+  // New method for hosted models
+  Future<Stream<String>> chatWithHostedModel(
+    String modelId,
+    List<Map<String, dynamic>> messages,
+  ) async {
+    final controller = StreamController<String>();
+    
+    try {
+      final model = _availableModels.firstWhere(
+        (m) => m.id == modelId,
+        orElse: () => throw Exception('Model not found'),
+      );
+      
+      if (model.source != 'Hosted Models') {
+        throw Exception('This method is only for hosted models');
+      }
+      
+      final endpoint = model.metadata['endpoint'] as String;
+      await _chatWithHuggingFaceAPI(endpoint, messages, controller);
+    } catch (e) {
+      controller.addError('Error: $e');
+    }
+    
+    return controller.stream;
+  }
+
+  Future<void> _chatWithHuggingFaceAPI(
+    String endpoint,
+    List<Map<String, dynamic>> messages,
+    StreamController<String> controller,
+  ) async {
+    // Convert messages to prompt
+    final prompt = _convertMessagesToPrompt(messages);
+    
+    final request = http.Request('POST', Uri.parse(endpoint));
+    request.headers['Content-Type'] = 'application/json';
+    
+    // Use the free Hugging Face Inference API
+    request.body = json.encode({
+      'inputs': prompt,
+      'parameters': {
+        'max_new_tokens': 512,
+        'temperature': 0.7,
+        'do_sample': true,
+        'return_full_text': false,
+      },
+      'options': {
+        'wait_for_model': true,
+      }
+    });
+
+    try {
+      final client = http.Client();
+      final response = await client.send(request);
+
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        final data = json.decode(responseBody);
+        
+        String generatedText = '';
+        if (data is List && data.isNotEmpty) {
+          generatedText = data[0]['generated_text'] ?? '';
+        } else if (data is Map) {
+          generatedText = data['generated_text'] ?? data['answer'] ?? data['response'] ?? '';
+        }
+        
+        if (generatedText.isNotEmpty) {
+          // Stream the response word by word for better UX
+          final words = generatedText.split(' ');
+          for (int i = 0; i < words.length; i++) {
+            controller.add(words[i] + (i < words.length - 1 ? ' ' : ''));
+            await Future.delayed(const Duration(milliseconds: 50));
+          }
+        } else {
+          controller.add('Model response was empty. The model might be loading - please try again in a moment.');
+        }
+      } else if (response.statusCode == 503) {
+        controller.add('Model is currently loading, please try again in a few seconds...');
+      } else {
+        final errorBody = await response.stream.bytesToString();
+        debugPrint('API Error: ${response.statusCode} - $errorBody');
+        controller.add('Error: Unable to get response from the model. Status: ${response.statusCode}');
+      }
+      
+      client.close();
+    } catch (e) {
+      debugPrint('Chat error: $e');
+      controller.add('Error connecting to the model: $e');
+    }
+    
+    controller.close();
+  }
+
   Future<void> _chatWithOllama(
     LocalLLM llm,
     String model,
@@ -555,41 +695,20 @@ class LocalLLMService extends ChangeNotifier {
   }
 
   Future<void> downloadModel(String modelId) async {
-    if (_isDownloading) return;
-
     final modelIndex = _availableModels.indexWhere((m) => m.id == modelId);
-    if (modelIndex == -1) return;
+    if (modelIndex == -1) {
+      throw Exception('Model not found');
+    }
 
     final model = _availableModels[modelIndex];
     
-    _isDownloading = true;
-    notifyListeners();
-
-    try {
-      if (model.source == 'Ollama Library') {
-        await _downloadOllamaModel(model);
-      } else if (model.source == 'Hugging Face') {
-        await _downloadHuggingFaceModel(model);
-      }
-      
-      // Update model status
-      _availableModels[modelIndex] = LocalLLMModel(
-        id: model.id,
-        name: model.name,
-        size: model.size,
-        format: model.format,
-        source: model.source,
-        isDownloaded: true,
-        isAvailable: true,
-        metadata: model.metadata,
-      );
-    } catch (e) {
-      debugPrint('Error downloading model $modelId: $e');
-      rethrow;
-    } finally {
-      _isDownloading = false;
-      notifyListeners();
+    if (model.source == 'Hosted Models') {
+      // Hosted models are always ready - no download needed
+      debugPrint('Hosted model ${model.name} is ready to use!');
+      return;
     }
+    
+    throw Exception('Download not supported for ${model.source} models. Use hosted models for instant access.');
   }
 
   Future<void> _downloadOllamaModel(LocalLLMModel model) async {
