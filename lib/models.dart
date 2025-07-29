@@ -1,94 +1,163 @@
+import 'dart:typed_data';
+
 /* ----------------------------------------------------------
    MODELS
 ---------------------------------------------------------- */
 enum Sender { user, bot }
 
 class ThoughtContent {
-  final String text;
-  final String type; // 'thinking', 'thoughts', 'think', 'thought', 'reason', 'reasoning'
-  
-  ThoughtContent({required this.text, required this.type});
+  final String content;
+  final DateTime timestamp;
+
+  ThoughtContent({
+    required this.content,
+    required this.timestamp,
+  });
 }
 
 class CodeContent {
+  final String language;
   final String code;
-  final String language; // 'dart', 'python', 'javascript', etc.
-  final String extension; // '.dart', '.py', '.js', etc.
-  
-  CodeContent({required this.code, required this.language, required this.extension});
+  final DateTime timestamp;
+
+  CodeContent({
+    required this.language,
+    required this.code,
+    required this.timestamp,
+  });
 }
 
 class Message {
-  final String id;
-  final String text;
-  final Sender sender;
-  final bool isStreaming;
-  final String? imagePath;
+  String content;
+  final bool isUser;
   final DateTime timestamp;
-  final String displayText;
-  final Map<String, dynamic> toolData;
-  final List<ThoughtContent> thoughts;
-  final List<CodeContent> codes;
+  final String? id;
+  final String? displayText;
+  final Map<String, dynamic>? toolData;
+  final List<ThoughtContent>? thoughts;
+  final List<CodeContent>? codes;
+  final Uint8List? imageBytes;
 
   Message({
-    String? id,
-    required this.text,
-    required this.sender,
-    this.isStreaming = false,
-    this.imagePath,
-    DateTime? timestamp,
-    String? displayText,
-    this.toolData = const {},
-    this.thoughts = const [],
-    this.codes = const [],
-  }) : id = id ?? 'msg_${DateTime.now().millisecondsSinceEpoch}',
-       timestamp = timestamp ?? DateTime.now(),
-       displayText = displayText ?? text;
+    required this.content,
+    required this.isUser,
+    required this.timestamp,
+    this.id,
+    this.displayText,
+    this.toolData,
+    this.thoughts,
+    this.codes,
+    this.imageBytes,
+  });
 
-  factory Message.user(String text, {String? imagePath}) {
+  // Legacy constructors for compatibility
+  factory Message.user(String text) {
     return Message(
-      text: text,
-      sender: Sender.user,
-      imagePath: imagePath,
+      content: text,
+      isUser: true,
+      timestamp: DateTime.now(),
     );
   }
 
-  factory Message.bot(String text, {bool isStreaming = false, Map<String, dynamic>? toolData}) {
+  factory Message.bot(String text) {
     return Message(
-      text: text,
-      sender: Sender.bot,
-      isStreaming: isStreaming,
-      toolData: toolData ?? {},
+      content: text,
+      isUser: false,
+      timestamp: DateTime.now(),
     );
   }
 
-  bool get isUser => sender == Sender.user;
-  bool get isBot => sender == Sender.bot;
-  bool get hasImage => imagePath != null && imagePath!.isNotEmpty;
+  factory Message.withImage({
+    required String text,
+    required Uint8List imageBytes,
+    required bool isUser,
+  }) {
+    return Message(
+      content: text,
+      isUser: isUser,
+      timestamp: DateTime.now(),
+      imageBytes: imageBytes,
+    );
+  }
+
+  factory Message.imageOnly({
+    required Uint8List imageBytes,
+    required bool isUser,
+  }) {
+    return Message(
+      content: '',
+      isUser: isUser,
+      timestamp: DateTime.now(),
+      imageBytes: imageBytes,
+    );
+  }
+
+  factory Message.text({
+    required String text,
+    required bool isUser,
+  }) {
+    return Message(
+      content: text,
+      isUser: isUser,
+      timestamp: DateTime.now(),
+    );
+  }
+
+  factory Message.toolResponse({
+    required String toolName,
+    required Map<String, dynamic> response,
+  }) {
+    return Message(
+      content: toolName,
+      isUser: false,
+      timestamp: DateTime.now(),
+      toolData: response,
+    );
+  }
+
+  factory Message.systemInfo({required String text}) {
+    return Message(
+      content: text,
+      isUser: false,
+      timestamp: DateTime.now(),
+    );
+  }
+
+  factory Message.thinking({required String text}) {
+    return Message(
+      content: text,
+      isUser: false,
+      timestamp: DateTime.now(),
+    );
+  }
+
+  // Legacy properties for compatibility
+  String get text => content;
+  String get sender => isUser ? 'user' : 'assistant';
+  bool get isBot => !isUser;
+  bool get hasImage => imageBytes != null;
 
   Message copyWith({
-    String? id,
-    String? text,
-    Sender? sender,
-    bool? isStreaming,
-    String? imagePath,
+    String? content,
+    bool? isUser,
     DateTime? timestamp,
+    String? id,
     String? displayText,
     Map<String, dynamic>? toolData,
     List<ThoughtContent>? thoughts,
     List<CodeContent>? codes,
+    Uint8List? imageBytes,
   }) {
     return Message(
-      id: id ?? this.id,
-      text: text ?? this.text,
-      sender: sender ?? this.sender,
-      isStreaming: isStreaming ?? this.isStreaming,
-      imagePath: imagePath ?? this.imagePath,
+      content: content ?? this.content,
+      isUser: isUser ?? this.isUser,
       timestamp: timestamp ?? this.timestamp,
+      id: id ?? this.id,
       displayText: displayText ?? this.displayText,
       toolData: toolData ?? this.toolData,
       thoughts: thoughts ?? this.thoughts,
       codes: codes ?? this.codes,
+      imageBytes: imageBytes ?? this.imageBytes,
     );
   }
 }

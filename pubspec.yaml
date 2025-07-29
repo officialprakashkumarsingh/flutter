@@ -32,7 +32,7 @@ dependencies:
   flutter_web_auth_2: ^4.1.0
   font_awesome_flutter: ^10.8.0
   flutter_svg: ^2.1.0
-  ollama_dart: ^0.2.3
+  ollama_dart: ^0.2.2+1
 
 dev_dependencies:
   flutter_test:

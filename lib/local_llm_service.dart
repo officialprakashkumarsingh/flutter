@@ -1,15 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ollama_dart/ollama_dart.dart';
+import 'package:ollama_dart/ollama_dart.dart' as ollama;
 import 'models.dart';
 
 class LocalLLMService extends ChangeNotifier {
   List<Map<String, dynamic>> _availableModels = [];
   String _downloadProgress = '';
-  OllamaClient? _ollamaClient;
+  ollama.OllamaClient? _ollamaClient;
   bool _isOllamaConnected = false;
   String _ollamaStatus = 'Checking Ollama connection...';
 
@@ -31,7 +28,7 @@ class LocalLLMService extends ChangeNotifier {
 
   Future<void> _initializeOllamaClient() async {
     try {
-      _ollamaClient = OllamaClient(
+      _ollamaClient = ollama.OllamaClient(
         baseUrl: 'http://localhost:11434/api',
       );
     } catch (e) {
@@ -153,7 +150,7 @@ class LocalLLMService extends ChangeNotifier {
 
     try {
       final stream = _ollamaClient!.pullModelStream(
-        request: PullModelRequest(model: modelId),
+        request: ollama.PullModelRequest(model: modelId),
       );
 
       await for (final response in stream) {
@@ -192,7 +189,7 @@ class LocalLLMService extends ChangeNotifier {
     }
 
     try {
-      await _ollamaClient!.deleteModel(model: modelId);
+      await _ollamaClient!.deleteModel(request: ollama.DeleteModelRequest(model: modelId));
       
       final model = _availableModels.firstWhere((m) => m['id'] == modelId);
       model['isDownloaded'] = false;
@@ -211,15 +208,15 @@ class LocalLLMService extends ChangeNotifier {
     try {
       // Convert our messages to Ollama format
       final ollamaMessages = messages.map((msg) {
-        return ollama_dart.Message(
-          role: msg.isUser ? MessageRole.user : MessageRole.assistant,
+        return ollama.Message(
+          role: msg.isUser ? ollama.MessageRole.user : ollama.MessageRole.assistant,
           content: msg.content,
         );
       }).toList();
 
       // Generate chat completion stream
       final stream = _ollamaClient!.generateChatCompletionStream(
-        request: GenerateChatCompletionRequest(
+        request: ollama.GenerateChatCompletionRequest(
           model: modelId,
           messages: ollamaMessages,
           stream: true,
@@ -256,7 +253,7 @@ class LocalLLMService extends ChangeNotifier {
         'size': model.size ?? 0,
         'digest': model.digest ?? '',
         'details': model.details?.toJson() ?? {},
-        'expires_at': model.expiresAt?.toIso8601String() ?? '',
+        'expires_at': model.expiresAt?.toString() ?? '',
         'size_vram': model.sizeVram ?? 0,
       }).toList() ?? [];
     } catch (e) {

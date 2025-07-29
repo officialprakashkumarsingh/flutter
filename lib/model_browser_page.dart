@@ -1,10 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 import 'local_llm_service.dart';
-import 'hosted_model_chat_page.dart';
 
 class ModelBrowserPage extends StatefulWidget {
   const ModelBrowserPage({super.key});
@@ -13,119 +10,171 @@ class ModelBrowserPage extends StatefulWidget {
   State<ModelBrowserPage> createState() => _ModelBrowserPageState();
 }
 
-class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProviderStateMixin {
-  final LocalLLMService _llmService = LocalLLMService();
-  late TabController _tabController;
-  
+class _ModelBrowserPageState extends State<ModelBrowserPage> {
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _llmService.addListener(_onServiceChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<LocalLLMService>().refreshConnection();
+    });
   }
 
   @override
-  void dispose() {
-    _tabController.dispose();
-    _llmService.removeListener(_onServiceChanged);
-    super.dispose();
-  }
-
-  void _onServiceChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  Future<void> _downloadModel(LocalLLMModel model) async {
-    try {
-      await _llmService.downloadModel(model.id);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${model.name} downloaded successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Download failed: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  Future<void> _deleteModel(LocalLLMModel model) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Model'),
-        content: Text('Are you sure you want to delete ${model.name}?'),
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Browse AI Models'),
+        backgroundColor: Colors.deepPurple,
+        foregroundColor: Colors.white,
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              context.read<LocalLLMService>().refreshConnection();
+            },
+            tooltip: 'Refresh',
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+        ],
+      ),
+      body: Consumer<LocalLLMService>(
+        builder: (context, llmService, child) {
+          if (!llmService.isOllamaConnected) {
+            return _buildOllamaNotConnectedView(llmService);
+          }
+
+          return Column(
+            children: [
+              if (llmService.downloadProgress.isNotEmpty)
+                _buildDownloadProgress(llmService.downloadProgress),
+              Expanded(
+                child: _buildModelList(llmService),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildOllamaNotConnectedView(LocalLLMService llmService) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Ollama Not Connected',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              llmService.ollamaStatus,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => _showOllamaInstructions(),
+              icon: const Icon(Icons.help_outline),
+              label: const Text('Setup Instructions'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => llmService.refreshConnection(),
+              child: const Text('Try Again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDownloadProgress(String progress) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      color: Colors.blue[50],
+      child: Row(
+        children: [
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              progress,
+              style: TextStyle(
+                color: Colors.blue[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
     );
-
-    if (confirmed == true) {
-      try {
-        await _llmService.deleteModel(model.id);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${model.name} deleted successfully!'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Delete failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 
-  Widget _buildModelCard(LocalLLMModel model) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+  Widget _buildModelList(LocalLLMService llmService) {
+    final models = llmService.availableModels;
+    
+    if (models.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: models.length,
+      itemBuilder: (context, index) {
+        final model = models[index];
+        return _buildModelCard(model, llmService);
+      },
+    );
+  }
+
+  Widget _buildModelCard(Map<String, dynamic> model, LocalLLMService llmService) {
+    final isDownloaded = model['isDownloaded'] as bool;
+    final isInstalling = model['isInstalling'] as bool? ?? false;
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _getSourceColor(model.source).withOpacity(0.1),
+                    color: _getModelColor(model['family'] as String).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    _getSourceIcon(model.source),
-                    color: _getSourceColor(model.source),
+                    _getModelIcon(model['family'] as String),
+                    color: _getModelColor(model['family'] as String),
                     size: 24,
                   ),
                 ),
@@ -135,180 +184,103 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        model.name,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF000000),
+                        model['name'] as String,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: _getSourceColor(model.source),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              model.source,
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            model.size,
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: const Color(0xFFA3A3A3),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            model.format,
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: const Color(0xFFA3A3A3),
-                            ),
-                          ),
-                        ],
+                      Text(
+                        model['description'] as String,
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                if (model.isDownloaded)
-                  Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                    size: 20,
-                  )
-                else if (_llmService.isDownloading)
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                if (isDownloaded)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Downloaded',
+                      style: TextStyle(
+                        color: Colors.green[700],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
               ],
             ),
             const SizedBox(height: 16),
             Row(
               children: [
-                if (model.source == 'Google Gemma' && model.isDownloaded)
+                _buildInfoChip(
+                  icon: Icons.source,
+                  label: model['source'] as String,
+                  color: Colors.blue,
+                ),
+                const SizedBox(width: 8),
+                _buildInfoChip(
+                  icon: Icons.storage,
+                  label: model['size'] as String,
+                  color: Colors.orange,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                if (isDownloaded) ...[
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => _chatWithGemmaModel(model),
-                      icon: const Icon(Icons.chat, size: 16),
+                      onPressed: () => _startChat(model),
+                      icon: const Icon(Icons.chat),
                       label: const Text('Chat Now'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
+                        backgroundColor: Colors.deepPurple,
                         foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                    ),
-                  )
-                else if (model.source == 'Google Gemma' && !model.isDownloaded)
-                  Expanded(
-                    child: Column(
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: _llmService.isDownloading ? null : () => _downloadModel(model),
-                          icon: _llmService.isDownloading
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                )
-                              : const Icon(Icons.download, size: 16),
-                          label: Text(_llmService.isDownloading ? 'Downloading...' : 'Download'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4285F4),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        if (_llmService.isDownloading && _llmService.downloadProgress.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              _llmService.downloadProgress,
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                color: const Color(0xFFA3A3A3),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                      ],
-                    ),
-                  )
-                else if (!model.isDownloaded && model.source != 'Local Directory')
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _llmService.isDownloading ? null : () => _downloadModel(model),
-                      icon: const Icon(Icons.download, size: 16),
-                      label: Text(_llmService.isDownloading ? 'Downloading...' : 'Download'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _getSourceColor(model.source),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  )
-                else if (model.isDownloaded)
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => _deleteModel(model),
-                            icon: const Icon(Icons.delete_outline, size: 16),
-                            label: const Text('Delete'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.red,
-                              side: const BorderSide(color: Colors.red),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              // TODO: Use this model
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Using ${model.name}')),
-                              );
-                            },
-                            icon: const Icon(Icons.play_arrow, size: 16),
-                            label: const Text('Use'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: isInstalling ? null : () => _deleteModel(model, llmService),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[100],
+                      foregroundColor: Colors.red[700],
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    child: const Icon(Icons.delete),
+                  ),
+                ] else ...[
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: isInstalling ? null : () => _downloadModel(model, llmService),
+                      icon: isInstalling 
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.download),
+                      label: Text(isInstalling ? 'Installing...' : 'Download'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ],
@@ -317,168 +289,182 @@ class _ModelBrowserPageState extends State<ModelBrowserPage> with TickerProvider
     );
   }
 
-  void _chatWithGemmaModel(LocalLLMModel model) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HostedModelChatPage(
-          modelId: model.id,
-          modelName: model.name,
-        ),
+  Widget _buildInfoChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Color _getSourceColor(String source) {
-    switch (source) {
-      case 'Google Gemma':
-        return const Color(0xFF4285F4);
-      case 'Ollama Library':
-        return const Color(0xFF3B82F6);
-      case 'Hugging Face':
-        return const Color(0xFFEF4444);
-      case 'Local Directory':
-        return const Color(0xFF10B981);
+  Color _getModelColor(String family) {
+    switch (family) {
+      case 'llama':
+        return Colors.purple;
+      case 'gemma':
+        return Colors.blue;
+      case 'phi':
+        return Colors.orange;
+      case 'qwen':
+        return Colors.green;
+      case 'mistral':
+        return Colors.red;
       default:
-        return const Color(0xFF6B7280);
+        return Colors.grey;
     }
   }
 
-  IconData _getSourceIcon(String source) {
-    switch (source) {
-      case 'Google Gemma':
-        return Icons.auto_awesome;
-      case 'Ollama Library':
-        return Icons.local_library;
-      case 'Hugging Face':
-        return Icons.cloud_download;
-      case 'Local Directory':
-        return Icons.folder;
+  IconData _getModelIcon(String family) {
+    switch (family) {
+      case 'llama':
+        return Icons.psychology;
+      case 'gemma':
+        return Icons.diamond;
+      case 'phi':
+        return Icons.scatter_plot;
+      case 'qwen':
+        return Icons.translate;
+      case 'mistral':
+        return Icons.wind_power;
       default:
-        return Icons.smart_toy;
+        return Icons.memory;
     }
   }
 
-  Widget _buildTabContent(String source) {
-    final models = _llmService.availableModels.where((m) => m.source == source).toList();
-    
-    if (models.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              _getSourceIcon(source),
-              size: 64,
-              color: const Color(0xFFA3A3A3),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No models from $source',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFFA3A3A3),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Check your connection or refresh',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFFA3A3A3),
-              ),
-            ),
-          ],
-        ),
-      );
+  void _downloadModel(Map<String, dynamic> model, LocalLLMService llmService) async {
+    try {
+      await llmService.downloadModel(model['id'] as String);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${model['name']} downloaded successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to download ${model['name']}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
+  }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: models.length,
-      itemBuilder: (context, index) {
-        return _buildModelCard(models[index]);
+  void _deleteModel(Map<String, dynamic> model, LocalLLMService llmService) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Model'),
+        content: Text('Are you sure you want to delete ${model['name']}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await llmService.deleteModel(model['id'] as String);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${model['name']} deleted successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to delete ${model['name']}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _startChat(Map<String, dynamic> model) {
+    Navigator.pushNamed(
+      context,
+      '/local_llm_chat',
+      arguments: {
+        'modelId': model['id'],
+        'modelName': model['name'],
       },
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final downloadedCount = _llmService.availableModels.where((m) => m.isDownloaded).length;
-    final availableCount = _llmService.availableModels.length;
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F3F0),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF4F3F0),
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(
-            Icons.arrow_back_ios_rounded,
-            color: Color(0xFF000000),
+  void _showOllamaInstructions() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Setup Ollama'),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'To download and use local AI models, you need Ollama:',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 16),
+              Text('1. Visit ollama.ai and download Ollama'),
+              SizedBox(height: 8),
+              Text('2. Install and start the Ollama application'),
+              SizedBox(height: 8),
+              Text('3. Ollama will run on http://localhost:11434'),
+              SizedBox(height: 8),
+              Text('4. Return here and tap the refresh button'),
+              SizedBox(height: 16),
+              Text(
+                'Once connected, you can download and chat with various AI models including Llama, Gemma, Phi, and more.',
+                style: TextStyle(fontStyle: FontStyle.italic),
+              ),
+            ],
           ),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Model Browser',
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF000000),
-              ),
-            ),
-            Text(
-              '$downloadedCount downloaded • $availableCount available',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: const Color(0xFFA3A3A3),
-              ),
-            ),
-          ],
         ),
         actions: [
-          IconButton(
-            onPressed: () {
-              // Refresh the model list
-              setState(() {});
-            },
-            icon: const Icon(
-              Icons.refresh_rounded,
-              color: Color(0xFF000000),
-            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Got it'),
           ),
-          const SizedBox(width: 8),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: const Color(0xFF000000),
-          unselectedLabelColor: const Color(0xFFA3A3A3),
-          indicatorColor: const Color(0xFF000000),
-          indicatorWeight: 3,
-          labelStyle: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-          unselectedLabelStyle: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w400,
-          ),
-                      tabs: const [
-              Tab(text: 'Google Gemma'),
-              Tab(text: 'Local'),
-            ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Google Gemma models
-          _buildTabContent('Google Gemma'),
-          _buildTabContent('Local Directory'),
         ],
       ),
     );

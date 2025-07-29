@@ -161,6 +161,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.3.1"
+  fetch_api:
+    dependency: transitive
+    description:
+      name: fetch_api
+      sha256: "97f46c25b480aad74f7cc2ad7ccba2c5c6f08d008e68f95c1077286ce243d0e6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.0"
+  fetch_client:
+    dependency: transitive
+    description:
+      name: fetch_client
+      sha256: "375253f4efe64303c793fb17fe90771c591320b2ae11fb29cb5b406cc8533c00"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.4"
   ffi:
     dependency: transitive
     description:
@@ -230,14 +246,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_gemma:
-    dependency: "direct main"
-    description:
-      name: flutter_gemma
-      sha256: bf3e1e76bf63aabe6bf92ea46e4f362ae6173eeeeb8be34764da467c80e7c42d
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.10.1"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -312,6 +320,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "10.8.0"
+  freezed_annotation:
+    dependency: transitive
+    description:
+      name: freezed_annotation
+      sha256: c2e2d632dd9b8a2b7751117abcfc2b4888ecfe181bd9fca7170d9ef02e595fe2
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.4"
   functions_client:
     dependency: transitive
     description:
@@ -464,19 +480,19 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.20.2"
+  json_annotation:
+    dependency: transitive
+    description:
+      name: json_annotation
+      sha256: "1ce844379ca14835a50d2f019a3099f419082cfdd231cd86a142af94dd5c6bb1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.9.0"
   jwt_decode:
     dependency: transitive
     description:
       name: jwt_decode
       sha256: d2e9f68c052b2225130977429d30f187aa1981d789c76ad104a32243cfdebfbb
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.1"
-  large_file_handler:
-    dependency: transitive
-    description:
-      name: large_file_handler
-      sha256: c2ecaf552e8039119bbe3a094d15aecbafe833899f30b2dcfbb513eddf76b36f
       url: "https://pub.dev"
     source: hosted
     version: "0.3.1"
@@ -568,6 +584,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  ollama_dart:
+    dependency: "direct main"
+    description:
+      name: ollama_dart
+      sha256: "4e40bc499b6fe46ba54a004d2da601c40bd73d66e3f18cf7b03225ccf3d481a6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.2+1"
   path:
     dependency: transitive
     description:
@@ -1134,5 +1158,5 @@ packages:
     source: hosted
     version: "2.1.0"
 sdks:
-  dart: ">=3.5.3 <4.0.0"
+  dart: ">=3.5.0 <4.0.0"
   flutter: ">=3.24.0"

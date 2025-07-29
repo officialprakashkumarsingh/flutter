@@ -26,11 +26,6 @@ public final class GeneratedPluginRegistrant {
       Log.e(TAG, "Error registering plugin file_picker, com.mr.flutter.plugin.filepicker.FilePickerPlugin", e);
     }
     try {
-      flutterEngine.getPlugins().add(new dev.flutterberlin.flutter_gemma.FlutterGemmaPlugin());
-    } catch (Exception e) {
-      Log.e(TAG, "Error registering plugin flutter_gemma, dev.flutterberlin.flutter_gemma.FlutterGemmaPlugin", e);
-    }
-    try {
       flutterEngine.getPlugins().add(new io.flutter.plugins.flutter_plugin_android_lifecycle.FlutterAndroidLifecyclePlugin());
     } catch (Exception e) {
       Log.e(TAG, "Error registering plugin flutter_plugin_android_lifecycle, io.flutter.plugins.flutter_plugin_android_lifecycle.FlutterAndroidLifecyclePlugin", e);
@@ -54,11 +49,6 @@ public final class GeneratedPluginRegistrant {
       flutterEngine.getPlugins().add(new io.flutter.plugins.imagepicker.ImagePickerPlugin());
     } catch (Exception e) {
       Log.e(TAG, "Error registering plugin image_picker_android, io.flutter.plugins.imagepicker.ImagePickerPlugin", e);
-    }
-    try {
-      flutterEngine.getPlugins().add(new com.example.large_file_handler.LargeFileHandlerPlugin());
-    } catch (Exception e) {
-      Log.e(TAG, "Error registering plugin large_file_handler, com.example.large_file_handler.LargeFileHandlerPlugin", e);
     }
     try {
       flutterEngine.getPlugins().add(new io.flutter.plugins.pathprovider.PathProviderPlugin());

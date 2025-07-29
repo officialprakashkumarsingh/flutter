@@ -74,13 +74,13 @@ class _HostedModelChatPageState extends State<HostedModelChatPage> {
               })
           .toList();
 
-      final stream = await _llmService.chatWithGemmaModel(
+      final stream = _llmService.chatWithOllamaModel(
         widget.modelId,
-        chatMessages,
+        _messages,
       );
 
       String accumulatedResponse = '';
-      final botMessage = Message.bot('', isStreaming: true);
+      final botMessage = Message.bot('');
       setState(() {
         _messages.add(botMessage);
       });
@@ -89,19 +89,13 @@ class _HostedModelChatPageState extends State<HostedModelChatPage> {
         (chunk) {
           accumulatedResponse += chunk;
           setState(() {
-            _messages[_messages.length - 1] = Message.bot(
-              accumulatedResponse,
-              isStreaming: true,
-            );
+            _messages[_messages.length - 1].content = accumulatedResponse;
           });
           _scrollToBottom();
         },
         onDone: () {
           setState(() {
-            _messages[_messages.length - 1] = Message.bot(
-              accumulatedResponse,
-              isStreaming: false,
-            );
+            _messages[_messages.length - 1].content = accumulatedResponse;
             _isLoading = false;
           });
           _scrollToBottom();

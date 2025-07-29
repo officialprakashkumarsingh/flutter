@@ -8,7 +8,6 @@
 
 import 'package:app_links_web/app_links_web.dart';
 import 'package:file_picker/_internal/file_picker_web.dart';
-import 'package:flutter_gemma/web/flutter_gemma_web.dart';
 import 'package:flutter_tts/flutter_tts_web.dart';
 import 'package:flutter_web_auth_2/src/web.dart';
 import 'package:image_picker_for_web/image_picker_for_web.dart';
@@ -22,7 +21,6 @@ void registerPlugins([final Registrar? pluginRegistrar]) {
   final Registrar registrar = pluginRegistrar ?? webPluginRegistrar;
   AppLinksPluginWeb.registerWith(registrar);
   FilePickerWeb.registerWith(registrar);
-  FlutterGemmaWeb.registerWith(registrar);
   FlutterTtsPlugin.registerWith(registrar);
   FlutterWebAuth2WebPlugin.registerWith(registrar);
   ImagePickerPlugin.registerWith(registrar);
