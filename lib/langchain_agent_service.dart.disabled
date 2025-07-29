@@ -1,0 +1,274 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:langchain/langchain.dart';
+import 'package:langchain_openai/langchain_openai.dart';
+import 'package:uuid/uuid.dart';
+import 'external_tools_service.dart';
+import 'cache_manager.dart';
+
+class LangChainAgentService {
+  static const String _apiKey = "ahamaibyprakash25";
+  static const String _baseUrl = "https://ahamai-api.officialprakashkrsingh.workers.dev/v1";
+  
+  late final ChatOpenAI _llm;
+  late final ExternalToolsService _externalToolsService;
+  final Uuid _uuid = const Uuid();
+  
+  // Agent execution state
+  bool _isExecuting = false;
+  String? _currentSessionId;
+  List<Map<String, dynamic>> _conversationHistory = [];
+
+  LangChainAgentService() {
+    _initializeAgent();
+  }
+
+  void _initializeAgent() {
+    // Initialize the language model with custom API
+    _llm = ChatOpenAI(
+      apiKey: _apiKey,
+      baseUrl: _baseUrl,
+      defaultOptions: const ChatOpenAIOptions(
+        model: 'gpt-4o-mini',
+        temperature: 0.7,
+        maxTokens: 4000,
+      ),
+    );
+
+    // Initialize external tools service
+    _externalToolsService = ExternalToolsService();
+
+    _currentSessionId = _uuid.v4();
+  }
+
+
+
+  /// Build chat messages for LangChain
+  List<ChatMessage> _buildChatMessages(String currentInput) {
+    final messages = <ChatMessage>[];
+    
+    // Add system message
+    messages.add(ChatMessage.system(_getSystemPrompt()));
+    
+    // Add conversation history (last 10 messages to avoid token limits)
+    final recentHistory = _conversationHistory.takeLast(10).toList();
+    for (final msg in recentHistory) {
+      if (msg['type'] == 'human') {
+        messages.add(ChatMessage.humanText(msg['content']));
+      } else {
+        messages.add(ChatMessage.ai(msg['content']));
+      }
+    }
+    
+    // Add current input
+    messages.add(ChatMessage.humanText(currentInput));
+    
+    return messages;
+  }
+
+  /// Process tool calls in the response
+  Future<String> _processToolCalls(String response) async {
+    // Simple tool detection and execution
+    if (response.contains('generate_image') || response.toLowerCase().contains('create an image')) {
+      // Try to extract image prompt from response
+      final match = RegExp(r'(?:generate_image|create an image).*?[\'"`]([^\'"`]+)[\'"`]').firstMatch(response);
+      if (match != null) {
+        final prompt = match.group(1)!;
+        try {
+          final result = await _externalToolsService.executeTool('generate_image', {'prompt': prompt});
+          if (result['success'] == true) {
+            response += '\n\n![Generated Image](${result['image_url']})';
+            response += '\n\n[IMAGE_SAVE_BUTTON:${result['image_url']}]';
+          }
+        } catch (e) {
+          debugPrint('Error generating image: $e');
+        }
+      }
+    }
+    
+    if (response.contains('plantuml_chart') || response.toLowerCase().contains('create a diagram')) {
+      // Try to extract diagram from response
+      final match = RegExp(r'(?:plantuml_chart|create a diagram).*?[\'"`]([^\'"`]+)[\'"`]').firstMatch(response);
+      if (match != null) {
+        final diagram = match.group(1)!;
+        try {
+          final result = await _externalToolsService.executeTool('plantuml_chart', {'diagram': diagram});
+          if (result['success'] == true) {
+            response += '\n\n![PlantUML Diagram](${result['image_url']})';
+            response += '\n\n[DIAGRAM_SAVE_BUTTON:${result['image_url']}]';
+          }
+        } catch (e) {
+          debugPrint('Error generating diagram: $e');
+        }
+      }
+    }
+    
+    return response;
+  }
+
+  /// Get the system prompt for the agent
+  String _getSystemPrompt() {
+    return '''You are AhamAI, an intelligent assistant with advanced capabilities. You have access to powerful tools for generating images, creating diagrams, searching the web, and fetching cryptocurrency data.
+
+🎯 YOUR CAPABILITIES:
+- **Image Generation**: Create artistic images, photos, and illustrations
+- **Diagram Creation**: Generate technical diagrams, flowcharts, UML diagrams
+- **Web Search**: Search the internet for current information
+- **Crypto Data**: Fetch real-time cryptocurrency market data
+
+🛠️ TOOL USAGE GUIDELINES:
+1. **Always use tools when appropriate** - Don't provide generic responses when you can get real data
+2. **For images**: Use generate_image for any visual content requests
+3. **For diagrams**: Use plantuml_chart for technical diagrams, flowcharts, system architecture
+4. **For current info**: Use google_search to get up-to-date information
+5. **For crypto**: Use crypto_market_data for cryptocurrency prices and market data
+
+💬 RESPONSE STYLE:
+- Be conversational and helpful
+- Explain what you're doing when using tools
+- Provide comprehensive answers based on tool results
+- Present information in a clear, organized manner
+
+🔧 TOOL EXECUTION:
+- Tools will be executed automatically
+- Results will be integrated into your responses
+- Images and diagrams will be displayed directly
+- Search results will inform your answers
+
+Always strive to provide accurate, helpful, and engaging responses using your available tools.''';
+  }
+
+  /// Execute agent with enhanced capabilities
+  Future<AgentResponse> executeAgent(String input, {String? imageBase64}) async {
+    if (_isExecuting) {
+      return AgentResponse(
+        response: "I'm currently processing another request. Please wait a moment.",
+        toolResults: [],
+        sessionId: _currentSessionId!,
+      );
+    }
+
+    _isExecuting = true;
+    
+    try {
+      // Prepare input with image if provided
+      String enhancedInput = input;
+      if (imageBase64 != null && imageBase64.isNotEmpty) {
+        enhancedInput = '''$input
+
+[Image provided by user - base64 data available for analysis]''';
+      }
+
+      // Add to conversation history
+      _conversationHistory.add({
+        'type': 'human',
+        'content': enhancedInput,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+
+      // Create messages for LangChain
+      final messages = _buildChatMessages(enhancedInput);
+      
+      // Execute the LLM with tool capabilities
+      final result = await _llm.invoke(PromptValue.chat(messages));
+      
+      String response = result.output.content;
+      
+      // Process any tool calls detected in the response
+      final processedResponse = await _processToolCalls(response);
+      
+      // Add AI response to history
+      _conversationHistory.add({
+        'type': 'ai',
+        'content': processedResponse,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+
+      // Save conversation to cache
+      await _saveConversationToCache();
+
+      return AgentResponse(
+        response: processedResponse,
+        toolResults: [],
+        sessionId: _currentSessionId!,
+      );
+
+    } catch (e) {
+      debugPrint('❌ Agent execution error: $e');
+      return AgentResponse(
+        response: "I encountered an error while processing your request: $e",
+        toolResults: [],
+        sessionId: _currentSessionId!,
+      );
+    } finally {
+      _isExecuting = false;
+    }
+  }
+
+  /// Load conversation history from cache
+  Future<void> loadConversationHistory() async {
+    try {
+      final history = await CacheManager.instance.getConversationMemory();
+      if (history.isNotEmpty) {
+        // Parse conversation history
+        final messages = json.decode(history) as List;
+        _conversationHistory = messages.cast<Map<String, dynamic>>();
+        debugPrint('🔄 Loaded ${_conversationHistory.length} messages from cache');
+      }
+    } catch (e) {
+      debugPrint('Error loading conversation history: $e');
+    }
+  }
+
+  /// Save conversation to cache
+  Future<void> _saveConversationToCache() async {
+    try {
+      await CacheManager.instance.setConversationMemory(json.encode(_conversationHistory));
+    } catch (e) {
+      debugPrint('Error saving conversation history: $e');
+    }
+  }
+
+  /// Clear conversation memory
+  Future<void> clearMemory() async {
+    _conversationHistory.clear();
+    await CacheManager.instance.clearCache();
+    _currentSessionId = _uuid.v4();
+  }
+
+  /// Get conversation summary
+  String getConversationSummary() {
+    if (_conversationHistory.isEmpty) return "No conversation history";
+    
+    final messageCount = _conversationHistory.length;
+    final humanMessages = _conversationHistory.where((msg) => msg['type'] == 'human').length;
+    final aiMessages = _conversationHistory.where((msg) => msg['type'] == 'ai').length;
+    
+    return "Session: $_currentSessionId\nMessages: $messageCount (Human: $humanMessages, AI: $aiMessages)";
+  }
+
+  /// Check if agent is currently executing
+  bool get isExecuting => _isExecuting;
+
+  /// Get current session ID
+  String? get currentSessionId => _currentSessionId;
+
+  /// Dispose resources
+  void dispose() {
+    // Clean up resources if needed
+  }
+}
+
+/// Response from the LangChain agent
+class AgentResponse {
+  final String response;
+  final List<Map<String, dynamic>> toolResults;
+  final String sessionId;
+
+  AgentResponse({
+    required this.response,
+    required this.toolResults,
+    required this.sessionId,
+  });
+}
