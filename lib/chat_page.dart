@@ -2211,6 +2211,10 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
 
 
   Widget _buildImageWidget(String url) {
+    print('🖼️ Building image widget for URL: $url');
+    print('🔍 Is data:image? ${url.startsWith('data:image')}');
+    print('🔍 Contains API URL? ${url.contains('ahamai-api.officialprakashkrsingh.workers.dev')}');
+    
     try {
       Widget image;
       if (url.startsWith('data:image')) {
@@ -2251,15 +2255,15 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
           Container(
             constraints: const BoxConstraints(maxHeight: 300, maxWidth: double.infinity),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(30),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(30),
               child: image,
             ),
           ),
-          // Save button for generated images (base64 or from image generation service)
-          if (url.startsWith('data:image') || url.contains('ahamai-api.officialprakashkrsingh.workers.dev'))
+          // Save button for generated images (always show for testing)
+          // if (url.startsWith('data:image') || url.contains('ahamai-api.officialprakashkrsingh.workers.dev'))
             Padding(
               padding: const EdgeInsets.only(top: 8.0),
               child: Align(
@@ -2581,13 +2585,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
       child: Column(
         crossAxisAlignment: isBot ? CrossAxisAlignment.start : CrossAxisAlignment.end,
         children: [
-          // Thoughts panel for bot messages - MOVED ABOVE THE MESSAGE
-          if (isBot && widget.message.thoughts.isNotEmpty)
-            _ThoughtsPanel(thoughts: widget.message.thoughts),
-          if (isBot && widget.message.codes.isNotEmpty)
-            _CodePanel(codes: widget.message.codes),
-          // Tool results panel removed for cleaner interface
-          // Agent processing panel removed – agent output will now stream directly in the chat bubble
+          // All tool panels completely removed - everything shows directly in message content
           if (isUser)
             GestureDetector(
               onTap: _toggleUserActions,
