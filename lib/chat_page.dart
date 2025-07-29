@@ -50,6 +50,12 @@ class ChatPageState extends State<ChatPage> {
   // Image upload functionality
   String? _uploadedImagePath;
   String? _uploadedImageBase64;
+  
+  // Image generation mode
+  bool _isImageGenerationMode = false;
+  String _selectedImageModel = 'flux';
+  List<String> _availableImageModels = ['flux', 'turbo'];
+  bool _isGeneratingImage = false;
 
   // Add memory system for general chat
   List<String> _conversationMemory = [];
@@ -91,6 +97,7 @@ class ChatPageState extends State<ChatPage> {
     
     _updateGreetingForCharacter();
     _loadConversationMemory();
+    _loadImageModels();
     _controller.addListener(() {
       setState(() {}); // Refresh UI when text changes
     });
@@ -1718,7 +1725,7 @@ $priceChart
                   ),
                   onTap: () {
                     Navigator.pop(context);
-                    _showImageGenerationDialog();
+                    _enableImageGenerationMode();
                   },
                 ),
               ],
@@ -1729,6 +1736,84 @@ $priceChart
         ),
       ),
     );
+  }
+
+  Future<void> _loadImageModels() async {
+    final result = await ImageGenerationService.getImageModels();
+    if (mounted) {
+      setState(() {
+        _availableImageModels = List<String>.from(result['models'] ?? ['flux', 'turbo']);
+        if (!_availableImageModels.contains(_selectedImageModel)) {
+          _selectedImageModel = _availableImageModels.first;
+        }
+      });
+    }
+  }
+
+  void _enableImageGenerationMode() {
+    setState(() {
+      _isImageGenerationMode = true;
+      _controller.clear();
+    });
+  }
+
+  void _disableImageGenerationMode() {
+    setState(() {
+      _isImageGenerationMode = false;
+      _controller.clear();
+    });
+  }
+
+  Future<void> _generateImageInline() async {
+    final prompt = _controller.text.trim();
+    if (prompt.isEmpty) return;
+
+    setState(() {
+      _isGeneratingImage = true;
+    });
+
+    final result = await ImageGenerationService.generateImage(
+      prompt: prompt,
+      model: _selectedImageModel,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isGeneratingImage = false;
+        _isImageGenerationMode = false;
+      });
+
+      if (result['success']) {
+        // Add user prompt message
+        final promptMessage = Message.user("🎨 Generate image: $prompt");
+        setState(() {
+          _messages.add(promptMessage);
+        });
+
+        // Add generated image message
+        final imageMessage = Message.bot('''**🎨 Image Generated Successfully**
+
+![Generated Image](${result['image_url']})
+
+**Model:** ${result['model'].toString().toUpperCase()}
+**Size:** ${result['size_kb']}KB''');
+        
+        setState(() {
+          _messages.add(imageMessage);
+        });
+
+        _controller.clear();
+        _scrollToBottom();
+      } else {
+        // Show error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${result['error']}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _showImageGenerationDialog() {
@@ -1873,7 +1958,7 @@ $priceChart
             right: false,
             child: _InputBar(
               controller: _controller,
-              onSend: () => _send(),
+              onSend: () => _isImageGenerationMode ? _generateImageInline() : _send(),
               onStop: _stopGeneration,
               awaitingReply: _awaitingReply,
               isEditing: _editingMessageId != null,
@@ -1882,6 +1967,12 @@ $priceChart
               onImageUpload: _showAttachmentOptions,
               uploadedImagePath: _uploadedImagePath,
               onClearImage: _clearUploadedImage,
+              isImageGenerationMode: _isImageGenerationMode,
+              selectedImageModel: _selectedImageModel,
+              availableImageModels: _availableImageModels,
+              onImageModelChanged: (model) => setState(() => _selectedImageModel = model),
+              onCancelImageGeneration: _disableImageGenerationMode,
+              isGeneratingImage: _isGeneratingImage,
             ),
           ),
         ],
@@ -2599,6 +2690,12 @@ class _InputBar extends StatelessWidget {
     required this.onImageUpload,
     this.uploadedImagePath,
     required this.onClearImage,
+    required this.isImageGenerationMode,
+    required this.selectedImageModel,
+    required this.availableImageModels,
+    required this.onImageModelChanged,
+    required this.onCancelImageGeneration,
+    required this.isGeneratingImage,
   });
 
   final TextEditingController controller;
@@ -2611,6 +2708,12 @@ class _InputBar extends StatelessWidget {
   final VoidCallback onImageUpload;
   final String? uploadedImagePath;
   final VoidCallback onClearImage;
+  final bool isImageGenerationMode;
+  final String selectedImageModel;
+  final List<String> availableImageModels;
+  final Function(String) onImageModelChanged;
+  final VoidCallback onCancelImageGeneration;
+  final bool isGeneratingImage;
 
   @override
   Widget build(BuildContext context) {
@@ -2660,6 +2763,96 @@ class _InputBar extends StatelessWidget {
                 ],
               ),
             ),
+
+          // Image generation mode indicator
+          if (isImageGenerationMode)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              margin: const EdgeInsets.only(left: 20, right: 20, bottom: 12, top: 16),
+              decoration: BoxDecoration(
+                color: Color(0xFF2D3748).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Color(0xFF2D3748).withOpacity(0.2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  FaIcon(FontAwesomeIcons.paintBrush, color: Color(0xFF2D3748), size: 16),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      "Image Generation Mode", 
+                      style: TextStyle(color: Color(0xFF2D3748), fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      onCancelImageGeneration();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Color(0xFF2D3748),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.close_rounded, color: Colors.white, size: 16),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Model selection chips for image generation
+          if (isImageGenerationMode)
+            Container(
+              margin: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
+              child: Row(
+                children: [
+                  Text(
+                    'Model: ',
+                    style: TextStyle(
+                      color: Color(0xFF2D3748),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  ...availableImageModels.map((model) => Container(
+                    margin: EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        onImageModelChanged(model);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: selectedImageModel == model 
+                              ? Color(0xFF2D3748) 
+                              : Color(0xFF2D3748).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Color(0xFF2D3748).withOpacity(0.3),
+                          ),
+                        ),
+                        child: Text(
+                          model.toUpperCase(),
+                          style: TextStyle(
+                            color: selectedImageModel == model 
+                                ? Colors.white 
+                                : Color(0xFF2D3748),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  )).toList(),
+                ],
+              ),
+            ),
           
           // Main input container (smaller height)
           Container(
@@ -2684,7 +2877,7 @@ class _InputBar extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 // Attachment button (moved to left side)
-                if (!awaitingReply)
+                if (!awaitingReply && !isImageGenerationMode)
                   Padding(
                     padding: const EdgeInsets.only(left: 8, bottom: 6),
                     child: GestureDetector(
@@ -2736,11 +2929,15 @@ class _InputBar extends StatelessWidget {
                     decoration: InputDecoration(
                       hintText: awaitingReply 
                           ? 'AhamAI is responding...' 
-                          : externalToolsService.isExecuting
-                              ? 'External tool is running...'
-                              : uploadedImagePath != null
-                                  ? 'Image uploaded - Describe or ask about it...'
-                                  : 'Message AhamAI',
+                          : isGeneratingImage
+                              ? 'Generating image...'
+                              : isImageGenerationMode
+                                  ? 'Enter your image prompt...'
+                              : externalToolsService.isExecuting
+                                  ? 'External tool is running...'
+                                  : uploadedImagePath != null
+                                      ? 'Image uploaded - Describe or ask about it...'
+                                      : 'Message AhamAI',
                       hintStyle: const TextStyle(
                         color: Color(0xFFA3A3A3),
                         fontSize: 16,
@@ -2774,11 +2971,24 @@ class _InputBar extends StatelessWidget {
                             : const Color(0xFF000000),
                         borderRadius: BorderRadius.circular(12), // Smaller radius
                       ),
-                      child: Icon(
-                        awaitingReply ? Icons.stop_circle : Icons.arrow_upward_rounded,
-                        color: awaitingReply ? Colors.red : Colors.white,
-                        size: 18, // Smaller icon
-                      ),
+                      child: awaitingReply 
+                          ? Icon(Icons.stop_circle, color: Colors.red, size: 18)
+                          : isGeneratingImage
+                              ? SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : Icon(
+                                  isImageGenerationMode 
+                                      ? FontAwesomeIcons.magic 
+                                      : Icons.arrow_upward_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                     ),
                   ),
                 ),
