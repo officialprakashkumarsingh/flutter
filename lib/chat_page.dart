@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -476,7 +477,9 @@ Be conversational and helpful!'''
                 accumulatedText += _fixServerEncoding(content);
                 
                         // Process tools and create panels
+        print('🔍 BEFORE tool processing: ${accumulatedText.substring(0, math.min(200, accumulatedText.length))}...');
         final processedStreamingMessage = await _processToolCallsDuringStreaming(accumulatedText, botMessageIndex);
+        print('🔍 AFTER tool processing: ${processedStreamingMessage.substring(0, math.min(200, processedStreamingMessage.length))}...');
         finalProcessedText = processedStreamingMessage; // Store the latest processed text
         
         // Use processed text directly - NO CLEANING during streaming to preserve tool results
@@ -507,6 +510,8 @@ Be conversational and helpful!'''
 
         
         // DEBUG: Don't clean the final text - just use it directly to preserve tool results
+        print('🔍 FINAL TEXT TO USE: ${textToUse.substring(0, math.min(300, textToUse.length))}...');
+        print('🔍 Contains PlantUML diagram? ${textToUse.contains('![PlantUML Diagram]')}');
         setState(() {
           _messages[botMessageIndex] = Message.bot(
             textToUse, // NO CLEANING - preserve tool results
@@ -1761,23 +1766,38 @@ $priceChart
       // For Android 10+ (API 29+), we don't need storage permission for app-specific directories
       // For older versions, try to get permission but continue if denied
 
-      // Use app-specific external storage (no permission needed on Android 10+)
+      // Use Downloads directory with MANAGE_EXTERNAL_STORAGE approach
       Directory? directory;
       try {
+        print('🔍 Platform.isAndroid: ${Platform.isAndroid}');
+        
         if (Platform.isAndroid) {
-          // Try external storage first (app-specific, no permission needed)
-          directory = await getExternalStorageDirectory();
-          if (directory != null) {
-            final ahamAIDir = Directory('${directory.path}/AhamAI');
-            if (!await ahamAIDir.exists()) {
-              await ahamAIDir.create(recursive: true);
+          // Try to use Downloads folder directly
+          directory = Directory('/storage/emulated/0/Download/AhamAI');
+          print('📁 Trying Downloads directory: ${directory.path}');
+          
+          if (!await directory.exists()) {
+            print('📁 Creating Downloads/AhamAI directory...');
+            try {
+              await directory.create(recursive: true);
+              print('✅ Downloads directory created successfully');
+            } catch (e) {
+              print('❌ Failed to create Downloads directory: $e');
+              // Fallback to external storage
+              directory = await getExternalStorageDirectory();
+              if (directory != null) {
+                directory = Directory('${directory.path}/AhamAI');
+                if (!await directory.exists()) {
+                  await directory.create(recursive: true);
+                }
+              }
             }
-            directory = ahamAIDir;
           }
         }
         
-        // Fallback to app documents directory if external storage fails
-        if (directory == null) {
+        // Fallback to app documents directory if everything fails
+        if (directory == null || !await directory.exists()) {
+          print('📁 Using fallback app documents directory');
           directory = await getApplicationDocumentsDirectory();
           final ahamAIDir = Directory('${directory.path}/AhamAI');
           if (!await ahamAIDir.exists()) {
@@ -1785,11 +1805,14 @@ $priceChart
           }
           directory = ahamAIDir;
         }
+        
+        print('📂 Final directory: ${directory.path}');
+        print('📂 Directory exists: ${await directory.exists()}');
+        
       } catch (e) {
-        print('Storage access error: $e');
-        _showSnackBar('❌ Storage access failed, but trying to save anyway...');
-        // Continue trying to save even if directory creation fails
-        directory = await getApplicationDocumentsDirectory();
+        print('💥 Storage setup error: $e');
+        _showSnackBar('❌ Storage setup failed: $e');
+        return;
       }
 
       // Generate unique filename
