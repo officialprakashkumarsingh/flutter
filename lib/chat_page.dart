@@ -335,7 +335,10 @@ class ChatPageState extends State<ChatPage> {
       
       final systemMessage = {
         'role': 'system',
-        'content': '''You are AhamAI, an intelligent assistant with access to external tools. You can execute tools to help users with various tasks.
+        'content': '''You are AhamAI, an intelligent assistant with access to external tools and image generation capabilities. You can execute tools to help users with various tasks.
+
+🎨 IMAGE GENERATION CAPABILITY:
+When users request image generation (photos, artwork, illustrations, creative images), you should activate image generation mode by saying "Let me switch to image generation mode for you" and then guide them to use the built-in image generator with model selection (Flux, Turbo) and follow-up options.
 
 Available External Tools:
 $toolsInfo
@@ -1455,6 +1458,20 @@ $priceChart
     final messageText = text ?? _controller.text.trim();
     if (messageText.isEmpty || _awaitingReply) return;
 
+    // Check if user is requesting image generation
+    if (!_isImageGenerationMode && _shouldTriggerImageGeneration(messageText)) {
+      _enableImageGenerationMode();
+      
+      // Add AI response suggesting image generation mode
+      setState(() {
+        _messages.add(Message.user(messageText));
+        _messages.add(Message.bot('🎨 I can help you generate images! I\'ve switched to image generation mode. You can now:\n\n• Select a model (Flux or Turbo)\n• Toggle follow-up mode if you want consistent style\n• Enter your image prompt and generate\n\nWhat would you like me to create?'));
+      });
+      
+      _scrollToBottom();
+      return;
+    }
+
     final isEditing = _editingMessageId != null;
     if (isEditing) {
       final messageIndex = _messages.indexWhere((m) => m.id == _editingMessageId);
@@ -1766,6 +1783,21 @@ $priceChart
       _isImageGenerationMode = false;
       _controller.clear();
     });
+  }
+
+  bool _shouldTriggerImageGeneration(String message) {
+    final imageKeywords = [
+      'generate image', 'create image', 'make image', 'draw image',
+      'generate picture', 'create picture', 'make picture', 'draw picture',
+      'generate photo', 'create photo', 'make photo', 'draw photo',
+      'generate artwork', 'create artwork', 'make artwork', 'draw artwork',
+      'generate illustration', 'create illustration', 'make illustration',
+      'show me', 'can you draw', 'can you create', 'can you generate',
+      'image of', 'picture of', 'photo of', 'artwork of', 'illustration of'
+    ];
+    
+    final lowerMessage = message.toLowerCase();
+    return imageKeywords.any((keyword) => lowerMessage.contains(keyword));
   }
 
   Future<void> _generateImageInline() async {
@@ -2187,7 +2219,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
       }
 
       return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20), // More rounded for generated images
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxHeight: 300, maxWidth: double.infinity),
           child: image,
@@ -2878,16 +2910,16 @@ class _InputBar extends StatelessWidget {
                    
                    Spacer(),
                    
-                   // Follow-up toggle
+                   // Follow-up toggle for image generation model
                    GestureDetector(
                      onTap: () {
                        HapticFeedback.lightImpact();
-                       setState(() => _followUpMode = !_followUpMode);
+                       onToggleFollowUp();
                      },
                      child: Container(
                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                        decoration: BoxDecoration(
-                         color: _followUpMode 
+                         color: followUpMode 
                              ? Color(0xFF2D3748) 
                              : Color(0xFF2D3748).withOpacity(0.1),
                          borderRadius: BorderRadius.circular(16),
@@ -2901,7 +2933,7 @@ class _InputBar extends StatelessWidget {
                            FaIcon(
                              FontAwesomeIcons.link,
                              size: 10,
-                             color: _followUpMode 
+                             color: followUpMode 
                                  ? Colors.white 
                                  : Color(0xFF2D3748),
                            ),
@@ -2909,7 +2941,7 @@ class _InputBar extends StatelessWidget {
                            Text(
                              'Follow-up',
                              style: TextStyle(
-                               color: _followUpMode 
+                               color: followUpMode 
                                    ? Colors.white 
                                    : Color(0xFF2D3748),
                                fontWeight: FontWeight.w600,
