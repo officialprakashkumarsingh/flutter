@@ -13,6 +13,9 @@ import 'models.dart';
 import 'auth_service.dart';
 import 'auth_and_profile_pages.dart';
 import 'external_tools_service.dart';
+import 'local_llm_service.dart';
+import 'local_llm_page.dart';
+import 'local_llm_chat_page.dart';
 
 /* ----------------------------------------------------------
    MAIN SHELL (Tab Navigation)
@@ -38,6 +41,9 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   
   // State for temporary chat mode
   bool _isTemporaryChatMode = false;
+  
+  // Local LLM service
+  final LocalLLMService _localLLMService = LocalLLMService();
 
   late AnimationController _fabAnimationController;
   late Animation<double> _fabAnimation;
@@ -494,6 +500,85 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
             
             const SizedBox(height: 16),
             
+            // Local LLMs option
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              child: Material(
+                color: const Color(0xFFEAE9E5),
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            const LocalLLMPage(),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          return SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(1.0, 0.0),
+                              end: Offset.zero,
+                            ).animate(CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOutCubic,
+                            )),
+                            child: child,
+                          );
+                        },
+                        transitionDuration: const Duration(milliseconds: 300),
+                      ),
+                    ).then((selectedLLM) {
+                      if (selectedLLM is LocalLLM) {
+                        // Navigate to local LLM chat
+                        Navigator.push(
+                          context,
+                          PageRouteBuilder(
+                            pageBuilder: (context, animation, secondaryAnimation) =>
+                                LocalLLMChatPage(localLLM: selectedLLM),
+                            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                              return SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(1.0, 0.0),
+                                  end: Offset.zero,
+                                ).animate(CurvedAnimation(
+                                  parent: animation,
+                                  curve: Curves.easeOutCubic,
+                                )),
+                                child: child,
+                              );
+                            },
+                            transitionDuration: const Duration(milliseconds: 300),
+                          ),
+                        );
+                      }
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.computer_rounded, color: Color(0xFF000000), size: 22),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Text(
+                            'Local LLMs',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF000000),
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFA3A3A3), size: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
             // Characters option
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
@@ -734,6 +819,78 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
           ),
         ),
         actions: [
+          // Local LLM quick access button
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: ScaleTransition(
+              scale: _fabAnimation,
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(21),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (context, animation, secondaryAnimation) =>
+                              const LocalLLMPage(),
+                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                            return SlideTransition(
+                              position: Tween<Offset>(
+                                begin: const Offset(1.0, 0.0),
+                                end: Offset.zero,
+                              ).animate(CurvedAnimation(
+                                parent: animation,
+                                curve: Curves.easeOutCubic,
+                              )),
+                              child: child,
+                            );
+                          },
+                          transitionDuration: const Duration(milliseconds: 300),
+                        ),
+                      ).then((selectedLLM) {
+                        if (selectedLLM is LocalLLM) {
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (context, animation, secondaryAnimation) =>
+                                  LocalLLMChatPage(localLLM: selectedLLM),
+                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                return SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(1.0, 0.0),
+                                    end: Offset.zero,
+                                  ).animate(CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOutCubic,
+                                  )),
+                                  child: child,
+                                );
+                              },
+                              transitionDuration: const Duration(milliseconds: 300),
+                            ),
+                          );
+                        }
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(21),
+                    child: const FaIcon(
+                      FontAwesomeIcons.computer,
+                      color: Color(0xFFA3A3A3),
+                      size: 22,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
           // Temporary chat toggle button with incognito icon
           Container(
             margin: const EdgeInsets.only(right: 8),
