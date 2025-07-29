@@ -46,7 +46,12 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3394897715416901~1671061893"/>
-        <!-- Flutter Gemma GPU support removed temporarily -->
+        <!-- OpenGL support for flutter_gemma GPU acceleration -->
+        <uses-native-library
+            android:name="libOpenCL.so"
+            android:required="false"/>
+        <uses-native-library android:name="libOpenCL-car.so" android:required="false"/>
+        <uses-native-library android:name="libOpenCL-pixel.so" android:required="false"/>
     </application>
 
     <!-- Required for PROCESS_TEXT intent -->
