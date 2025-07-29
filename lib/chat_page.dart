@@ -247,106 +247,16 @@ class ChatPageState extends State<ChatPage> {
   }
 
   void _updateConversationMemory(String userMessage, String aiResponse) async {
-    // Clean AI response to remove large base64 image data that can cause API issues
-    String cleanedAiResponse = aiResponse;
+    // Simple memory storage without any cleaning that could affect display
+    // Just store basic conversation for context, truncate if too long
+    String simpleResponse = aiResponse.length > 300 ? aiResponse.substring(0, 300) + '...' : aiResponse;
     
-    // Extract and preserve image generation prompts for memory context
-    String imagePromptMemory = '';
-    
-    // Debug: Always check for image generation regardless of specific text
-    print('Checking for image generation in AI response...');
-    print('User message: $userMessage');
-    print('AI response contains image keywords: ${aiResponse.toLowerCase().contains('image')}');
-    
-    if (aiResponse.toLowerCase().contains('image') || 
-        userMessage.toLowerCase().contains('image') ||
-        aiResponse.contains('🎨') || 
-        aiResponse.contains('[IMAGE_SAVE_BUTTON:') ||
-        aiResponse.toLowerCase().contains('generated') ||
-        aiResponse.toLowerCase().contains('created')) {
-      
-      print('Image generation detected, extracting prompt...');
-      
-      // Strategy 1: Extract from user message (most reliable for image generation)
-      if (userMessage.toLowerCase().contains('image') || 
-          userMessage.toLowerCase().contains('generate') ||
-          userMessage.toLowerCase().contains('create') ||
-          userMessage.toLowerCase().contains('draw') ||
-          userMessage.toLowerCase().contains('make')) {
-        
-        String extractedPrompt = userMessage;
-        
-        // Clean up the user message to get the actual prompt
-        extractedPrompt = extractedPrompt.replaceAll(RegExp(r'(please\s+)?(generate|create|make|draw|show)\s+(me\s+)?(an?\s+)?image\s+(of\s+)?', caseSensitive: false), '');
-        extractedPrompt = extractedPrompt.replaceAll(RegExp(r'(can\s+you\s+)?(generate|create|make|draw|show)', caseSensitive: false), '');
-        extractedPrompt = extractedPrompt.trim();
-        
-        if (extractedPrompt.length >= 5 && extractedPrompt.length <= 150) {
-          imagePromptMemory = ' [Previous image: "$extractedPrompt"]';
-          print('Extracted from user message: $extractedPrompt');
-        }
-      }
-      
-      // Strategy 2: Extract from AI response if Strategy 1 failed
-      if (imagePromptMemory.isEmpty) {
-        final lines = aiResponse.split('\n');
-        for (final line in lines) {
-          String promptToExtract = '';
-          
-          // Look for **Prompt:** pattern
-          if (line.toLowerCase().contains('prompt') && line.contains(':')) {
-            final parts = line.split(':');
-            if (parts.length >= 2) {
-              promptToExtract = parts.sublist(1).join(':').trim();
-              promptToExtract = promptToExtract.replaceAll(RegExp(r'[*_"`]'), '').trim();
-              
-              if (promptToExtract.length >= 5 && promptToExtract.length <= 150) {
-                imagePromptMemory = ' [Previous image: "$promptToExtract"]';
-                print('Extracted from AI response: $promptToExtract');
-                break;
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    print('Final image memory: $imagePromptMemory');
-    
-    // Remove base64 image data from conversation memory to prevent API failures
-    final base64ImagePattern = RegExp(r'data:image/[^;]+;base64,[A-Za-z0-9+/=]{100,}');
-    cleanedAiResponse = cleanedAiResponse.replaceAll(base64ImagePattern, '[IMAGE_GENERATED]');
-    
-    // Note: Keep IMAGE_SAVE_BUTTON and DIAGRAM_SAVE_BUTTON patterns with URLs intact
-    // for proper UI display - these are needed for the save functionality
-    
-    // Remove any INTERACTIVE_CRYPTO_CHART patterns that contain large data
-    final cryptoChartPattern = RegExp(r'\[INTERACTIVE_CRYPTO_CHART:[^\]]+\]');
-    cleanedAiResponse = cleanedAiResponse.replaceAll(cryptoChartPattern, '[CRYPTO_CHART]');
-    
-    // Limit response length to prevent memory overflow
-    if (cleanedAiResponse.length > 2000) {
-      cleanedAiResponse = cleanedAiResponse.substring(0, 1997) + '...';
-    }
-    
-    // Add image prompt memory for context continuity
-    final memoryEntry = 'User: $userMessage\nAI: $cleanedAiResponse$imagePromptMemory';
+    final memoryEntry = 'User: $userMessage\nAI: $simpleResponse';
     _conversationMemory.add(memoryEntry);
     
-    // Keep only the last 10 memory entries
-    if (_conversationMemory.length > _maxMemorySize) {
+    // Keep only last 3 conversations to prevent token overflow
+    if (_conversationMemory.length > 3) {
       _conversationMemory.removeAt(0);
-    }
-    
-    // Save to persistent storage
-    await CacheManager.instance.saveConversationMemory(_conversationMemory);
-    
-    // Save image prompts separately if found
-    if (imagePromptMemory.isNotEmpty) {
-      final imagePrompts = await CacheManager.instance.getImagePrompts();
-      imagePrompts.add(imagePromptMemory);
-      if (imagePrompts.length > 5) imagePrompts.removeAt(0); // Keep last 5
-      await CacheManager.instance.saveImagePrompts(imagePrompts);
     }
   }
 
@@ -594,11 +504,7 @@ Be conversational and helpful!'''
         // Use the final processed text that includes all tool results
         final textToUse = finalProcessedText.isNotEmpty ? finalProcessedText : accumulatedText;
         
-        // DEBUG: Check if base64 images are in the final text
-        if (textToUse.contains('data:image/') || textToUse.contains('base64,')) {
-          print('🖼️ DEBUG: Final text contains base64 images: ${textToUse.contains('data:image/')}');
-          print('🖼️ DEBUG: First 300 chars: ${textToUse.length > 300 ? textToUse.substring(0, 300) : textToUse}');
-        }
+
         
         // DEBUG: Don't clean the final text - just use it directly to preserve tool results
         setState(() {
@@ -1034,8 +940,6 @@ $screenshotImages**Service:** ${result['service']}
 
 ![Generated Image](${result['image_url']})
 
-[IMAGE_SAVE_BUTTON:${result['image_url']}]
-
 ✅ High-quality image generated successfully using ${result['model']} model!''';
 
         case 'fetch_image_models':
@@ -1060,9 +964,7 @@ $screenshotImages**Service:** ${result['service']}
 
         case 'plantuml_chart':
           // For PlantUML charts, show clean diagram without technical details
-          return '''![PlantUML Diagram](${result['image_url']})
-
-[DIAGRAM_SAVE_BUTTON:${result['image_url']}]''';
+          return '''![PlantUML Diagram](${result['image_url']})''';
 
         case 'crypto_market_data':
           // Format crypto market data with interactive chart
@@ -2101,10 +2003,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
     final lines = text.split('\n');
     String currentText = '';
     
-    // DEBUG: Check for base64 images in the text
-    if (text.contains('data:image/') || text.contains('base64,')) {
-      print('🎨 DEBUG: _buildBotMessageContent received base64 images: ${text.contains('data:image/')}');
-    }
+
 
     // Simple content rendering without shimmer effects
     
@@ -2126,7 +2025,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
         final base64Match = base64Regex.firstMatch(line);
         if (base64Match != null) {
           final base64ImageData = base64Match.group(0) ?? '';
-          print('🖼️ DEBUG: Found base64 image data, length: ${base64ImageData.length}');
+
           
           widgets.add(
             Container(
@@ -2188,59 +2087,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
         continue;
       }
       
-      // Check for diagram save button placeholder
-      if (line.contains('[DIAGRAM_SAVE_BUTTON:')) {
 
-        // Add any accumulated text
-        if (currentText.isNotEmpty) {
-          widgets.add(_buildMarkdownText(currentText));
-          currentText = '';
-        }
-        
-        // Extract image URL from placeholder
-        final regex = RegExp(r'\[DIAGRAM_SAVE_BUTTON:(.*?)\]');
-        final match = regex.firstMatch(line);
-        if (match != null) {
-          final imageUrl = match.group(1) ?? '';
-
-          widgets.add(
-            DiagramSaveWidget(
-              imageUrl: imageUrl,
-              diagramType: 'plantuml',
-            ),
-          );
-        } else {
-          print('🔧 DEBUG: No regex match for DIAGRAM_SAVE_BUTTON');
-        }
-        continue;
-      }
-      
-      // Check for image save button placeholder
-      if (line.contains('[IMAGE_SAVE_BUTTON:')) {
-
-        // Add any accumulated text
-        if (currentText.isNotEmpty) {
-          widgets.add(_buildMarkdownText(currentText));
-          currentText = '';
-        }
-        
-        // Extract image URL from placeholder
-        final regex = RegExp(r'\[IMAGE_SAVE_BUTTON:(.*?)\]');
-        final match = regex.firstMatch(line);
-        if (match != null) {
-          final imageUrl = match.group(1) ?? '';
-
-          widgets.add(
-            DiagramSaveWidget(
-              imageUrl: imageUrl,
-              diagramType: 'generated_image',
-            ),
-          );
-        } else {
-          print('🎨 DEBUG: No regex match for IMAGE_SAVE_BUTTON');
-        }
-        continue;
-      }
       
       // Accumulate regular text
       if (i == 0) {
