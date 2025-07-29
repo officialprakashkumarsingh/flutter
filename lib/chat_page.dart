@@ -63,6 +63,9 @@ class ChatPageState extends State<ChatPage> {
   // Image generation memory and follow-up (default OFF)
   List<String> _imagePromptMemory = [];
   bool _followUpMode = false; // Default OFF - user can enable if needed
+  
+  // Diagram generation tracking
+  bool _diagramGeneratedInCurrentResponse = false;
 
   // Add memory system for general chat
   List<String> _conversationMemory = [];
@@ -292,6 +295,7 @@ class ChatPageState extends State<ChatPage> {
     // Clear executed tools and results for new message to prevent cross-message interference
     _executedTools.clear();
     _completedToolResults.clear();
+    _diagramGeneratedInCurrentResponse = false; // Reset diagram flag for new response
     
     setState(() => _awaitingReply = true);
 
@@ -474,13 +478,23 @@ Be conversational and helpful!'''
               final data = json.decode(jsonStr);
               final content = data['choices']?[0]?['delta']?['content'];
               if (content != null) {
+                // DIAGRAM FIX: Stop streaming if diagram was generated to prevent AI overriding it
+                if (_diagramGeneratedInCurrentResponse) {
+                  print('🛑 DIAGRAM GENERATED - STOPPING FURTHER STREAMING to prevent override');
+                  break; // Stop processing further content
+                }
+                
                 accumulatedText += _fixServerEncoding(content);
                 
                         // Process tools and create panels
-        print('🔍 BEFORE tool processing: ${accumulatedText.substring(0, math.min(200, accumulatedText.length))}...');
         final processedStreamingMessage = await _processToolCallsDuringStreaming(accumulatedText, botMessageIndex);
-        print('🔍 AFTER tool processing: ${processedStreamingMessage.substring(0, math.min(200, processedStreamingMessage.length))}...');
         finalProcessedText = processedStreamingMessage; // Store the latest processed text
+        
+        // DIAGRAM FIX: If diagram was generated during tool processing, stop streaming
+        if (_diagramGeneratedInCurrentResponse) {
+          print('🛑 DIAGRAM GENERATED DURING PROCESSING - STOPPING STREAMING');
+          break; // Exit the streaming loop
+        }
         
         // Use processed text directly - NO CLEANING during streaming to preserve tool results
         String displayText = processedStreamingMessage;
@@ -509,9 +523,7 @@ Be conversational and helpful!'''
         
 
         
-        // DEBUG: Don't clean the final text - just use it directly to preserve tool results
-        print('🔍 FINAL TEXT TO USE: ${textToUse.substring(0, math.min(300, textToUse.length))}...');
-        print('🔍 Contains PlantUML diagram? ${textToUse.contains('![PlantUML Diagram]')}');
+        // Don't clean the final text - just use it directly to preserve tool results
         setState(() {
           _messages[botMessageIndex] = Message.bot(
             textToUse, // NO CLEANING - preserve tool results
@@ -918,7 +930,8 @@ Be conversational and helpful!'''
         case 'plantuml_chart':
           // For PlantUML charts, show clean diagram without technical details
           final diagramMarkdown = '''![PlantUML Diagram](${result['image_url']})''';
-          print('🔍 PlantUML diagram formatted: $diagramMarkdown');
+          print('📊 PlantUML diagram generated - flagging to stop AI streaming');
+          _diagramGeneratedInCurrentResponse = true; // Mark that diagram was generated
           return diagramMarkdown;
 
         case 'crypto_market_data':
@@ -1766,23 +1779,17 @@ $priceChart
       // For Android 10+ (API 29+), we don't need storage permission for app-specific directories
       // For older versions, try to get permission but continue if denied
 
-      // Use Downloads directory with MANAGE_EXTERNAL_STORAGE approach
+      // Use Downloads directory for user accessibility
       Directory? directory;
       try {
-        print('🔍 Platform.isAndroid: ${Platform.isAndroid}');
-        
         if (Platform.isAndroid) {
-          // Try to use Downloads folder directly
+          // Try to use Downloads folder directly (user accessible)
           directory = Directory('/storage/emulated/0/Download/AhamAI');
-          print('📁 Trying Downloads directory: ${directory.path}');
           
           if (!await directory.exists()) {
-            print('📁 Creating Downloads/AhamAI directory...');
             try {
               await directory.create(recursive: true);
-              print('✅ Downloads directory created successfully');
             } catch (e) {
-              print('❌ Failed to create Downloads directory: $e');
               // Fallback to external storage
               directory = await getExternalStorageDirectory();
               if (directory != null) {
@@ -1797,7 +1804,6 @@ $priceChart
         
         // Fallback to app documents directory if everything fails
         if (directory == null || !await directory.exists()) {
-          print('📁 Using fallback app documents directory');
           directory = await getApplicationDocumentsDirectory();
           final ahamAIDir = Directory('${directory.path}/AhamAI');
           if (!await ahamAIDir.exists()) {
@@ -1806,11 +1812,7 @@ $priceChart
           directory = ahamAIDir;
         }
         
-        print('📂 Final directory: ${directory.path}');
-        print('📂 Directory exists: ${await directory.exists()}');
-        
       } catch (e) {
-        print('💥 Storage setup error: $e');
         _showSnackBar('❌ Storage setup failed: $e');
         return;
       }
