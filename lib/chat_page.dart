@@ -2262,9 +2262,14 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
 
 
   Widget _buildImageWidget(String url) {
-    print('🖼️ Building image widget for URL: $url');
-    print('🔍 Is data:image? ${url.startsWith('data:image')}');
-    print('🔍 Contains API URL? ${url.contains('ahamai-api.officialprakashkrsingh.workers.dev')}');
+    // Check if this is a PlantUML diagram URL
+    final isDiagram = url.contains('plantuml.com') || 
+                     url.contains('kroki.io/plantuml') || 
+                     url.contains('planttext.com/api/plantuml');
+    
+    if (isDiagram) {
+      print('📊 Building DIAGRAM widget (no height limit): $url');
+    }
     
     try {
       Widget image;
@@ -2304,7 +2309,10 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            constraints: const BoxConstraints(maxHeight: 300, maxWidth: double.infinity),
+            // DIAGRAM FIX: Remove height constraint for diagrams to show full content
+            constraints: isDiagram 
+                ? const BoxConstraints(maxWidth: double.infinity) // No height limit for diagrams
+                : const BoxConstraints(maxHeight: 300, maxWidth: double.infinity), // Keep limit for other images
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(30),
             ),
