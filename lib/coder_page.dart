@@ -47,6 +47,7 @@ class _CoderPageState extends State<CoderPage> {
   // File Management
   Map<String, String> _fileContents = {};
   Map<String, String> _modifiedFiles = {};
+  Map<String, String> _fileOperations = {}; // Track what operation was done on each file
   
   // Follow-up System
   bool _showFollowUp = false;
@@ -318,7 +319,10 @@ class _CoderPageState extends State<CoderPage> {
       await _updateTaskStep(task, verification['message'], TaskStatus.verifying);
       
       // Step 5: Success with Git operations
-      await _updateTaskStep(task, 'Task completed! ${_modifiedFiles.length} files modified', TaskStatus.completed);
+      await _updateTaskStep(task, 'Task completed! ${_modifiedFiles.length} files processed', TaskStatus.completed);
+      
+      // Generate AI summary of what was accomplished
+      await _generateTaskSummary(task);
       
       // Check Git status and show options
       await _checkGitStatus(task);
@@ -428,40 +432,41 @@ Respond with a structured plan including:
     final filesToModify = plan['files_to_modify'] as List<String>;
     
     for (final filePath in filesToModify) {
-      await _updateTaskStep(task, 'Modifying $filePath...', TaskStatus.executing);
-      
       try {
-        // Get current file content
+        // Check if file exists to determine operation type
         final currentContent = await _getFileContent(task, filePath);
+        final isNewFile = currentContent == '// File not found or empty' || currentContent.startsWith('// Error loading file');
+        
+        final operation = isNewFile ? 'Creating' : 'Modifying';
+        await _updateTaskStep(task, '$operation $filePath...', TaskStatus.executing);
         
         // Get AI suggestions for this specific file
         final modificationPrompt = '''
-Current file: $filePath
-Current content:
-```
-$currentContent
-```
+File: $filePath
+${isNewFile ? 'This is a NEW file to be created.' : 'Current content:\n```\n$currentContent\n```'}
 
 Task: ${task.description}
 Plan: ${plan['response']}
 
-Provide the COMPLETE modified file content for this specific file.
-Only return the code, no explanations.
+${isNewFile ? 'Create the COMPLETE file content for this new file.' : 'Provide the COMPLETE modified file content for this file.'}
+Only return the code, no explanations or markdown blocks.
 ''';
 
         final modifiedContent = await _callAIModel(modificationPrompt);
         
-        // Store modification
+        // Store modification and operation type
         _modifiedFiles[filePath] = modifiedContent;
         _fileContents[filePath] = currentContent;
+        _fileOperations[filePath] = operation.toLowerCase();
         
-        await _updateTaskStep(task, 'Modified $filePath (${modifiedContent.length} chars)', TaskStatus.executing);
+        final operationText = isNewFile ? 'Created' : 'Modified';
+        await _updateTaskStep(task, '$operationText $filePath (${modifiedContent.length} chars)', TaskStatus.executing);
         
         // Small delay for streaming effect
         await Future.delayed(const Duration(milliseconds: 800));
         
       } catch (e) {
-        await _updateTaskStep(task, 'Failed to modify $filePath: $e', TaskStatus.executing);
+        await _updateTaskStep(task, 'Failed to process $filePath: $e', TaskStatus.executing);
       }
     }
   }
@@ -526,11 +531,31 @@ Only return the code, no explanations.
     }
   }
   
-  // Extract file paths from AI plan
+  // Extract file paths from AI plan with better extension detection
   List<String> _extractFilesFromPlan(String plan) {
-    final filePattern = RegExp(r'([a-zA-Z0-9_\-./]+\.(js|ts|py|java|cpp|c|h|dart|kt|swift|go|rs|php|rb|cs))', multiLine: true);
+    // Enhanced pattern to catch more file types including HTML, CSS, JS
+    final filePattern = RegExp(r'([a-zA-Z0-9_\-./]+\.(html|htm|css|js|jsx|ts|tsx|py|java|cpp|c|h|dart|kt|swift|go|rs|php|rb|cs|json|xml|yml|yaml|md|txt))', multiLine: true);
     final matches = filePattern.allMatches(plan);
-    return matches.map((match) => match.group(1)!).toSet().toList();
+    
+    // Also look for common file names without extensions mentioned in plan
+    final commonFiles = <String>[];
+    if (plan.toLowerCase().contains('index') && (plan.toLowerCase().contains('html') || plan.toLowerCase().contains('web'))) {
+      commonFiles.add('index.html');
+    }
+    if (plan.toLowerCase().contains('style') && plan.toLowerCase().contains('css')) {
+      commonFiles.add('style.css');
+    }
+    if (plan.toLowerCase().contains('script') && plan.toLowerCase().contains('javascript')) {
+      commonFiles.add('script.js');
+    }
+    if (plan.toLowerCase().contains('app.js') || plan.toLowerCase().contains('main.js')) {
+      commonFiles.add(plan.toLowerCase().contains('app.js') ? 'app.js' : 'main.js');
+    }
+    
+    final allFiles = matches.map((match) => match.group(1)!).toSet().toList();
+    allFiles.addAll(commonFiles);
+    
+    return allFiles.toSet().toList(); // Remove duplicates
   }
   
   // Verify changes
@@ -544,8 +569,38 @@ Only return the code, no explanations.
     
     return {
       'success': true,
-      'message': 'Successfully modified ${_modifiedFiles.length} files: ${_modifiedFiles.keys.join(', ')}',
+      'message': 'Successfully processed ${_modifiedFiles.length} files: ${_modifiedFiles.keys.join(', ')}',
     };
+  }
+  
+  // Generate AI summary of completed task
+  Future<void> _generateTaskSummary(CoderTask task) async {
+    try {
+      final fileOperationsText = _fileOperations.entries.map((entry) {
+        return '• ${entry.value.capitalize()} ${entry.key}';
+      }).join('\n');
+      
+      final summaryPrompt = '''
+Task: ${task.description}
+Repository: ${task.repository.name}
+Branch: ${task.branch}
+
+Files processed:
+$fileOperationsText
+
+Provide a concise summary of what was accomplished in this task. 
+Focus on the actual implementation and files created/modified.
+Keep it under 100 words and be specific about what was built.
+''';
+
+      final summary = await _callAIModel(summaryPrompt);
+      
+      await _updateTaskStep(task, 'Summary: $summary', TaskStatus.completed);
+      
+    } catch (e) {
+      // If summary generation fails, just add a simple completion message
+      await _updateTaskStep(task, 'Task completed successfully!', TaskStatus.completed);
+    }
   }
   
   // Check Git status
@@ -1191,7 +1246,7 @@ no changes added to commit (use "git add ." or "git commit -a")
                 const FaIcon(FontAwesomeIcons.fileCode, size: 12, color: Color(0xFF4299E1)),
                 const SizedBox(width: 6),
                 Text(
-                  'Modified Files (${_modifiedFiles.length})',
+                  'File Operations (${_modifiedFiles.length})',
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -1243,6 +1298,24 @@ no changes added to commit (use "git add ." or "git commit -a")
             ),
             child: Row(
               children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: _fileOperations[fileName] == 'creating' 
+                        ? const Color(0xFF48BB78) 
+                        : const Color(0xFF4299E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: Text(
+                    _fileOperations[fileName]?.toUpperCase() ?? 'MODIFIED',
+                    style: const TextStyle(
+                      fontSize: 7,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     fileName,
@@ -1287,7 +1360,7 @@ no changes added to commit (use "git add ." or "git commit -a")
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF48BB78)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1295,7 +1368,7 @@ no changes added to commit (use "git add ." or "git commit -a")
           Container(
             padding: const EdgeInsets.all(12),
             decoration: const BoxDecoration(
-              color: Color(0xFFF0FFF4),
+              color: Color(0xFFFAFAFA),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(8),
                 topRight: Radius.circular(8),
@@ -1303,7 +1376,7 @@ no changes added to commit (use "git add ." or "git commit -a")
             ),
             child: Row(
               children: [
-                const FaIcon(FontAwesomeIcons.codeBranch, size: 12, color: Color(0xFF48BB78)),
+                const FaIcon(FontAwesomeIcons.codeBranch, size: 12, color: Color(0xFF718096)),
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
@@ -1464,13 +1537,14 @@ no changes added to commit (use "git add ." or "git commit -a")
   Widget _buildGitButton(String label, IconData icon, Color color, VoidCallback onPressed) {
     return ElevatedButton.icon(
       onPressed: _isLoading ? null : onPressed,
-      icon: FaIcon(icon, size: 10, color: Colors.white),
-      label: Text(label, style: const TextStyle(fontSize: 10, color: Colors.white)),
+      icon: FaIcon(icon, size: 8, color: Colors.white),
+      label: Text(label, style: const TextStyle(fontSize: 9, color: Colors.white)),
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         minimumSize: Size.zero,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        elevation: 0,
       ),
     );
   }
@@ -1601,7 +1675,7 @@ Generated by AhamAI Coder
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF4299E1)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1609,7 +1683,7 @@ Generated by AhamAI Coder
           Container(
             padding: const EdgeInsets.all(12),
             decoration: const BoxDecoration(
-              color: Color(0xFFF0F8FF),
+              color: Color(0xFFFAFAFA),
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(8),
                 topRight: Radius.circular(8),
@@ -1617,7 +1691,7 @@ Generated by AhamAI Coder
             ),
             child: Row(
               children: [
-                const FaIcon(FontAwesomeIcons.arrowRight, size: 12, color: Color(0xFF4299E1)),
+                const FaIcon(FontAwesomeIcons.arrowRight, size: 12, color: Color(0xFF718096)),
                 const SizedBox(width: 8),
                 const Expanded(
                   child: Text(
@@ -1873,4 +1947,10 @@ enum TaskStatus {
   verifying,
   completed,
   failed,
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1)}";
+  }
 }
