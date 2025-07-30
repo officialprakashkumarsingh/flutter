@@ -2171,11 +2171,63 @@ $diagram''';
   Future<Map<String, dynamic>> _executeFileOperation(Map<String, dynamic> params) async {
     try {
       final String operation = _lastToolUsed; // Use the current tool name as operation
-      final List<String> args = ['python3', 'python_tools/file_operations.py', operation];
       
-      // Enhanced base path handling - try multiple strategies
-      final currentDir = Directory.current.path;
-      args.addAll(['--base-path', currentDir]);
+      // CRITICAL FIX: Use absolute path to Python script to avoid path issues
+      String pythonScriptPath = 'python_tools/file_operations.py';
+      
+      // Try to find the actual script location
+      final possibleScriptPaths = [
+        '/workspace/python_tools/file_operations.py',
+        'python_tools/file_operations.py',
+        '${Directory.current.path}/python_tools/file_operations.py',
+        './python_tools/file_operations.py',
+      ];
+      
+      for (final path in possibleScriptPaths) {
+        if (File(path).existsSync()) {
+          pythonScriptPath = path;
+          break;
+        }
+      }
+      
+      final List<String> args = ['python3', pythonScriptPath, operation];
+      
+      // CRITICAL FIX: Ensure we're working in the project root directory
+      // The Flutter app might be running from /data/data/... on Android
+      // We need to ensure Python tools work in a writable location
+      
+      String workingDir = Directory.current.path;
+      
+      // Try to find the actual project root or use a reliable working directory
+      final possibleRoots = [
+        '/workspace',
+        '/tmp/coder_workspace', 
+        Directory.current.path,
+        '${Directory.current.path}/coder_files',
+      ];
+      
+      String finalWorkingDir = workingDir;
+      for (final root in possibleRoots) {
+        final dir = Directory(root);
+        if (dir.existsSync() || root.startsWith('/tmp')) {
+          try {
+            if (!dir.existsSync()) {
+              dir.createSync(recursive: true);
+            }
+            // Test if writable
+            final testFile = File('$root/.test_write');
+            testFile.writeAsStringSync('test');
+            testFile.deleteSync();
+            finalWorkingDir = root;
+            break;
+          } catch (e) {
+            // Continue to next option
+            continue;
+          }
+        }
+      }
+      
+      args.addAll(['--base-path', finalWorkingDir]);
       
       // Add operation-specific arguments
       switch (operation) {
