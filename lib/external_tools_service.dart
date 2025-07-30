@@ -138,6 +138,108 @@ class ExternalToolsService extends ChangeNotifier {
       execute: _getCryptoTrending,
     );
 
+    // Python-based File Operations - External tool execution
+    _tools['read_file'] = ExternalTool(
+      name: 'read_file',
+      description: 'Read content from a file or specific lines from a file using Python execution.',
+      parameters: {
+        'file_path': {'type': 'string', 'description': 'Path to the file to read', 'required': true},
+        'start_line': {'type': 'int', 'description': 'Start line number (1-indexed, optional)', 'default': null},
+        'end_line': {'type': 'int', 'description': 'End line number (1-indexed, optional)', 'default': null},
+      },
+      execute: _executeFileOperation,
+    );
+
+    _tools['write_file'] = ExternalTool(
+      name: 'write_file',
+      description: 'Write content to a file using Python execution.',
+      parameters: {
+        'file_path': {'type': 'string', 'description': 'Path to the file to write', 'required': true},
+        'content': {'type': 'string', 'description': 'Content to write to the file', 'required': true},
+        'mode': {'type': 'string', 'description': 'Write mode (w for overwrite, a for append)', 'default': 'w'},
+      },
+      execute: _executeFileOperation,
+    );
+
+    _tools['edit_file'] = ExternalTool(
+      name: 'edit_file',
+      description: 'Edit a file by replacing old content with new content using Python execution.',
+      parameters: {
+        'file_path': {'type': 'string', 'description': 'Path to the file to edit', 'required': true},
+        'old_content': {'type': 'string', 'description': 'Old content to replace', 'required': true},
+        'new_content': {'type': 'string', 'description': 'New content to replace with', 'required': true},
+      },
+      execute: _executeFileOperation,
+    );
+
+    _tools['delete_file'] = ExternalTool(
+      name: 'delete_file',
+      description: 'Delete a file using Python execution.',
+      parameters: {
+        'file_path': {'type': 'string', 'description': 'Path to the file to delete', 'required': true},
+      },
+      execute: _executeFileOperation,
+    );
+
+    _tools['list_directory'] = ExternalTool(
+      name: 'list_directory',
+      description: 'List contents of a directory using Python execution.',
+      parameters: {
+        'dir_path': {'type': 'string', 'description': 'Path to the directory to list', 'default': '.'},
+        'include_hidden': {'type': 'boolean', 'description': 'Include hidden files and directories', 'default': false},
+      },
+      execute: _executeFileOperation,
+    );
+
+    _tools['create_directory'] = ExternalTool(
+      name: 'create_directory',
+      description: 'Create a directory using Python execution.',
+      parameters: {
+        'dir_path': {'type': 'string', 'description': 'Path to the directory to create', 'required': true},
+      },
+      execute: _executeFileOperation,
+    );
+
+    _tools['search_files'] = ExternalTool(
+      name: 'search_files',
+      description: 'Search for files matching a pattern using Python execution.',
+      parameters: {
+        'pattern': {'type': 'string', 'description': 'Search pattern (glob style)', 'required': true},
+        'dir_path': {'type': 'string', 'description': 'Directory to search in', 'default': '.'},
+        'extensions': {'type': 'list', 'description': 'List of file extensions to filter', 'default': null},
+      },
+      execute: _executeFileOperation,
+    );
+
+    // Python-based Code Analysis Tools
+    _tools['analyze_project_structure'] = ExternalTool(
+      name: 'analyze_project_structure',
+      description: 'Analyze the overall project structure and dependencies using Python execution.',
+      parameters: {
+        'max_depth': {'type': 'int', 'description': 'Maximum depth for directory tree analysis', 'default': 3},
+      },
+      execute: _executeCodeAnalysis,
+    );
+
+    _tools['analyze_file_content'] = ExternalTool(
+      name: 'analyze_file_content',
+      description: 'Analyze the content and structure of a specific file using Python execution.',
+      parameters: {
+        'file_path': {'type': 'string', 'description': 'Path to the file to analyze', 'required': true},
+      },
+      execute: _executeCodeAnalysis,
+    );
+
+    _tools['generate_implementation_plan'] = ExternalTool(
+      name: 'generate_implementation_plan',
+      description: 'Generate a detailed implementation plan for a coding task using Python execution.',
+      parameters: {
+        'task_description': {'type': 'string', 'description': 'Description of the task to implement', 'required': true},
+        'relevant_files': {'type': 'list', 'description': 'List of relevant files for context', 'default': null},
+      },
+      execute: _executeCodeAnalysis,
+    );
+
     // Get Local IP tool removed - not needed for core functionality
   }
 
@@ -2064,4 +2166,148 @@ $diagram''';
       };
     }
   }
+
+  /// Execute Python-based file operations
+  Future<Map<String, dynamic>> _executeFileOperation(Map<String, dynamic> params) async {
+    try {
+      final String operation = _lastToolUsed; // Use the current tool name as operation
+      final List<String> args = ['python3', 'python_tools/file_operations.py', operation];
+      
+      // Add operation-specific arguments
+      switch (operation) {
+        case 'read_file':
+          args.addAll(['--file-path', params['file_path']]);
+          if (params['start_line'] != null) {
+            args.addAll(['--start-line', params['start_line'].toString()]);
+          }
+          if (params['end_line'] != null) {
+            args.addAll(['--end-line', params['end_line'].toString()]);
+          }
+          break;
+        case 'write_file':
+          args.addAll(['--file-path', params['file_path']]);
+          args.addAll(['--content', params['content'] ?? '']);
+          args.addAll(['--mode', params['mode'] ?? 'w']);
+          break;
+        case 'edit_file':
+          args.addAll(['--file-path', params['file_path']]);
+          args.addAll(['--old-content', params['old_content'] ?? '']);
+          args.addAll(['--new-content', params['new_content'] ?? '']);
+          break;
+        case 'delete_file':
+          args.addAll(['--file-path', params['file_path']]);
+          break;
+        case 'list_directory':
+          args.addAll(['--dir-path', params['dir_path'] ?? '.']);
+          if (params['include_hidden'] == true) {
+            args.add('--include-hidden');
+          }
+          break;
+        case 'create_directory':
+          args.addAll(['--dir-path', params['dir_path']]);
+          break;
+        case 'search_files':
+          args.addAll(['--pattern', params['pattern']]);
+          args.addAll(['--dir-path', params['dir_path'] ?? '.']);
+          if (params['extensions'] != null) {
+            args.add('--extensions');
+            args.addAll((params['extensions'] as List).map((e) => e.toString()));
+          }
+          break;
+      }
+
+      final result = await Process.run(args[0], args.sublist(1));
+      
+      if (result.exitCode == 0) {
+        try {
+          final Map<String, dynamic> output = json.decode(result.stdout);
+          output['timestamp'] = DateTime.now().toIso8601String();
+          output['execution_method'] = 'python_external';
+          return output;
+        } catch (e) {
+          return {
+            'success': false,
+            'error': 'Failed to parse Python tool output: $e',
+            'raw_output': result.stdout,
+            'operation': operation,
+          };
+        }
+      } else {
+        return {
+          'success': false,
+          'error': 'Python tool execution failed',
+          'exit_code': result.exitCode,
+          'stderr': result.stderr,
+          'operation': operation,
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Failed to execute file operation: $e',
+        'operation': params['operation'] ?? 'unknown',
+      };
+    }
+  }
+
+  /// Execute Python-based code analysis
+  Future<Map<String, dynamic>> _executeCodeAnalysis(Map<String, dynamic> params) async {
+    try {
+      final String operation = _lastToolUsed; // Use the current tool name as operation
+      final List<String> args = ['python3', 'python_tools/code_analysis.py', operation];
+      
+      // Add operation-specific arguments
+      switch (operation) {
+        case 'analyze_project_structure':
+          if (params['max_depth'] != null) {
+            args.addAll(['--max-depth', params['max_depth'].toString()]);
+          }
+          break;
+        case 'analyze_file_content':
+          args.addAll(['--file-path', params['file_path']]);
+          break;
+        case 'generate_implementation_plan':
+          args.addAll(['--task-description', params['task_description']]);
+          if (params['relevant_files'] != null) {
+            args.add('--relevant-files');
+            args.addAll((params['relevant_files'] as List).map((e) => e.toString()));
+          }
+          break;
+      }
+
+      final result = await Process.run(args[0], args.sublist(1));
+      
+      if (result.exitCode == 0) {
+        try {
+          final Map<String, dynamic> output = json.decode(result.stdout);
+          output['timestamp'] = DateTime.now().toIso8601String();
+          output['execution_method'] = 'python_external';
+          return output;
+        } catch (e) {
+          return {
+            'success': false,
+            'error': 'Failed to parse Python analysis output: $e',
+            'raw_output': result.stdout,
+            'operation': operation,
+          };
+        }
+      } else {
+        return {
+          'success': false,
+          'error': 'Python analysis tool execution failed',
+          'exit_code': result.exitCode,
+          'stderr': result.stderr,
+          'operation': operation,
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Failed to execute code analysis: $e',
+        'operation': params['operation'] ?? 'unknown',
+      };
+    }
+  }
+
+
 }

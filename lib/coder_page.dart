@@ -256,7 +256,7 @@ class _CoderPageState extends State<CoderPage> {
     setState(() => _isLoading = false);
   }
   
-  // Process user task with AI
+  // Process user task with AI - focused on coding tasks only
   Future<void> _processTask() async {
     final taskDescription = _taskController.text.trim();
     if (taskDescription.isEmpty || _selectedRepo == null || _selectedBranch == null) return;
@@ -265,19 +265,7 @@ class _CoderPageState extends State<CoderPage> {
       _isProcessingTask = true;
     });
     
-    // SMART TASK CLASSIFICATION - Check if this is actually a coding task
-    final isCodeTask = await _isCodeRelatedTask(taskDescription);
-    
-    if (!isCodeTask) {
-      // Handle as general conversation, not a coding task
-      await _handleGeneralConversation(taskDescription);
-      setState(() {
-        _isProcessingTask = false;
-      });
-      return;
-    }
-    
-    // Create new task
+    // Create new coding task
     final task = CoderTask(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       description: taskDescription,
@@ -295,7 +283,7 @@ class _CoderPageState extends State<CoderPage> {
     
     _scrollToBottom();
     
-    // AI Workflow: Think → Plan → Execute → Verify → Success
+    // Enhanced AI Workflow: Think → Plan → Execute → Verify → Success
     await _executeAIWorkflow(task);
     
     setState(() {
@@ -303,111 +291,7 @@ class _CoderPageState extends State<CoderPage> {
     });
   }
   
-  // Determine if user input is a coding task or general conversation
-  Future<bool> _isCodeRelatedTask(String input) async {
-    // Quick keyword detection for obvious coding tasks
-    final codingKeywords = [
-      'create', 'build', 'implement', 'develop', 'code', 'write', 'function',
-      'class', 'method', 'api', 'database', 'frontend', 'backend', 'website',
-      'app', 'application', 'component', 'module', 'library', 'framework',
-      'fix', 'debug', 'optimize', 'refactor', 'test', 'deploy', 'install',
-      'configure', 'setup', 'add feature', 'remove', 'update', 'modify',
-      'algorithm', 'data structure', 'schema', 'model', 'view', 'controller'
-    ];
-    
-    final generalKeywords = [
-      'hello', 'hi', 'thanks', 'thank you', 'how are you', 'what is',
-      'explain', 'tell me', 'describe', 'what does', 'how does', 'why',
-      'when', 'where', 'who', 'help', 'question', 'advice', 'suggest'
-    ];
-    
-    final lowerInput = input.toLowerCase();
-    
-    // Check for obvious general conversation
-    if (generalKeywords.any((keyword) => lowerInput.contains(keyword)) && 
-        !codingKeywords.any((keyword) => lowerInput.contains(keyword))) {
-      return false;
-    }
-    
-    // Check for obvious coding tasks
-    if (codingKeywords.any((keyword) => lowerInput.contains(keyword))) {
-      return true;
-    }
-    
-    // For ambiguous cases, use AI to determine
-    try {
-      final classificationPrompt = '''
-Analyze this user input and determine if it's a coding/development task or general conversation.
 
-User input: "$input"
-
-Respond with ONLY "CODING" or "CONVERSATION".
-
-CODING examples:
-- "Create a login system"
-- "Build a todo app"
-- "Fix the navigation bug"
-- "Add dark mode"
-- "Write a function to calculate..."
-
-CONVERSATION examples:
-- "Hello, how are you?"
-- "What is React?"
-- "Explain how databases work"
-- "Thanks for the help"
-- "Tell me about programming"
-''';
-
-      final response = await _callAIModel(classificationPrompt);
-      return response.toUpperCase().contains('CODING');
-    } catch (e) {
-      // Default to coding task if classification fails
-      return true;
-    }
-  }
-  
-  // Handle general conversation without coding workflow
-  Future<void> _handleGeneralConversation(String message) async {
-    try {
-      final conversationPrompt = '''
-You are AhamAI, a helpful AI assistant integrated into a coding environment.
-
-The user said: "$message"
-
-Provide a helpful, concise response. If they're asking about programming concepts, explain clearly. 
-If it's a greeting or general question, respond appropriately.
-Keep responses under 200 words and be friendly but professional.
-''';
-
-      final response = await _callAIModel(conversationPrompt);
-      
-      // Create a simple conversation task to display the response
-      final conversationTask = CoderTask(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        description: message,
-        repository: _selectedRepo!,
-        branch: _selectedBranch!,
-        status: TaskStatus.completed,
-        steps: [
-          TaskStep(
-            description: response,
-            timestamp: DateTime.now(),
-            status: TaskStatus.completed,
-          )
-        ],
-        createdAt: DateTime.now(),
-      );
-      
-      setState(() {
-        _tasks.insert(0, conversationTask);
-        _taskController.clear();
-      });
-      
-      _scrollToBottom();
-    } catch (e) {
-      _showSnackBar('❌ Failed to process message: $e');
-    }
-  }
   
   // Execute AI workflow steps with REAL functionality
   Future<void> _executeAIWorkflow(CoderTask task) async {
@@ -767,66 +651,85 @@ Keep responses under 200 words and be friendly but professional.
     }
   }
   
-  // Generate AI plan using real AI model
+  // Enhanced AI plan generation using Python-based analysis
   Future<Map<String, dynamic>> _generateAIPlan(CoderTask task, Map<String, dynamic> context) async {
     try {
+      // Step 1: Use Python tools for detailed project analysis
+      await _updateTaskStep(task, 'Analyzing project structure with Python tools...', TaskStatus.planning);
+      
+      final projectAnalysis = await _toolsService.executeTool('analyze_project_structure', {
+        'max_depth': 3,
+      });
+      
+      await _updateTaskStep(task, 'Generating implementation plan with AI...', TaskStatus.planning);
+      
+      // Step 2: Use Python tool to generate initial plan
+      final pythonPlan = await _toolsService.executeTool('generate_implementation_plan', {
+        'task_description': task.description,
+        'relevant_files': context['files'] ?? [],
+      });
+      
       final projectType = context['projectType'] ?? 'Unknown';
       final technologies = (context['technologies'] as List? ?? []).join(', ');
       
-      // Cursor AI-style comprehensive system prompt
+      // Step 3: Enhanced AI prompt with Python analysis results
       final prompt = '''
-You are an AI coding assistant, powered by advanced language models. You operate in an integrated development environment.
+You are an expert AI coding assistant with access to external Python-based analysis tools.
 
-You are pair programming with a USER to solve their coding task. Each time the USER sends a message, we automatically attach information about their current state, such as what files they have open, where their cursor is, recently viewed files, edit history in their session so far, linter errors, and more.
-
-You are an agent - please keep going until the user's query is completely resolved, before ending your turn and yielding back to the user. Only terminate your turn when you are sure that the problem is solved. Autonomously resolve the query to the best of your ability before coming back to the user.
+TASK: ${task.description}
 
 REPOSITORY CONTEXT:
 - Repository: ${task.repository.fullName}
 - Branch: ${task.branch}  
 - Project Type: ${projectType}
 - Technologies: ${technologies}
-- File count: ${context['fileCount']}
-- Languages: ${context['languages'].join(', ')}
-- Key files: ${context['files'].join(', ')}
 
-USER TASK: ${task.description}
+DETAILED PROJECT ANALYSIS:
+${projectAnalysis['success'] ? json.encode(projectAnalysis) : 'Project analysis not available'}
+
+PYTHON-GENERATED IMPLEMENTATION PLAN:
+${pythonPlan['success'] ? json.encode(pythonPlan['plan']) : 'Python plan generation failed'}
+
+CRITICAL REQUIREMENTS:
+1. Create a comprehensive, detailed implementation plan
+2. Use external Python tools for file operations (read_file, write_file, edit_file, delete_file)
+3. Follow the structure suggested by the Python analysis
+4. Consider the complexity estimation: ${pythonPlan['success'] ? pythonPlan['plan']['estimated_complexity'] : 'medium'}
+
+AUTONOMOUS EXECUTION STRATEGY:
+- Think step-by-step before implementing
+- Use Python tools for all file operations
+- Verify implementations thoroughly
+- Handle edge cases and errors
+- Create production-ready, maintainable code
+
+IMPLEMENTATION PLAN FORMAT:
+1. **Requirements Analysis**: Detailed understanding of the task
+2. **Architecture Design**: High-level approach and structure
+3. **File Operations Plan**: Specific files to create/modify/delete using Python tools
+4. **Implementation Steps**: Step-by-step execution with external tool usage
+5. **Testing Strategy**: Verification and validation approach
+6. **Potential Issues**: Risk mitigation and edge case handling
 
 CRITICAL FILE EXTENSION RULES:
 ${_getFileExtensionRules(projectType)}
 
-AUTONOMOUS EXECUTION GUIDELINES:
-1. Be THOROUGH when gathering information. Make sure you have the FULL picture before implementing.
-2. TRACE every symbol back to its definitions and usages so you fully understand it.
-3. Look past the first seemingly relevant result. EXPLORE alternative implementations, edge cases, and varied search terms until you have COMPREHENSIVE coverage.
-4. If you've performed an edit that may partially fulfill the USER's query, but you're not confident, gather more information before ending your turn.
-5. Bias towards not asking the user for help if you can find the answer yourself.
-
-IMPLEMENTATION STRATEGY:
-As an expert ${projectType} developer, create a detailed implementation plan for this task.
-Consider file operations: CREATE, MODIFY, or DELETE files as needed.
-Provide specific file paths with CORRECT extensions, code changes, and step-by-step instructions.
-
-Your response must be a structured plan that includes:
-1. Analysis of the task requirements
-2. Specific files to create/modify/delete with proper extensions
-3. Detailed implementation steps with code snippets
-4. Dependencies and setup requirements
-5. Testing and verification steps
-
-Be very specific about file names and use the correct file extensions for ${projectType}.
-Focus on creating production-ready, maintainable code that follows best practices.
+Create a detailed implementation plan that leverages external Python tools for maximum efficiency and accuracy.
+Focus on using the Python tools for all file operations and analysis tasks.
 ''';
 
       final aiResponse = await _callAIModel(prompt);
       
       return {
-        'summary': 'Autonomous implementation plan for ${task.description}',
+        'summary': 'Enhanced implementation plan with Python tool integration for ${task.description}',
         'response': aiResponse,
         'files_to_modify': _extractFilesFromPlan(aiResponse),
+        'python_analysis': projectAnalysis,
+        'python_plan': pythonPlan,
+        'complexity': pythonPlan['success'] ? pythonPlan['plan']['estimated_complexity'] : 'medium',
       };
     } catch (e) {
-      throw Exception('Failed to generate AI plan: $e');
+      throw Exception('Failed to generate enhanced AI plan: $e');
     }
   }
   
@@ -887,37 +790,49 @@ Always ensure your implementations are complete and ready to run.''',
     }
   }
   
-  // Execute AI plan with enhanced file operations
+  // Execute AI plan with Python-based external tool operations
   Future<void> _executeAIPlan(CoderTask task, Map<String, dynamic> plan) async {
     final filesToModify = plan['files_to_modify'] as List<String>;
     
+    await _updateTaskStep(task, 'Beginning implementation with Python tools...', TaskStatus.executing);
+    
     for (final filePath in filesToModify) {
       try {
-        // Check if file exists to determine operation type
-        final currentContent = await _getFileContent(task, filePath);
-        final isNewFile = currentContent == '// File not found or empty' || currentContent.startsWith('// Error loading file');
+        // Step 1: Use Python tool to read current file content
+        await _updateTaskStep(task, 'Analyzing $filePath with Python tools...', TaskStatus.executing);
+        
+        final readResult = await _toolsService.executeTool('read_file', {
+          'file_path': filePath,
+        });
+        
+        final currentContent = readResult['success'] ? readResult['content'] : '';
+        final isNewFile = !readResult['success'] || currentContent.isEmpty;
         
         final operation = isNewFile ? 'Creating' : 'Modifying';
-        await _updateTaskStep(task, '$operation $filePath...', TaskStatus.executing);
+        await _updateTaskStep(task, '$operation $filePath using AI analysis...', TaskStatus.executing);
         
-        // Enhanced AI prompt for file-specific modifications
+        // Step 2: Use AI to determine the file modifications
         final modificationPrompt = '''
-AUTONOMOUS FILE OPERATION
+EXTERNAL PYTHON TOOL-BASED FILE OPERATION
 
 Repository: ${task.repository.fullName}
 Branch: ${task.branch}
 File: $filePath
 Operation: ${isNewFile ? 'CREATE' : 'MODIFY'}
+Tool Integration: Python-based external execution
 
-${isNewFile ? 'This is a NEW file to be created.' : 'Current content:\n```\n$currentContent\n```'}
+${isNewFile ? 'This is a NEW file to be created.' : 'Current content (read via Python tool):\n```\n$currentContent\n```'}
 
 Original Task: ${task.description}
 Implementation Plan: ${plan['response']}
+Python Analysis: ${plan['python_analysis'] != null ? 'Available' : 'Not available'}
+Complexity Level: ${plan['complexity'] ?? 'medium'}
 
-INSTRUCTIONS:
-${isNewFile ? 'Create the COMPLETE file content for this new file.' : 'Provide the COMPLETE modified file content for this file.'}
+INSTRUCTIONS FOR PYTHON TOOL EXECUTION:
+${isNewFile ? 'Generate the COMPLETE file content for this new file.' : 'Generate the COMPLETE modified file content for this file.'}
 
 REQUIREMENTS:
+- The output will be used with Python write_file or edit_file tools
 - Follow best practices for the detected project type
 - Use proper file structure and organization
 - Include necessary imports and dependencies
@@ -926,36 +841,70 @@ REQUIREMENTS:
 - Handle edge cases and error conditions
 
 OUTPUT ONLY THE COMPLETE FILE CONTENT - no explanations, no markdown blocks, just the raw code/content.
+The content will be passed directly to Python external tools for file operations.
 ''';
 
         final modifiedContent = await _callAIModel(modificationPrompt);
         
-        // Check if AI wants to delete the file
+        // Step 3: Use Python tools to perform file operations
         if (modifiedContent.toLowerCase().contains('delete this file') || 
             modifiedContent.toLowerCase().contains('remove this file') ||
             modifiedContent.toLowerCase().contains('file should be deleted')) {
           
-          await _deleteFile(task, filePath);
-          _fileOperations[filePath] = 'deleted';
-          await _updateTaskStep(task, 'Deleted $filePath', TaskStatus.executing);
+          // Use Python tool to delete file
+          final deleteResult = await _toolsService.executeTool('delete_file', {
+            'file_path': filePath,
+          });
+          
+          if (deleteResult['success']) {
+            _fileOperations[filePath] = 'deleted';
+            await _updateTaskStep(task, 'Deleted $filePath via Python tool', TaskStatus.executing);
+          } else {
+            await _updateTaskStep(task, 'Failed to delete $filePath: ${deleteResult['error']}', TaskStatus.executing);
+          }
           
         } else {
-          // Store modification and operation type
-          _modifiedFiles[filePath] = modifiedContent;
-          _fileContents[filePath] = currentContent;
-          _fileOperations[filePath] = operation.toLowerCase();
+          // Use Python tool to write/edit file
+          Map<String, dynamic> writeResult;
           
-          final operationText = isNewFile ? 'Created' : 'Modified';
-          await _updateTaskStep(task, '$operationText $filePath (${modifiedContent.length} chars)', TaskStatus.executing);
+          if (isNewFile) {
+            // Create new file with Python tool
+            writeResult = await _toolsService.executeTool('write_file', {
+              'file_path': filePath,
+              'content': modifiedContent,
+              'mode': 'w',
+            });
+          } else {
+            // Edit existing file with Python tool
+            writeResult = await _toolsService.executeTool('edit_file', {
+              'file_path': filePath,
+              'old_content': currentContent,
+              'new_content': modifiedContent,
+            });
+          }
+          
+          if (writeResult['success']) {
+            _modifiedFiles[filePath] = modifiedContent;
+            _fileContents[filePath] = currentContent;
+            _fileOperations[filePath] = operation.toLowerCase();
+            
+            final operationText = isNewFile ? 'Created' : 'Modified';
+            final toolInfo = writeResult['execution_method'] ?? 'python_external';
+            await _updateTaskStep(task, '$operationText $filePath via Python tool ($toolInfo)', TaskStatus.executing);
+          } else {
+            await _updateTaskStep(task, 'Failed to ${operation.toLowerCase()} $filePath: ${writeResult['error']}', TaskStatus.executing);
+          }
         }
         
         // Small delay for streaming effect
-        await Future.delayed(const Duration(milliseconds: 800));
+        await Future.delayed(const Duration(milliseconds: 500));
         
       } catch (e) {
-        await _updateTaskStep(task, 'Failed to process $filePath: $e', TaskStatus.executing);
+        await _updateTaskStep(task, 'Python tool error for $filePath: $e', TaskStatus.executing);
       }
     }
+    
+    await _updateTaskStep(task, 'Completed implementation using Python external tools', TaskStatus.executing);
   }
   
   // Get file content from GitHub
