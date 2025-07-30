@@ -1,60 +1,24 @@
-# 📱 **AhamAI Android APK Downloads**
+# APK Download Links
 
-## 🚀 **Latest Version - Enhanced MCP AI Workstation (v14.0)**
+## Latest Version - v7.0 (Python External Tools Coder) ⭐ **NEW!**
+**File:** `aham-app-v7.0-python-external-tools-coder.apk`
+**Size:** 27.9 MB
+**Features:** 
+- **🚀 Refactored Coder Feature**: Focused exclusively on coding tasks (no conversation)
+- **🐍 Python External Tools**: Robust file operations using external Python execution
+- **📊 Enhanced Analysis**: Comprehensive project structure analysis and planning
+- **⚡ Improved Performance**: Better error handling and reliability
+- **🔧 Advanced Tools**: 
+  - File operations (read, write, edit, delete, search)
+  - Code analysis and implementation planning
+  - External tool execution with JSON communication
 
-### **📅 Version 14.0 - Transform Your Phone into a PC-Level AI Workstation**
-**📦 File:** `aham-app-enhanced-mcp-v14.0.apk` **(28.7MB)**  
-**🗓️ Date:** January 17, 2025  
-**✨ Major Update:** Full MCP (Model Context Protocol) Implementation
+## Previous Versions
 
-### 🌟 **Revolutionary Features:**
-
-#### **🔗 MCP Server & Client Integration**
-- **🏢 Act as MCP Server**: Your phone becomes an AI server that other devices can connect to
-- **📱 Connect to Other AIs**: Use tools from external MCP servers and AI systems
-- **🌐 Network Discovery**: Automatically find AI devices on your network
-- **🔄 Cross-Device Sync**: Sync conversations, images, and data across all connected devices
-- **🛠️ External Tools Access**: Execute tools from Claude Desktop, Ollama, and other MCP-compatible systems
-
-#### **📊 Enhanced MCP Control Center**
-- **📈 Dashboard**: Monitor connected devices, sessions, and server status
-- **🔍 Device Discovery**: Scan network for AI servers and automatically connect
-- **🏪 AI Marketplace**: Browse and connect to featured AI services
-- **⚙️ Advanced Settings**: Configure auto-discovery, sync preferences, and server parameters
-- **📖 Setup Guide**: Complete tutorials for multi-device AI setup
-
-#### **🤖 Powerful AI Capabilities**
-- **Multi-Device AI**: Use your phone's AI from laptop, tablet, or any connected device
-- **Smart Home Integration**: Connect with Home Assistant and IoT systems
-- **AI Collaboration**: Multiple AI systems working together on projects
-- **Remote AI Access**: Access your phone's AI capabilities from anywhere on the network
-
-#### **💪 Technical Innovations**
-- **Production-Ready MCP Server**: Full JSON-RPC 2.0 protocol support with SSE transport
-- **Device Health Monitoring**: Real-time connection status and automatic reconnection
-- **Tool Marketplace**: Discover and integrate capabilities from external AI systems
-- **Configuration Persistence**: Settings and connections saved between app restarts
-
-### **🎯 Use Cases:**
-- **💻 Desktop Integration**: Connect Claude Desktop to your phone's image generation
-- **🏠 Smart Home Control**: Integrate AhamAI with home automation systems
-- **👥 Team Collaboration**: Share AI capabilities across multiple devices
-- **🚀 Development**: Build multi-AI workflows and integrations
-- **📱 Mobile Workstation**: Transform your phone into a powerful AI development platform
-
----
-
-## 📋 **Previous Versions:**
-
-### **📅 Version 13.0 - Core Functionality Fixes**
-**📦 File:** `aham-app-v13.0.apk` **(28.1MB)**  
-**🗓️ Date:** January 16, 2025  
-**✅ Fixed:** Content persistence, tool execution flow, and UI improvements
-
-### **📅 Version 12.5 - UI Polish & Memory**
-**📦 File:** `aham-app-v12.5.apk` **(27.8MB)**  
-**🗓️ Date:** January 15, 2025  
-**✅ Fixed:** Image memory context, input area styling, and tool result display
+### v6.0 - Ultimate Smart Coder
+**File:** `aham-app-v6.0-ultimate-smart-coder.apk`
+**Size:** 27.9 MB
+**Features:** Advanced AI coding assistance with conversation capabilities
 
 ---
 
