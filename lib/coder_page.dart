@@ -64,6 +64,11 @@ class _CoderPageState extends State<CoderPage> {
   String _gitStatus = '';
   bool _hasUncommittedChanges = false;
   
+  // Code Search
+  final TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
+  List<Map<String, dynamic>> _searchResults = [];
+  
   @override
   void initState() {
     super.initState();
@@ -78,6 +83,7 @@ class _CoderPageState extends State<CoderPage> {
     _scrollController.dispose();
     _followUpController.dispose();
     _commitMessageController.dispose();
+    _searchController.dispose();
     _httpClient.close();
     _logicService?.dispose();
     super.dispose();
@@ -1449,6 +1455,30 @@ no changes added to commit (use "git add ." or "git commit -a")
         );
       }
     });
+  }
+  
+  // Perform in-repository code search using GitHub's search API via CoderLogicService
+  Future<void> _performCodeSearch() async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty || _logicService == null) return;
+    setState(() {
+      _isSearching = true;
+      _searchResults = [];
+    });
+    try {
+      final results = await _logicService!.searchCode(query, maxResults: 50);
+      setState(() {
+        _searchResults = results;
+      });
+    } catch (e) {
+      setState(() {
+        _statusMessage = 'Search error: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isSearching = false);
+      }
+    }
   }
   
   @override
