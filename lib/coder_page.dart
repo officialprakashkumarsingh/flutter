@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 import 'external_tools_service.dart';
+import 'coder_logic_service.dart';
 
 class CoderPage extends StatefulWidget {
   final String selectedModel;
@@ -39,6 +40,9 @@ class _CoderPageState extends State<CoderPage> {
   // AI Integration
   late ExternalToolsService _toolsService;
   late http.Client _httpClient;
+  
+  // Refactored logic service (handles repository analysis)
+  CoderLogicService? _logicService;
   
   // Task Management
   List<CoderTask> _tasks = [];
@@ -75,6 +79,7 @@ class _CoderPageState extends State<CoderPage> {
     _followUpController.dispose();
     _commitMessageController.dispose();
     _httpClient.close();
+    _logicService?.dispose();
     super.dispose();
   }
   
@@ -245,6 +250,14 @@ class _CoderPageState extends State<CoderPage> {
           _selectedBranch = _branches.isNotEmpty ? _branches[0] : null;
           _selectedRepo = repo;
           _showRepoDropdown = false;
+          // Initialize the refactored logic service whenever repository or branch changes
+          if (_githubToken != null && _selectedBranch != null) {
+            _logicService = CoderLogicService(
+              githubToken: _githubToken!,
+              repoFullName: repo.fullName,
+              branch: _selectedBranch!,
+            );
+          }
         });
       }
     } catch (e) {
@@ -476,6 +489,11 @@ Keep responses under 200 words and be friendly but professional.
   
   // Get repository context for AI with project type detection
   Future<Map<String, dynamic>> _getRepositoryContext(CoderTask task) async {
+    // Prefer the new logic service for repository context gathering
+    if (_logicService != null) {
+      return await _logicService!.getRepositoryContext(task.description);
+    }
+    
     try {
       final response = await http.get(
         Uri.parse('https://api.github.com/repos/${task.repository.fullName}/contents?ref=${task.branch}'),
@@ -1337,6 +1355,13 @@ no changes added to commit (use "git add ." or "git commit -a")
         await _fetchBranches(_selectedRepo!);
         setState(() {
           _selectedBranch = cleanBranchName;
+          if (_githubToken != null) {
+            _logicService = CoderLogicService(
+              githubToken: _githubToken!,
+              repoFullName: _selectedRepo!.fullName,
+              branch: _selectedBranch!,
+            );
+          }
         });
         
         _showSnackBar('✅ Created and switched to branch: $cleanBranchName');
@@ -1637,6 +1662,13 @@ no changes added to commit (use "git add ." or "git commit -a")
                             setState(() {
                               _selectedBranch = branch;
                               _showBranchDropdown = false;
+                              if (_githubToken != null) {
+                                _logicService = CoderLogicService(
+                                  githubToken: _githubToken!,
+                                  repoFullName: _selectedRepo!.fullName,
+                                  branch: _selectedBranch!,
+                                );
+                              }
                             });
                           },
                         );
