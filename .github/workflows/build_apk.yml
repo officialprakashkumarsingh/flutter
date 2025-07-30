@@ -1,0 +1,48 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '**/*.apk'
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release --dart-define=BUILD_TIMESTAMP=$(date +%s)
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Commit APK back to repository (optional)
+        if: env.GH_TOKEN != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          cp build/app/outputs/flutter-apk/app-release.apk ./aham-app-latest.apk
+          git add aham-app-latest.apk
+          git commit -m "chore(build): update generated APK [skip ci]" || true
+          git push https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }} HEAD:${{ github.ref_name }}
