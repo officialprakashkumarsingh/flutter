@@ -1,24 +1,27 @@
 # APK Download Links
 
-## Latest Version - v7.0 (Python External Tools Coder) ⭐ **NEW!**
-**File:** `aham-app-v7.0-python-external-tools-coder.apk`
+## Latest Version - v7.1 (Robust Coder Fixed) ⭐ **RECOMMENDED!**
+**File:** `aham-app-v7.1-robust-coder-fixed.apk`
 **Size:** 27.9 MB
 **Features:** 
-- **🚀 Refactored Coder Feature**: Focused exclusively on coding tasks (no conversation)
-- **🐍 Python External Tools**: Robust file operations using external Python execution
-- **📊 Enhanced Analysis**: Comprehensive project structure analysis and planning
-- **⚡ Improved Performance**: Better error handling and reliability
-- **🔧 Advanced Tools**: 
-  - File operations (read, write, edit, delete, search)
-  - Code analysis and implementation planning
-  - External tool execution with JSON communication
+- **🔧 FIXED**: "0 modified files" issue completely resolved
+- **🎯 Enhanced File Detection**: Multiple intelligent patterns for file extraction
+- **📊 Robust Operation Tracking**: Comprehensive file operation monitoring
+- **🐍 Python External Tools**: Reliable file operations with better error handling
+- **💡 Smart Defaults**: Intelligent file suggestions when none detected
+- **🔍 Advanced Features**:
+  - Quoted file path detection (`"src/App.js"`, `'lib/main.dart'`)
+  - Project-specific file suggestions (Flutter, React, Python, etc.)
+  - Code block file extraction from AI responses
+  - Better task completion logic with operation summaries
+  - Debug logging for troubleshooting
 
 ## Previous Versions
 
-### v6.0 - Ultimate Smart Coder
-**File:** `aham-app-v6.0-ultimate-smart-coder.apk`
+### v7.0 - Python External Tools Coder
+**File:** `aham-app-v7.0-python-external-tools-coder.apk`
 **Size:** 27.9 MB
-**Features:** Advanced AI coding assistance with conversation capabilities
+**Features:** Initial Python external tools implementation (had 0 modified files issue)
 
 ---
 
