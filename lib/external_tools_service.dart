@@ -2173,6 +2173,9 @@ $diagram''';
       final String operation = _lastToolUsed; // Use the current tool name as operation
       final List<String> args = ['python3', 'python_tools/file_operations.py', operation];
       
+      // Set the base path to current working directory for file operations
+      args.addAll(['--base-path', '.']);
+      
       // Add operation-specific arguments
       switch (operation) {
         case 'read_file':

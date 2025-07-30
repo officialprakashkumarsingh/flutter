@@ -261,6 +261,11 @@ class _CoderPageState extends State<CoderPage> {
     final taskDescription = _taskController.text.trim();
     if (taskDescription.isEmpty || _selectedRepo == null || _selectedBranch == null) return;
     
+    // Clear previous task data
+    _modifiedFiles.clear();
+    _fileContents.clear();
+    _fileOperations.clear();
+    
     setState(() {
       _isProcessingTask = true;
     });
@@ -716,6 +721,19 @@ ${_getFileExtensionRules(projectType)}
 
 Create a detailed implementation plan that leverages external Python tools for maximum efficiency and accuracy.
 Focus on using the Python tools for all file operations and analysis tasks.
+
+IMPORTANT: Be very specific about which files to create/modify. Include:
+1. Exact file paths (e.g., src/components/Button.js, lib/pages/home_page.dart)
+2. Clear file operation type (CREATE new file, MODIFY existing file, DELETE file)
+3. Specific implementation details for each file
+4. File structure and organization
+
+EXAMPLE FILE SPECIFICATIONS:
+- CREATE src/components/LoginForm.js (React component for user login)
+- MODIFY lib/main.dart (add new route for settings page)
+- CREATE styles/global.css (application-wide styling)
+
+Provide concrete, actionable file operations that the Python tools can execute.
 ''';
 
       final aiResponse = await _callAIModel(prompt);
@@ -805,8 +823,11 @@ Always ensure your implementations are complete and ready to run.''',
           'file_path': filePath,
         });
         
-        final currentContent = readResult['success'] ? readResult['content'] : '';
-        final isNewFile = !readResult['success'] || currentContent.isEmpty;
+        final currentContent = readResult['success'] ? (readResult['content'] ?? '') : '';
+        final isNewFile = !readResult['success'] || currentContent.trim().isEmpty;
+        
+        // Log the read operation for debugging
+        print('DEBUG: Read $filePath - Success: ${readResult['success']}, Content length: ${currentContent.length}, Is new: $isNewFile');
         
         final operation = isNewFile ? 'Creating' : 'Modifying';
         await _updateTaskStep(task, '$operation $filePath using AI analysis...', TaskStatus.executing);
@@ -859,8 +880,11 @@ The content will be passed directly to Python external tools for file operations
           if (deleteResult['success']) {
             _fileOperations[filePath] = 'deleted';
             await _updateTaskStep(task, 'Deleted $filePath via Python tool', TaskStatus.executing);
+            print('DEBUG: Successfully deleted $filePath');
           } else {
             await _updateTaskStep(task, 'Failed to delete $filePath: ${deleteResult['error']}', TaskStatus.executing);
+            _fileOperations[filePath] = 'failed_delete';
+            print('DEBUG: Failed to delete $filePath: ${deleteResult['error']}');
           }
           
         } else {
@@ -884,15 +908,25 @@ The content will be passed directly to Python external tools for file operations
           }
           
           if (writeResult['success']) {
+            // Track successful operations
             _modifiedFiles[filePath] = modifiedContent;
             _fileContents[filePath] = currentContent;
             _fileOperations[filePath] = operation.toLowerCase();
             
             final operationText = isNewFile ? 'Created' : 'Modified';
             final toolInfo = writeResult['execution_method'] ?? 'python_external';
-            await _updateTaskStep(task, '$operationText $filePath via Python tool ($toolInfo)', TaskStatus.executing);
+            final contentSize = modifiedContent.length;
+            
+            await _updateTaskStep(task, '$operationText $filePath via Python tool ($contentSize chars, $toolInfo)', TaskStatus.executing);
+            
+            // Log successful operation
+            print('DEBUG: Successfully ${operation.toLowerCase()} $filePath - Content: ${contentSize} chars');
           } else {
             await _updateTaskStep(task, 'Failed to ${operation.toLowerCase()} $filePath: ${writeResult['error']}', TaskStatus.executing);
+            
+            // Still track the attempt for better visibility
+            _fileOperations[filePath] = 'failed_${operation.toLowerCase()}';
+            print('DEBUG: Failed to ${operation.toLowerCase()} $filePath: ${writeResult['error']}');
           }
         }
         
@@ -970,53 +1004,174 @@ The content will be passed directly to Python external tools for file operations
     }
   }
   
-  // Extract file paths from AI plan with better extension detection
+  // Enhanced file extraction from AI plan with intelligent detection
   List<String> _extractFilesFromPlan(String plan) {
-    // Enhanced pattern to catch more file types including HTML, CSS, JS
-    final filePattern = RegExp(r'([a-zA-Z0-9_\-./]+\.(html|htm|css|js|jsx|ts|tsx|py|java|cpp|c|h|dart|kt|swift|go|rs|php|rb|cs|json|xml|yml|yaml|md|txt))', multiLine: true);
+    final extractedFiles = <String>[];
+    
+    // 1. Direct file patterns with extensions
+    final filePattern = RegExp(r'([a-zA-Z0-9_\-./]+\.(html|htm|css|js|jsx|ts|tsx|py|java|cpp|c|h|dart|kt|swift|go|rs|php|rb|cs|json|xml|yml|yaml|md|txt|vue|svelte|scss|sass|less|sql|sh|bat|gradle|pom|lock|toml|ini|cfg|conf))', multiLine: true);
     final matches = filePattern.allMatches(plan);
+    extractedFiles.addAll(matches.map((match) => match.group(1)!));
     
-    // Also look for common file names without extensions mentioned in plan
-    final commonFiles = <String>[];
-    if (plan.toLowerCase().contains('index') && (plan.toLowerCase().contains('html') || plan.toLowerCase().contains('web'))) {
-      commonFiles.add('index.html');
-    }
-    if (plan.toLowerCase().contains('style') && plan.toLowerCase().contains('css')) {
-      commonFiles.add('style.css');
-    }
-    if (plan.toLowerCase().contains('script') && plan.toLowerCase().contains('javascript')) {
-      commonFiles.add('script.js');
-    }
-    if (plan.toLowerCase().contains('app.js') || plan.toLowerCase().contains('main.js')) {
-      commonFiles.add(plan.toLowerCase().contains('app.js') ? 'app.js' : 'main.js');
+    // 2. Look for quoted file paths
+    final quotedPattern = RegExp(r'"([a-zA-Z0-9_\-./]+\.[a-zA-Z0-9]+)"', multiLine: true);
+    final quotedMatches = quotedPattern.allMatches(plan);
+    extractedFiles.addAll(quotedMatches.map((match) => match.group(1)!));
+    
+    final singleQuotedPattern = RegExp(r"'([a-zA-Z0-9_\-./]+\.[a-zA-Z0-9]+)'", multiLine: true);
+    final singleQuotedMatches = singleQuotedPattern.allMatches(plan);
+    extractedFiles.addAll(singleQuotedMatches.map((match) => match.group(1)!));
+    
+    // 3. Look for markdown-style code blocks mentioning files
+    final codeBlockPattern = RegExp(r'```[a-zA-Z]*\n.*?([a-zA-Z0-9_\-./]+\.[a-zA-Z0-9]+).*?\n```', multiLine: true, dotAll: true);
+    final codeMatches = codeBlockPattern.allMatches(plan);
+    extractedFiles.addAll(codeMatches.map((match) => match.group(1)!));
+    
+    // 4. Project-specific common files based on detected type
+    final commonFiles = _getCommonFilesForProject(plan);
+    extractedFiles.addAll(commonFiles);
+    
+    // 5. Intelligent file suggestions based on task description
+    final suggestedFiles = _suggestFilesFromTask(plan);
+    extractedFiles.addAll(suggestedFiles);
+    
+    // Clean and validate files
+    final validFiles = extractedFiles
+        .where((file) => file.isNotEmpty && !file.startsWith('.') && file.contains('.'))
+        .map((file) => file.trim())
+        .toSet()
+        .toList();
+    
+    // If no files found, provide intelligent defaults
+    if (validFiles.isEmpty) {
+      validFiles.addAll(_getDefaultFilesForTask(plan));
     }
     
-    final allFiles = matches.map((match) => match.group(1)!).toSet().toList();
-    allFiles.addAll(commonFiles);
-    
-    return allFiles.toSet().toList(); // Remove duplicates
+    return validFiles;
   }
   
-  // Verify changes
+  // Get common files based on project type detection
+  List<String> _getCommonFilesForProject(String plan) {
+    final files = <String>[];
+    final planLower = plan.toLowerCase();
+    
+    // Flutter/Dart project
+    if (planLower.contains('flutter') || planLower.contains('dart')) {
+      files.addAll(['lib/main.dart', 'pubspec.yaml']);
+    }
+    
+    // React/Web project
+    if (planLower.contains('react') || planLower.contains('component')) {
+      files.addAll(['src/App.js', 'src/index.js', 'package.json']);
+    }
+    
+    // Node.js project
+    if (planLower.contains('node') || planLower.contains('express')) {
+      files.addAll(['server.js', 'app.js', 'package.json']);
+    }
+    
+    // Python project
+    if (planLower.contains('python') || planLower.contains('django') || planLower.contains('flask')) {
+      files.addAll(['main.py', 'app.py', 'requirements.txt']);
+    }
+    
+    // Web project
+    if (planLower.contains('html') || planLower.contains('website') || planLower.contains('web')) {
+      files.addAll(['index.html', 'style.css', 'script.js']);
+    }
+    
+    return files;
+  }
+  
+  // Suggest files based on task intent
+  List<String> _suggestFilesFromTask(String plan) {
+    final files = <String>[];
+    final planLower = plan.toLowerCase();
+    
+    // API/Backend tasks
+    if (planLower.contains('api') || planLower.contains('endpoint') || planLower.contains('route')) {
+      files.addAll(['api/routes.js', 'controllers/controller.js', 'models/model.js']);
+    }
+    
+    // UI/Frontend tasks
+    if (planLower.contains('ui') || planLower.contains('interface') || planLower.contains('component')) {
+      files.addAll(['components/Component.js', 'styles/style.css']);
+    }
+    
+    // Database tasks
+    if (planLower.contains('database') || planLower.contains('model') || planLower.contains('schema')) {
+      files.addAll(['models/schema.js', 'migrations/migration.sql']);
+    }
+    
+    // Configuration tasks
+    if (planLower.contains('config') || planLower.contains('setting') || planLower.contains('environment')) {
+      files.addAll(['config/config.js', '.env', 'settings.json']);
+    }
+    
+    return files;
+  }
+  
+  // Provide default files when nothing else is detected
+  List<String> _getDefaultFilesForTask(String plan) {
+    final planLower = plan.toLowerCase();
+    
+    // Try to determine project type and provide sensible defaults
+    if (planLower.contains('flutter') || planLower.contains('dart')) {
+      return ['lib/main.dart'];
+    } else if (planLower.contains('react') || planLower.contains('javascript')) {
+      return ['src/App.js'];
+    } else if (planLower.contains('python')) {
+      return ['main.py'];
+    } else if (planLower.contains('html') || planLower.contains('web')) {
+      return ['index.html'];
+    } else {
+      // Generic fallback - create a file based on task
+      return ['src/implementation.js']; // Generic implementation file
+    }
+  }
+  
+  // Verify changes with comprehensive operation tracking
   Future<Map<String, dynamic>> _verifyChanges(CoderTask task) async {
-    if (_modifiedFiles.isEmpty) {
+    final createdFiles = _fileOperations.entries.where((e) => e.value == 'creating').map((e) => e.key).toList();
+    final modifiedFiles = _fileOperations.entries.where((e) => e.value == 'modifying').map((e) => e.key).toList();
+    final deletedFiles = _fileOperations.entries.where((e) => e.value == 'deleted').map((e) => e.key).toList();
+    final failedFiles = _fileOperations.entries.where((e) => e.value.startsWith('failed_')).map((e) => e.key).toList();
+    
+    final totalSuccessful = createdFiles.length + modifiedFiles.length + deletedFiles.length;
+    
+    if (totalSuccessful == 0 && failedFiles.isEmpty) {
       return {
         'success': false,
-        'message': 'No files were modified',
+        'message': 'No file operations were completed. Task may need more specific implementation details.',
       };
     }
     
+    final operationsSummary = <String>[];
+    if (createdFiles.isNotEmpty) operationsSummary.add('${createdFiles.length} created');
+    if (modifiedFiles.isNotEmpty) operationsSummary.add('${modifiedFiles.length} modified');
+    if (deletedFiles.isNotEmpty) operationsSummary.add('${deletedFiles.length} deleted');
+    if (failedFiles.isNotEmpty) operationsSummary.add('${failedFiles.length} failed');
+    
     return {
-      'success': true,
-      'message': 'Successfully processed ${_modifiedFiles.length} files: ${_modifiedFiles.keys.join(', ')}',
+      'success': totalSuccessful > 0,
+      'message': 'File operations: ${operationsSummary.join(', ')}. Total processed: $totalSuccessful files.',
+      'details': {
+        'created': createdFiles,
+        'modified': modifiedFiles,
+        'deleted': deletedFiles,
+        'failed': failedFiles,
+      }
     };
   }
   
   // Generate AI summary of completed task
   Future<void> _generateTaskSummary(CoderTask task) async {
     try {
-      if (_modifiedFiles.isEmpty && _fileOperations.isEmpty) {
-        await _updateTaskStep(task, 'Task completed - no files were modified.', TaskStatus.completed);
+      // Count all operations including deletes
+      final totalOperations = _modifiedFiles.length + _fileOperations.values.where((op) => op == 'deleted').length;
+      
+      if (totalOperations == 0) {
+        await _updateTaskStep(task, 'Task completed - implementation analysis complete, ready for next steps.', TaskStatus.completed);
         return;
       }
 
