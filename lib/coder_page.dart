@@ -935,10 +935,34 @@ The content will be passed directly to Python external tools for file operations
         
       } catch (e) {
         await _updateTaskStep(task, 'Python tool error for $filePath: $e', TaskStatus.executing);
+        _fileOperations[filePath] = 'failed_error';
+        print('ERROR: File operation failed for $filePath: $e');
       }
     }
     
-    await _updateTaskStep(task, 'Completed implementation using Python external tools', TaskStatus.executing);
+    // Report comprehensive results
+    final successfulOps = _fileOperations.entries.where((e) => !e.value.startsWith('failed_')).length;
+    final failedOps = _fileOperations.entries.where((e) => e.value.startsWith('failed_')).length;
+    
+    await _updateTaskStep(task, 
+      'Completed implementation: $successfulOps successful operations, $failedOps failed operations. '
+      'Files in current directory ready for Git operations.', 
+      TaskStatus.executing);
+    
+    // Optional Git status check for debugging
+    try {
+      final gitResult = await Process.run('git', ['status', '--porcelain']);
+      if (gitResult.exitCode == 0) {
+        final changedFiles = gitResult.stdout.toString().trim();
+        if (changedFiles.isNotEmpty) {
+          await _updateTaskStep(task, 'Git detected changes: ${changedFiles.split('\n').length} files modified', TaskStatus.executing);
+        } else {
+          await _updateTaskStep(task, 'Git status: No changes detected in working directory', TaskStatus.executing);
+        }
+      }
+    } catch (e) {
+      print('Git status check failed: $e');
+    }
   }
   
   // Get file content from GitHub

@@ -2189,7 +2189,9 @@ $diagram''';
           break;
         case 'write_file':
           args.addAll(['--file-path', params['file_path']]);
-          args.addAll(['--content', params['content'] ?? '']);
+          // Use proper escaping for content to handle spaces and special characters
+          final content = params['content'] ?? '';
+          args.addAll(['--content', content]);
           args.addAll(['--mode', params['mode'] ?? 'w']);
           break;
         case 'edit_file':
@@ -2219,7 +2221,17 @@ $diagram''';
           break;
       }
 
+      // Debug logging for file operations
+      print('DEBUG FILE OPS: Current working directory: ${Directory.current.path}');
+      print('DEBUG FILE OPS: Executing command: ${args.join(' ')}');
+      print('DEBUG FILE OPS: Full args: $args');
+      print('DEBUG FILE OPS: Params: $params');
+
       final result = await Process.run(args[0], args.sublist(1));
+      
+      print('DEBUG FILE OPS: Exit code: ${result.exitCode}');
+      print('DEBUG FILE OPS: Stdout: ${result.stdout}');
+      print('DEBUG FILE OPS: Stderr: ${result.stderr}');
       
       if (result.exitCode == 0) {
         try {

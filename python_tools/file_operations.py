@@ -266,9 +266,9 @@ def main():
     parser.add_argument("--base-path", default=".", help="Base path for operations")
     parser.add_argument("--file-path", help="File path")
     parser.add_argument("--dir-path", help="Directory path")
-    parser.add_argument("--content", help="Content to write")
-    parser.add_argument("--old-content", help="Old content to replace")
-    parser.add_argument("--new-content", help="New content to replace with")
+    parser.add_argument("--content", help="Content to write", default="")
+    parser.add_argument("--old-content", help="Old content to replace", default="")
+    parser.add_argument("--new-content", help="New content to replace with", default="")
     parser.add_argument("--start-line", type=int, help="Start line for reading")
     parser.add_argument("--end-line", type=int, help="End line for reading")
     parser.add_argument("--pattern", help="Search pattern")
@@ -277,6 +277,9 @@ def main():
     parser.add_argument("--mode", default="w", help="Write mode (w, a)")
     
     args = parser.parse_args()
+    
+    # Debug logging
+    print(f"DEBUG: Operation={args.operation}, Content='{args.content}', Length={len(args.content or '')}", file=sys.stderr)
     
     file_ops = FileOperations(args.base_path)
     result = None
@@ -288,14 +291,14 @@ def main():
             result = file_ops.read_file(args.file_path, args.start_line, args.end_line)
             
         elif args.operation == "write_file":
-            if not args.file_path or args.content is None:
-                raise ValueError("--file-path and --content are required for write_file")
-            result = file_ops.write_file(args.file_path, args.content, args.mode)
+            if not args.file_path:
+                raise ValueError("--file-path is required for write_file")
+            result = file_ops.write_file(args.file_path, args.content or "", args.mode)
             
         elif args.operation == "edit_file":
-            if not all([args.file_path, args.old_content is not None, args.new_content is not None]):
-                raise ValueError("--file-path, --old-content, and --new-content are required for edit_file")
-            result = file_ops.edit_file(args.file_path, args.old_content, args.new_content)
+            if not args.file_path:
+                raise ValueError("--file-path is required for edit_file")
+            result = file_ops.edit_file(args.file_path, args.old_content or "", args.new_content or "")
             
         elif args.operation == "delete_file":
             if not args.file_path:
