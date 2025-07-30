@@ -677,74 +677,89 @@ class _CoderPageState extends State<CoderPage> {
       final projectType = context['projectType'] ?? 'Unknown';
       final technologies = (context['technologies'] as List? ?? []).join(', ');
       
-      // Step 3: Enhanced AI prompt with Python analysis results
+      // Step 3: SIMPLIFIED and FOCUSED AI prompt 
       final prompt = '''
-You are an expert AI coding assistant with access to external Python-based analysis tools.
+USER REQUEST: ${task.description}
 
-TASK: ${task.description}
-
-REPOSITORY CONTEXT:
+PROJECT CONTEXT:
 - Repository: ${task.repository.fullName}
-- Branch: ${task.branch}  
 - Project Type: ${projectType}
 - Technologies: ${technologies}
 
-DETAILED PROJECT ANALYSIS:
-${projectAnalysis['success'] ? json.encode(projectAnalysis) : 'Project analysis not available'}
+YOUR TASK:
+1. Understand exactly what the user wants
+2. Create a clear implementation plan
+3. Specify which files to create/modify/delete
 
-PYTHON-GENERATED IMPLEMENTATION PLAN:
-${pythonPlan['success'] ? json.encode(pythonPlan['plan']) : 'Python plan generation failed'}
+RESPONSE FORMAT:
+Provide a detailed plan that includes:
 
-CRITICAL REQUIREMENTS:
-1. Create a comprehensive, detailed implementation plan
-2. Use external Python tools for file operations (read_file, write_file, edit_file, delete_file)
-3. Follow the structure suggested by the Python analysis
-4. Consider the complexity estimation: ${pythonPlan['success'] ? pythonPlan['plan']['estimated_complexity'] : 'medium'}
+**WHAT I UNDERSTAND:**
+[Clearly restate what the user wants in simple terms]
 
-AUTONOMOUS EXECUTION STRATEGY:
-- Think step-by-step before implementing
-- Use Python tools for all file operations
-- Verify implementations thoroughly
-- Handle edge cases and errors
-- Create production-ready, maintainable code
+**FILES TO WORK WITH:**
+[List specific files with full paths, like:]
+- CREATE src/components/Button.js (for React button component)
+- MODIFY lib/main.dart (to add new routes)
+- CREATE styles/app.css (for styling)
 
-IMPLEMENTATION PLAN FORMAT:
-1. **Requirements Analysis**: Detailed understanding of the task
-2. **Architecture Design**: High-level approach and structure
-3. **File Operations Plan**: Specific files to create/modify/delete using Python tools
-4. **Implementation Steps**: Step-by-step execution with external tool usage
-5. **Testing Strategy**: Verification and validation approach
-6. **Potential Issues**: Risk mitigation and edge case handling
+**IMPLEMENTATION PLAN:**
+[Step-by-step plan of what you'll do]
 
-CRITICAL FILE EXTENSION RULES:
+IMPORTANT RULES:
+- Focus ONLY on what the user actually asked for
+- Use appropriate file extensions for the project type (${projectType})
+- Be specific about file paths
+- Don't add extra features the user didn't request
+- Keep it simple and focused
+
 ${_getFileExtensionRules(projectType)}
-
-Create a detailed implementation plan that leverages external Python tools for maximum efficiency and accuracy.
-Focus on using the Python tools for all file operations and analysis tasks.
-
-IMPORTANT: Be very specific about which files to create/modify. Include:
-1. Exact file paths (e.g., src/components/Button.js, lib/pages/home_page.dart)
-2. Clear file operation type (CREATE new file, MODIFY existing file, DELETE file)
-3. Specific implementation details for each file
-4. File structure and organization
-
-EXAMPLE FILE SPECIFICATIONS:
-- CREATE src/components/LoginForm.js (React component for user login)
-- MODIFY lib/main.dart (add new route for settings page)
-- CREATE styles/global.css (application-wide styling)
-
-Provide concrete, actionable file operations that the Python tools can execute.
 ''';
 
       final aiResponse = await _callAIModel(prompt);
       
+      // Extract files and validate the response makes sense
+      final extractedFiles = _extractFilesFromPlan(aiResponse);
+      
+      // If no files found, try to get a better response
+      if (extractedFiles.isEmpty) {
+        await _updateTaskStep(task, 'AI plan unclear, requesting clarification...', TaskStatus.planning);
+        
+        final clarificationPrompt = '''
+The user wants: ${task.description}
+
+You need to tell me exactly which files to create or modify. 
+Give me a simple list like:
+
+CREATE filename.ext - description
+MODIFY filename.ext - description
+
+For project type: ${projectType}
+User request: ${task.description}
+
+Just list the files, nothing else.
+''';
+        
+        final clarifiedResponse = await _callAIModel(clarificationPrompt);
+        final clarifiedFiles = _extractFilesFromPlan(clarifiedResponse);
+        
+        return {
+          'summary': 'Implementation plan for ${task.description}',
+          'response': aiResponse + '\n\nCLARIFIED FILES:\n' + clarifiedResponse,
+          'files_to_modify': clarifiedFiles.isNotEmpty ? clarifiedFiles : _getDefaultFilesForTask(task.description),
+          'python_analysis': projectAnalysis,
+          'python_plan': pythonPlan,
+          'complexity': 'medium',
+        };
+      }
+      
       return {
-        'summary': 'Enhanced implementation plan with Python tool integration for ${task.description}',
+        'summary': 'Implementation plan for ${task.description}',
         'response': aiResponse,
-        'files_to_modify': _extractFilesFromPlan(aiResponse),
+        'files_to_modify': extractedFiles,
         'python_analysis': projectAnalysis,
         'python_plan': pythonPlan,
-        'complexity': pythonPlan['success'] ? pythonPlan['plan']['estimated_complexity'] : 'medium',
+        'complexity': 'medium',
       };
     } catch (e) {
       throw Exception('Failed to generate enhanced AI plan: $e');
@@ -765,26 +780,19 @@ Provide concrete, actionable file operations that the Python tools can execute.
           'messages': [
             {
               'role': 'system',
-              'content': '''You are an expert software developer and AI coding assistant.
+              'content': '''You are a focused AI coding assistant.
 
-CORE PRINCIPLES:
-- You operate autonomously and thoroughly
-- You solve problems completely before stopping
-- You follow best practices and write production-ready code
-- You are thorough in gathering context and understanding requirements
-- You provide detailed, actionable implementations
-- You consider edge cases and potential issues
+KEY RULES:
+1. LISTEN CAREFULLY to what the user actually wants
+2. Don't add features they didn't ask for
+3. Don't change the programming language unless they ask
+4. Focus on their specific request
+5. Be clear about what files you'll create/modify
+6. Write clean, working code
 
-COMMUNICATION STYLE:
-- Be precise and practical in your solutions
-- Provide complete code implementations
-- Explain your reasoning when helpful
-- Focus on solving the user's specific problem
-- Use appropriate file extensions and naming conventions
-- Write clean, maintainable, well-documented code
-
-You have access to repository information and can create, modify, or delete files as needed.
-Always ensure your implementations are complete and ready to run.''',
+Your job is to understand the user's request and implement exactly what they asked for.
+If they want a Python script, make Python. If they want HTML, make HTML. 
+Follow their instructions precisely.''',
             },
             {
               'role': 'user',
@@ -836,35 +844,25 @@ Always ensure your implementations are complete and ready to run.''',
         
         // Step 2: Use AI to determine the file modifications
         final modificationPrompt = '''
-EXTERNAL PYTHON TOOL-BASED FILE OPERATION
+USER'S ORIGINAL REQUEST: ${task.description}
 
-Repository: ${task.repository.fullName}
-Branch: ${task.branch}
-File: $filePath
-Operation: ${isNewFile ? 'CREATE' : 'MODIFY'}
-Tool Integration: Python-based external execution
+FILE TO ${isNewFile ? 'CREATE' : 'MODIFY'}: $filePath
 
-${isNewFile ? 'This is a NEW file to be created.' : 'Current content (read via Python tool):\n```\n$currentContent\n```'}
+${isNewFile ? 'This is a NEW file - create complete content.' : 'CURRENT FILE CONTENT:\n```\n$currentContent\n```'}
 
-Original Task: ${task.description}
-Implementation Plan: ${plan['response']}
-Python Analysis: ${plan['python_analysis'] != null ? 'Available' : 'Not available'}
-Complexity Level: ${plan['complexity'] ?? 'medium'}
+INSTRUCTIONS:
+1. Focus on the user's original request: "${task.description}"
+2. ${isNewFile ? 'Create the complete file content' : 'Modify the file to fulfill the request'}
+3. Make sure the code/content does exactly what the user asked for
+4. Use the right programming language for this file type
+5. Write clean, working code
 
-INSTRUCTIONS FOR PYTHON TOOL EXECUTION:
-${isNewFile ? 'Generate the COMPLETE file content for this new file.' : 'Generate the COMPLETE modified file content for this file.'}
+IMPORTANT:
+- Don't add features the user didn't request
+- Keep it simple and focused
+- Make sure it actually works
 
-REQUIREMENTS:
-- The output will be used with Python write_file or edit_file tools
-- Follow best practices for the detected project type
-- Use proper file structure and organization
-- Include necessary imports and dependencies
-- Add appropriate comments and documentation
-- Ensure code is production-ready and maintainable
-- Handle edge cases and error conditions
-
-OUTPUT ONLY THE COMPLETE FILE CONTENT - no explanations, no markdown blocks, just the raw code/content.
-The content will be passed directly to Python external tools for file operations.
+OUTPUT ONLY THE COMPLETE FILE CONTENT (no explanations, no markdown blocks):
 ''';
 
         final modifiedContent = await _callAIModel(modificationPrompt);
@@ -1141,18 +1139,26 @@ The content will be passed directly to Python external tools for file operations
   List<String> _getDefaultFilesForTask(String plan) {
     final planLower = plan.toLowerCase();
     
-    // Try to determine project type and provide sensible defaults
+    // Try to determine what the user wants based on keywords
     if (planLower.contains('flutter') || planLower.contains('dart')) {
       return ['lib/main.dart'];
-    } else if (planLower.contains('react') || planLower.contains('javascript')) {
+    } else if (planLower.contains('react') || planLower.contains('component')) {
       return ['src/App.js'];
-    } else if (planLower.contains('python')) {
+    } else if (planLower.contains('python') || planLower.contains('script')) {
       return ['main.py'];
-    } else if (planLower.contains('html') || planLower.contains('web')) {
+    } else if (planLower.contains('html') || planLower.contains('web') || planLower.contains('page')) {
       return ['index.html'];
+    } else if (planLower.contains('css') || planLower.contains('style')) {
+      return ['style.css'];
+    } else if (planLower.contains('javascript') || planLower.contains('js')) {
+      return ['script.js'];
+    } else if (planLower.contains('api') || planLower.contains('server')) {
+      return ['server.js'];
+    } else if (planLower.contains('database') || planLower.contains('sql')) {
+      return ['database.sql'];
     } else {
-      // Generic fallback - create a file based on task
-      return ['src/implementation.js']; // Generic implementation file
+      // Ask AI to suggest a filename based on the task
+      return ['implementation.txt']; // Fallback that works for any content
     }
   }
   

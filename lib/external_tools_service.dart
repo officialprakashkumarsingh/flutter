@@ -2267,8 +2267,7 @@ $diagram''';
       return {
         'success': false,
         'error': 'Failed to execute file operation: $e',
-        'operation': operation,
-        'command_attempted': args.join(' '),
+        'operation': _lastToolUsed,
         'working_directory': Directory.current.path,
         'timestamp': DateTime.now().toIso8601String(),
         'error_type': e.runtimeType.toString(),
