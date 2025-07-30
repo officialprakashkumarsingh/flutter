@@ -256,28 +256,21 @@ class _CoderPageState extends State<CoderPage> {
     setState(() => _isLoading = false);
   }
   
-  // Process user task with AI
+  // Process user task with AI - focused on coding tasks only
   Future<void> _processTask() async {
     final taskDescription = _taskController.text.trim();
     if (taskDescription.isEmpty || _selectedRepo == null || _selectedBranch == null) return;
+    
+    // Clear previous task data
+    _modifiedFiles.clear();
+    _fileContents.clear();
+    _fileOperations.clear();
     
     setState(() {
       _isProcessingTask = true;
     });
     
-    // SMART TASK CLASSIFICATION - Check if this is actually a coding task
-    final isCodeTask = await _isCodeRelatedTask(taskDescription);
-    
-    if (!isCodeTask) {
-      // Handle as general conversation, not a coding task
-      await _handleGeneralConversation(taskDescription);
-      setState(() {
-        _isProcessingTask = false;
-      });
-      return;
-    }
-    
-    // Create new task
+    // Create new coding task
     final task = CoderTask(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       description: taskDescription,
@@ -295,7 +288,7 @@ class _CoderPageState extends State<CoderPage> {
     
     _scrollToBottom();
     
-    // AI Workflow: Think → Plan → Execute → Verify → Success
+    // Enhanced AI Workflow: Think → Plan → Execute → Verify → Success
     await _executeAIWorkflow(task);
     
     setState(() {
@@ -303,111 +296,7 @@ class _CoderPageState extends State<CoderPage> {
     });
   }
   
-  // Determine if user input is a coding task or general conversation
-  Future<bool> _isCodeRelatedTask(String input) async {
-    // Quick keyword detection for obvious coding tasks
-    final codingKeywords = [
-      'create', 'build', 'implement', 'develop', 'code', 'write', 'function',
-      'class', 'method', 'api', 'database', 'frontend', 'backend', 'website',
-      'app', 'application', 'component', 'module', 'library', 'framework',
-      'fix', 'debug', 'optimize', 'refactor', 'test', 'deploy', 'install',
-      'configure', 'setup', 'add feature', 'remove', 'update', 'modify',
-      'algorithm', 'data structure', 'schema', 'model', 'view', 'controller'
-    ];
-    
-    final generalKeywords = [
-      'hello', 'hi', 'thanks', 'thank you', 'how are you', 'what is',
-      'explain', 'tell me', 'describe', 'what does', 'how does', 'why',
-      'when', 'where', 'who', 'help', 'question', 'advice', 'suggest'
-    ];
-    
-    final lowerInput = input.toLowerCase();
-    
-    // Check for obvious general conversation
-    if (generalKeywords.any((keyword) => lowerInput.contains(keyword)) && 
-        !codingKeywords.any((keyword) => lowerInput.contains(keyword))) {
-      return false;
-    }
-    
-    // Check for obvious coding tasks
-    if (codingKeywords.any((keyword) => lowerInput.contains(keyword))) {
-      return true;
-    }
-    
-    // For ambiguous cases, use AI to determine
-    try {
-      final classificationPrompt = '''
-Analyze this user input and determine if it's a coding/development task or general conversation.
 
-User input: "$input"
-
-Respond with ONLY "CODING" or "CONVERSATION".
-
-CODING examples:
-- "Create a login system"
-- "Build a todo app"
-- "Fix the navigation bug"
-- "Add dark mode"
-- "Write a function to calculate..."
-
-CONVERSATION examples:
-- "Hello, how are you?"
-- "What is React?"
-- "Explain how databases work"
-- "Thanks for the help"
-- "Tell me about programming"
-''';
-
-      final response = await _callAIModel(classificationPrompt);
-      return response.toUpperCase().contains('CODING');
-    } catch (e) {
-      // Default to coding task if classification fails
-      return true;
-    }
-  }
-  
-  // Handle general conversation without coding workflow
-  Future<void> _handleGeneralConversation(String message) async {
-    try {
-      final conversationPrompt = '''
-You are AhamAI, a helpful AI assistant integrated into a coding environment.
-
-The user said: "$message"
-
-Provide a helpful, concise response. If they're asking about programming concepts, explain clearly. 
-If it's a greeting or general question, respond appropriately.
-Keep responses under 200 words and be friendly but professional.
-''';
-
-      final response = await _callAIModel(conversationPrompt);
-      
-      // Create a simple conversation task to display the response
-      final conversationTask = CoderTask(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        description: message,
-        repository: _selectedRepo!,
-        branch: _selectedBranch!,
-        status: TaskStatus.completed,
-        steps: [
-          TaskStep(
-            description: response,
-            timestamp: DateTime.now(),
-            status: TaskStatus.completed,
-          )
-        ],
-        createdAt: DateTime.now(),
-      );
-      
-      setState(() {
-        _tasks.insert(0, conversationTask);
-        _taskController.clear();
-      });
-      
-      _scrollToBottom();
-    } catch (e) {
-      _showSnackBar('❌ Failed to process message: $e');
-    }
-  }
   
   // Execute AI workflow steps with REAL functionality
   Future<void> _executeAIWorkflow(CoderTask task) async {
@@ -425,7 +314,11 @@ Keep responses under 200 words and be friendly but professional.
       final plan = await _generateAIPlan(task, repoContext);
       await _updateTaskStep(task, 'Plan created: ${plan['summary']}', TaskStatus.planning);
       
-      // Step 3: Execute - Real file modifications
+      // Step 3: Setup Repository Workspace
+      await _updateTaskStep(task, 'Setting up repository workspace...', TaskStatus.executing);
+      await _setupRepositoryWorkspace(task);
+      
+      // Step 4: Execute - Real file modifications
       await _updateTaskStep(task, 'Starting implementation...', TaskStatus.executing);
       
       // Execute the plan with real file operations
@@ -437,7 +330,11 @@ Keep responses under 200 words and be friendly but professional.
       final verification = await _verifyChanges(task);
       await _updateTaskStep(task, verification['message'], TaskStatus.verifying);
       
-      // Step 5: Success with Git operations
+      // Step 5: Verify Repository Integration
+      await _updateTaskStep(task, 'Verifying file operations and repository integration...', TaskStatus.verifying);
+      await _verifyRepositoryIntegration(task);
+      
+      // Step 6: Success with Git operations
       await _updateTaskStep(task, 'Task completed! ${_modifiedFiles.length} files processed', TaskStatus.completed);
       
       // Generate AI summary of what was accomplished
@@ -767,66 +664,113 @@ Keep responses under 200 words and be friendly but professional.
     }
   }
   
-  // Generate AI plan using real AI model
+  // Enhanced AI plan generation using Python-based analysis
   Future<Map<String, dynamic>> _generateAIPlan(CoderTask task, Map<String, dynamic> context) async {
     try {
+      // Step 1: Use Python tools for detailed project analysis
+      await _updateTaskStep(task, 'Analyzing project structure with Python tools...', TaskStatus.planning);
+      
+      final projectAnalysis = await _toolsService.executeTool('analyze_project_structure', {
+        'max_depth': 3,
+      });
+      
+      await _updateTaskStep(task, 'Generating implementation plan with AI...', TaskStatus.planning);
+      
+      // Step 2: Use Python tool to generate initial plan
+      final pythonPlan = await _toolsService.executeTool('generate_implementation_plan', {
+        'task_description': task.description,
+        'relevant_files': context['files'] ?? [],
+      });
+      
       final projectType = context['projectType'] ?? 'Unknown';
       final technologies = (context['technologies'] as List? ?? []).join(', ');
       
-      // Cursor AI-style comprehensive system prompt
+      // Step 3: SIMPLIFIED and FOCUSED AI prompt 
       final prompt = '''
-You are an AI coding assistant, powered by advanced language models. You operate in an integrated development environment.
+USER REQUEST: ${task.description}
 
-You are pair programming with a USER to solve their coding task. Each time the USER sends a message, we automatically attach information about their current state, such as what files they have open, where their cursor is, recently viewed files, edit history in their session so far, linter errors, and more.
-
-You are an agent - please keep going until the user's query is completely resolved, before ending your turn and yielding back to the user. Only terminate your turn when you are sure that the problem is solved. Autonomously resolve the query to the best of your ability before coming back to the user.
-
-REPOSITORY CONTEXT:
+PROJECT CONTEXT:
 - Repository: ${task.repository.fullName}
-- Branch: ${task.branch}  
 - Project Type: ${projectType}
 - Technologies: ${technologies}
-- File count: ${context['fileCount']}
-- Languages: ${context['languages'].join(', ')}
-- Key files: ${context['files'].join(', ')}
 
-USER TASK: ${task.description}
+YOUR TASK:
+1. Understand exactly what the user wants
+2. Create a clear implementation plan
+3. Specify which files to create/modify/delete
 
-CRITICAL FILE EXTENSION RULES:
+RESPONSE FORMAT:
+Provide a detailed plan that includes:
+
+**WHAT I UNDERSTAND:**
+[Clearly restate what the user wants in simple terms]
+
+**FILES TO WORK WITH:**
+[List specific files with full paths, like:]
+- CREATE src/components/Button.js (for React button component)
+- MODIFY lib/main.dart (to add new routes)
+- CREATE styles/app.css (for styling)
+
+**IMPLEMENTATION PLAN:**
+[Step-by-step plan of what you'll do]
+
+IMPORTANT RULES:
+- Focus ONLY on what the user actually asked for
+- Use appropriate file extensions for the project type (${projectType})
+- Be specific about file paths
+- Don't add extra features the user didn't request
+- Keep it simple and focused
+
 ${_getFileExtensionRules(projectType)}
-
-AUTONOMOUS EXECUTION GUIDELINES:
-1. Be THOROUGH when gathering information. Make sure you have the FULL picture before implementing.
-2. TRACE every symbol back to its definitions and usages so you fully understand it.
-3. Look past the first seemingly relevant result. EXPLORE alternative implementations, edge cases, and varied search terms until you have COMPREHENSIVE coverage.
-4. If you've performed an edit that may partially fulfill the USER's query, but you're not confident, gather more information before ending your turn.
-5. Bias towards not asking the user for help if you can find the answer yourself.
-
-IMPLEMENTATION STRATEGY:
-As an expert ${projectType} developer, create a detailed implementation plan for this task.
-Consider file operations: CREATE, MODIFY, or DELETE files as needed.
-Provide specific file paths with CORRECT extensions, code changes, and step-by-step instructions.
-
-Your response must be a structured plan that includes:
-1. Analysis of the task requirements
-2. Specific files to create/modify/delete with proper extensions
-3. Detailed implementation steps with code snippets
-4. Dependencies and setup requirements
-5. Testing and verification steps
-
-Be very specific about file names and use the correct file extensions for ${projectType}.
-Focus on creating production-ready, maintainable code that follows best practices.
 ''';
 
       final aiResponse = await _callAIModel(prompt);
       
+      // Extract files and validate the response makes sense
+      final extractedFiles = _extractFilesFromPlan(aiResponse);
+      
+      // If no files found, try to get a better response
+      if (extractedFiles.isEmpty) {
+        await _updateTaskStep(task, 'AI plan unclear, requesting clarification...', TaskStatus.planning);
+        
+        final clarificationPrompt = '''
+The user wants: ${task.description}
+
+You need to tell me exactly which files to create or modify. 
+Give me a simple list like:
+
+CREATE filename.ext - description
+MODIFY filename.ext - description
+
+For project type: ${projectType}
+User request: ${task.description}
+
+Just list the files, nothing else.
+''';
+        
+        final clarifiedResponse = await _callAIModel(clarificationPrompt);
+        final clarifiedFiles = _extractFilesFromPlan(clarifiedResponse);
+        
+        return {
+          'summary': 'Implementation plan for ${task.description}',
+          'response': aiResponse + '\n\nCLARIFIED FILES:\n' + clarifiedResponse,
+          'files_to_modify': clarifiedFiles.isNotEmpty ? clarifiedFiles : _getDefaultFilesForTask(task.description),
+          'python_analysis': projectAnalysis,
+          'python_plan': pythonPlan,
+          'complexity': 'medium',
+        };
+      }
+      
       return {
-        'summary': 'Autonomous implementation plan for ${task.description}',
+        'summary': 'Implementation plan for ${task.description}',
         'response': aiResponse,
-        'files_to_modify': _extractFilesFromPlan(aiResponse),
+        'files_to_modify': extractedFiles,
+        'python_analysis': projectAnalysis,
+        'python_plan': pythonPlan,
+        'complexity': 'medium',
       };
     } catch (e) {
-      throw Exception('Failed to generate AI plan: $e');
+      throw Exception('Failed to generate enhanced AI plan: $e');
     }
   }
   
@@ -844,26 +788,19 @@ Focus on creating production-ready, maintainable code that follows best practice
           'messages': [
             {
               'role': 'system',
-              'content': '''You are an expert software developer and AI coding assistant.
+              'content': '''You are a focused AI coding assistant.
 
-CORE PRINCIPLES:
-- You operate autonomously and thoroughly
-- You solve problems completely before stopping
-- You follow best practices and write production-ready code
-- You are thorough in gathering context and understanding requirements
-- You provide detailed, actionable implementations
-- You consider edge cases and potential issues
+KEY RULES:
+1. LISTEN CAREFULLY to what the user actually wants
+2. Don't add features they didn't ask for
+3. Don't change the programming language unless they ask
+4. Focus on their specific request
+5. Be clear about what files you'll create/modify
+6. Write clean, working code
 
-COMMUNICATION STYLE:
-- Be precise and practical in your solutions
-- Provide complete code implementations
-- Explain your reasoning when helpful
-- Focus on solving the user's specific problem
-- Use appropriate file extensions and naming conventions
-- Write clean, maintainable, well-documented code
-
-You have access to repository information and can create, modify, or delete files as needed.
-Always ensure your implementations are complete and ready to run.''',
+Your job is to understand the user's request and implement exactly what they asked for.
+If they want a Python script, make Python. If they want HTML, make HTML. 
+Follow their instructions precisely.''',
             },
             {
               'role': 'user',
@@ -887,74 +824,292 @@ Always ensure your implementations are complete and ready to run.''',
     }
   }
   
-  // Execute AI plan with enhanced file operations
+  // Execute AI plan with Python-based external tool operations
   Future<void> _executeAIPlan(CoderTask task, Map<String, dynamic> plan) async {
     final filesToModify = plan['files_to_modify'] as List<String>;
     
+    await _updateTaskStep(task, 'Beginning implementation with Python tools...', TaskStatus.executing);
+    
     for (final filePath in filesToModify) {
       try {
-        // Check if file exists to determine operation type
-        final currentContent = await _getFileContent(task, filePath);
-        final isNewFile = currentContent == '// File not found or empty' || currentContent.startsWith('// Error loading file');
+        // Step 1: Use Python tool to read current file content
+        await _updateTaskStep(task, 'Analyzing $filePath with Python tools...', TaskStatus.executing);
+        
+        // Normalize file path to handle different formats
+        final normalizedPath = filePath.replaceAll('\\', '/');
+        final readResult = await _toolsService.executeTool('read_file', {
+          'file_path': normalizedPath,
+          'repository_name': task.repository.name,
+          'branch_name': task.branch,
+        });
+        
+        final currentContent = readResult['success'] ? (readResult['content'] ?? '') : '';
+        final isNewFile = !readResult['success'] || currentContent.trim().isEmpty;
+        
+        // Log the read operation for debugging
+        print('DEBUG: Read $filePath - Success: ${readResult['success']}, Content length: ${currentContent.length}, Is new: $isNewFile');
         
         final operation = isNewFile ? 'Creating' : 'Modifying';
-        await _updateTaskStep(task, '$operation $filePath...', TaskStatus.executing);
+        await _updateTaskStep(task, '$operation $filePath using AI analysis...', TaskStatus.executing);
         
-        // Enhanced AI prompt for file-specific modifications
+        // Step 2: Use AI to determine the file modifications
         final modificationPrompt = '''
-AUTONOMOUS FILE OPERATION
+USER'S ORIGINAL REQUEST: ${task.description}
 
-Repository: ${task.repository.fullName}
-Branch: ${task.branch}
-File: $filePath
-Operation: ${isNewFile ? 'CREATE' : 'MODIFY'}
+FILE TO ${isNewFile ? 'CREATE' : 'MODIFY'}: $filePath
 
-${isNewFile ? 'This is a NEW file to be created.' : 'Current content:\n```\n$currentContent\n```'}
-
-Original Task: ${task.description}
-Implementation Plan: ${plan['response']}
+${isNewFile ? 'This is a NEW file - create complete content.' : 'CURRENT FILE CONTENT:\n```\n$currentContent\n```'}
 
 INSTRUCTIONS:
-${isNewFile ? 'Create the COMPLETE file content for this new file.' : 'Provide the COMPLETE modified file content for this file.'}
+1. Focus on the user's original request: "${task.description}"
+2. ${isNewFile ? 'Create the complete file content' : 'Modify the file to fulfill the request'}
+3. Make sure the code/content does exactly what the user asked for
+4. Use the right programming language for this file type
+5. Write clean, working code
 
-REQUIREMENTS:
-- Follow best practices for the detected project type
-- Use proper file structure and organization
-- Include necessary imports and dependencies
-- Add appropriate comments and documentation
-- Ensure code is production-ready and maintainable
-- Handle edge cases and error conditions
+IMPORTANT:
+- Don't add features the user didn't request
+- Keep it simple and focused
+- Make sure it actually works
 
-OUTPUT ONLY THE COMPLETE FILE CONTENT - no explanations, no markdown blocks, just the raw code/content.
+OUTPUT ONLY THE COMPLETE FILE CONTENT (no explanations, no markdown blocks):
 ''';
 
         final modifiedContent = await _callAIModel(modificationPrompt);
         
-        // Check if AI wants to delete the file
+        // Step 3: Use Python tools to perform file operations
         if (modifiedContent.toLowerCase().contains('delete this file') || 
             modifiedContent.toLowerCase().contains('remove this file') ||
             modifiedContent.toLowerCase().contains('file should be deleted')) {
           
-          await _deleteFile(task, filePath);
-          _fileOperations[filePath] = 'deleted';
-          await _updateTaskStep(task, 'Deleted $filePath', TaskStatus.executing);
+          // Use Python tool to delete file
+          final deleteResult = await _toolsService.executeTool('delete_file', {
+            'file_path': normalizedPath,
+            'repository_name': task.repository.name,
+            'branch_name': task.branch,
+          });
+          
+          if (deleteResult['success']) {
+            _fileOperations[filePath] = 'deleted';
+            await _updateTaskStep(task, 'Deleted $filePath via Python tool', TaskStatus.executing);
+            print('DEBUG: Successfully deleted $filePath');
+          } else {
+            await _updateTaskStep(task, 'Failed to delete $filePath: ${deleteResult['error']}', TaskStatus.executing);
+            _fileOperations[filePath] = 'failed_delete';
+            print('DEBUG: Failed to delete $filePath: ${deleteResult['error']}');
+          }
           
         } else {
-          // Store modification and operation type
-          _modifiedFiles[filePath] = modifiedContent;
-          _fileContents[filePath] = currentContent;
-          _fileOperations[filePath] = operation.toLowerCase();
+          // Use Python tool to write/edit file
+          Map<String, dynamic> writeResult;
           
-          final operationText = isNewFile ? 'Created' : 'Modified';
-          await _updateTaskStep(task, '$operationText $filePath (${modifiedContent.length} chars)', TaskStatus.executing);
+          if (isNewFile) {
+            // Create new file with Python tool
+            writeResult = await _toolsService.executeTool('write_file', {
+              'file_path': filePath,
+              'content': modifiedContent,
+              'mode': 'w',
+              'repository_name': task.repository.name,
+              'branch_name': task.branch,
+            });
+          } else {
+            // Edit existing file with Python tool
+            writeResult = await _toolsService.executeTool('edit_file', {
+              'file_path': filePath,
+              'old_content': currentContent,
+              'new_content': modifiedContent,
+              'repository_name': task.repository.name,
+              'branch_name': task.branch,
+            });
+          }
+          
+          if (writeResult['success']) {
+            // Track successful operations
+            _modifiedFiles[filePath] = modifiedContent;
+            _fileContents[filePath] = currentContent;
+            _fileOperations[filePath] = operation.toLowerCase();
+            
+            final operationText = isNewFile ? 'Created' : 'Modified';
+            final toolInfo = writeResult['execution_method'] ?? 'python_external';
+            final contentSize = modifiedContent.length;
+            
+            await _updateTaskStep(task, '$operationText $filePath via Python tool ($contentSize chars, $toolInfo)', TaskStatus.executing);
+            
+            // Log successful operation
+            print('DEBUG: Successfully ${operation.toLowerCase()} $filePath - Content: ${contentSize} chars');
+          } else {
+            await _updateTaskStep(task, 'Failed to ${operation.toLowerCase()} $filePath: ${writeResult['error']}', TaskStatus.executing);
+            
+            // Still track the attempt for better visibility
+            _fileOperations[filePath] = 'failed_${operation.toLowerCase()}';
+            print('DEBUG: Failed to ${operation.toLowerCase()} $filePath: ${writeResult['error']}');
+          }
         }
         
         // Small delay for streaming effect
-        await Future.delayed(const Duration(milliseconds: 800));
+        await Future.delayed(const Duration(milliseconds: 500));
         
       } catch (e) {
-        await _updateTaskStep(task, 'Failed to process $filePath: $e', TaskStatus.executing);
+        await _updateTaskStep(task, 'Python tool error for $filePath: $e', TaskStatus.executing);
+        _fileOperations[filePath] = 'failed_error';
+        print('ERROR: File operation failed for $filePath: $e');
       }
+    }
+    
+    // Report comprehensive results
+    final successfulOps = _fileOperations.entries.where((e) => !e.value.startsWith('failed_')).length;
+    final failedOps = _fileOperations.entries.where((e) => e.value.startsWith('failed_')).length;
+    
+    await _updateTaskStep(task, 
+      'Completed implementation: $successfulOps successful operations, $failedOps failed operations. '
+      'Files in current directory ready for Git operations.', 
+      TaskStatus.executing);
+    
+    // Optional Git status check for debugging
+    try {
+      final gitResult = await Process.run('git', ['status', '--porcelain']);
+      if (gitResult.exitCode == 0) {
+        final changedFiles = gitResult.stdout.toString().trim();
+        if (changedFiles.isNotEmpty) {
+          await _updateTaskStep(task, 'Git detected changes: ${changedFiles.split('\n').length} files modified', TaskStatus.executing);
+        } else {
+          await _updateTaskStep(task, 'Git status: No changes detected in working directory', TaskStatus.executing);
+        }
+      }
+    } catch (e) {
+      print('Git status check failed: $e');
+    }
+  }
+  
+  // Setup repository workspace for file operations
+  Future<void> _setupRepositoryWorkspace(CoderTask task) async {
+    try {
+      // Create workspace directory for this repository/branch
+      final workspaceSetup = await _toolsService.executeTool('create_directory', {
+        'dir_path': '.',
+        'repository_name': task.repository.name,
+        'branch_name': task.branch,
+      });
+      
+      if (workspaceSetup['success']) {
+        await _updateTaskStep(task, 
+          'Repository workspace ready: ${task.repository.name}/${task.branch}', 
+          TaskStatus.executing);
+      } else {
+        await _updateTaskStep(task, 
+          'Warning: Workspace setup failed, using default location', 
+          TaskStatus.executing);
+      }
+      
+      // Check if we need to fetch any existing files from GitHub
+      await _fetchRepositoryFiles(task);
+      
+    } catch (e) {
+      await _updateTaskStep(task, 
+        'Workspace setup error: $e. Continuing with default workspace.', 
+        TaskStatus.executing);
+    }
+  }
+  
+  // Fetch existing repository files if needed
+  Future<void> _fetchRepositoryFiles(CoderTask task) async {
+    try {
+      // Get basic repository structure to understand existing files
+      final repoInfo = await http.get(
+        Uri.parse('https://api.github.com/repos/${task.repository.fullName}/contents?ref=${task.branch}'),
+        headers: {
+          'Authorization': 'Bearer $_githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      );
+      
+      if (repoInfo.statusCode == 200) {
+        final contents = json.decode(repoInfo.body) as List;
+        final fileCount = contents.where((item) => item['type'] == 'file').length;
+        
+        await _updateTaskStep(task, 
+          'Found ${fileCount} existing files in repository. Ready for modifications.', 
+          TaskStatus.executing);
+      } else {
+        await _updateTaskStep(task, 
+          'Repository access ready. Will create new files as needed.', 
+          TaskStatus.executing);
+      }
+    } catch (e) {
+      print('DEBUG: Repository file fetch info: $e');
+      await _updateTaskStep(task, 
+        'Repository workspace ready for new file creation.', 
+        TaskStatus.executing);
+    }
+  }
+  
+  // Verify that file operations actually worked and files can be accessed
+  Future<void> _verifyRepositoryIntegration(CoderTask task) async {
+    try {
+      int filesVerified = 0;
+      int filesFailed = 0;
+      
+      // Check each file that was supposed to be modified
+      for (final filePath in _fileOperations.keys) {
+        final operation = _fileOperations[filePath];
+        
+        // Verify the file operation with Python tools
+        final verifyResult = await _toolsService.executeTool('read_file', {
+          'file_path': filePath,
+          'repository_name': task.repository.name,
+          'branch_name': task.branch,
+        });
+        
+        if (operation == 'deleted') {
+          // For deleted files, verify they don't exist
+          if (!verifyResult['success']) {
+            filesVerified++;
+            print('DEBUG: Verified deletion of $filePath');
+          } else {
+            filesFailed++;
+            print('DEBUG: Failed to verify deletion of $filePath');
+          }
+        } else {
+          // For created/modified files, verify they exist and have content
+          if (verifyResult['success'] && verifyResult['content'] != null && verifyResult['content'].toString().trim().isNotEmpty) {
+            filesVerified++;
+            final contentLength = verifyResult['content'].toString().length;
+            print('DEBUG: Verified $operation of $filePath ($contentLength chars)');
+          } else {
+            filesFailed++;
+            print('DEBUG: Failed to verify $operation of $filePath');
+          }
+        }
+      }
+      
+      if (filesVerified > 0) {
+        await _updateTaskStep(task, 
+          '✅ Repository integration verified: $filesVerified files successfully processed, $filesFailed failed',
+          TaskStatus.verifying);
+      } else {
+        await _updateTaskStep(task, 
+          '⚠️ File verification incomplete: Check workspace permissions and paths',
+          TaskStatus.verifying);
+      }
+      
+      // Test workspace accessibility
+      final workspaceTest = await _toolsService.executeTool('list_directory', {
+        'dir_path': '.',
+        'repository_name': task.repository.name,
+        'branch_name': task.branch,
+      });
+      
+      if (workspaceTest['success']) {
+        final fileCount = workspaceTest['total_items'] ?? 0;
+        await _updateTaskStep(task, 
+          'Workspace accessible: $fileCount items in repository directory',
+          TaskStatus.verifying);
+      }
+      
+    } catch (e) {
+      await _updateTaskStep(task, 
+        'Repository verification failed: $e. Files may still be created correctly.',
+        TaskStatus.verifying);
     }
   }
   
@@ -1021,53 +1176,182 @@ OUTPUT ONLY THE COMPLETE FILE CONTENT - no explanations, no markdown blocks, jus
     }
   }
   
-  // Extract file paths from AI plan with better extension detection
+  // Enhanced file extraction from AI plan with intelligent detection
   List<String> _extractFilesFromPlan(String plan) {
-    // Enhanced pattern to catch more file types including HTML, CSS, JS
-    final filePattern = RegExp(r'([a-zA-Z0-9_\-./]+\.(html|htm|css|js|jsx|ts|tsx|py|java|cpp|c|h|dart|kt|swift|go|rs|php|rb|cs|json|xml|yml|yaml|md|txt))', multiLine: true);
+    final extractedFiles = <String>[];
+    
+    // 1. Direct file patterns with extensions
+    final filePattern = RegExp(r'([a-zA-Z0-9_\-./]+\.(html|htm|css|js|jsx|ts|tsx|py|java|cpp|c|h|dart|kt|swift|go|rs|php|rb|cs|json|xml|yml|yaml|md|txt|vue|svelte|scss|sass|less|sql|sh|bat|gradle|pom|lock|toml|ini|cfg|conf))', multiLine: true);
     final matches = filePattern.allMatches(plan);
+    extractedFiles.addAll(matches.map((match) => match.group(1)!));
     
-    // Also look for common file names without extensions mentioned in plan
-    final commonFiles = <String>[];
-    if (plan.toLowerCase().contains('index') && (plan.toLowerCase().contains('html') || plan.toLowerCase().contains('web'))) {
-      commonFiles.add('index.html');
-    }
-    if (plan.toLowerCase().contains('style') && plan.toLowerCase().contains('css')) {
-      commonFiles.add('style.css');
-    }
-    if (plan.toLowerCase().contains('script') && plan.toLowerCase().contains('javascript')) {
-      commonFiles.add('script.js');
-    }
-    if (plan.toLowerCase().contains('app.js') || plan.toLowerCase().contains('main.js')) {
-      commonFiles.add(plan.toLowerCase().contains('app.js') ? 'app.js' : 'main.js');
+    // 2. Look for quoted file paths
+    final quotedPattern = RegExp(r'"([a-zA-Z0-9_\-./]+\.[a-zA-Z0-9]+)"', multiLine: true);
+    final quotedMatches = quotedPattern.allMatches(plan);
+    extractedFiles.addAll(quotedMatches.map((match) => match.group(1)!));
+    
+    final singleQuotedPattern = RegExp(r"'([a-zA-Z0-9_\-./]+\.[a-zA-Z0-9]+)'", multiLine: true);
+    final singleQuotedMatches = singleQuotedPattern.allMatches(plan);
+    extractedFiles.addAll(singleQuotedMatches.map((match) => match.group(1)!));
+    
+    // 3. Look for markdown-style code blocks mentioning files
+    final codeBlockPattern = RegExp(r'```[a-zA-Z]*\n.*?([a-zA-Z0-9_\-./]+\.[a-zA-Z0-9]+).*?\n```', multiLine: true, dotAll: true);
+    final codeMatches = codeBlockPattern.allMatches(plan);
+    extractedFiles.addAll(codeMatches.map((match) => match.group(1)!));
+    
+    // 4. Project-specific common files based on detected type
+    final commonFiles = _getCommonFilesForProject(plan);
+    extractedFiles.addAll(commonFiles);
+    
+    // 5. Intelligent file suggestions based on task description
+    final suggestedFiles = _suggestFilesFromTask(plan);
+    extractedFiles.addAll(suggestedFiles);
+    
+    // Clean and validate files
+    final validFiles = extractedFiles
+        .where((file) => file.isNotEmpty && !file.startsWith('.') && file.contains('.'))
+        .map((file) => file.trim())
+        .toSet()
+        .toList();
+    
+    // If no files found, provide intelligent defaults
+    if (validFiles.isEmpty) {
+      validFiles.addAll(_getDefaultFilesForTask(plan));
     }
     
-    final allFiles = matches.map((match) => match.group(1)!).toSet().toList();
-    allFiles.addAll(commonFiles);
-    
-    return allFiles.toSet().toList(); // Remove duplicates
+    return validFiles;
   }
   
-  // Verify changes
+  // Get common files based on project type detection
+  List<String> _getCommonFilesForProject(String plan) {
+    final files = <String>[];
+    final planLower = plan.toLowerCase();
+    
+    // Flutter/Dart project
+    if (planLower.contains('flutter') || planLower.contains('dart')) {
+      files.addAll(['lib/main.dart', 'pubspec.yaml']);
+    }
+    
+    // React/Web project
+    if (planLower.contains('react') || planLower.contains('component')) {
+      files.addAll(['src/App.js', 'src/index.js', 'package.json']);
+    }
+    
+    // Node.js project
+    if (planLower.contains('node') || planLower.contains('express')) {
+      files.addAll(['server.js', 'app.js', 'package.json']);
+    }
+    
+    // Python project
+    if (planLower.contains('python') || planLower.contains('django') || planLower.contains('flask')) {
+      files.addAll(['main.py', 'app.py', 'requirements.txt']);
+    }
+    
+    // Web project
+    if (planLower.contains('html') || planLower.contains('website') || planLower.contains('web')) {
+      files.addAll(['index.html', 'style.css', 'script.js']);
+    }
+    
+    return files;
+  }
+  
+  // Suggest files based on task intent
+  List<String> _suggestFilesFromTask(String plan) {
+    final files = <String>[];
+    final planLower = plan.toLowerCase();
+    
+    // API/Backend tasks
+    if (planLower.contains('api') || planLower.contains('endpoint') || planLower.contains('route')) {
+      files.addAll(['api/routes.js', 'controllers/controller.js', 'models/model.js']);
+    }
+    
+    // UI/Frontend tasks
+    if (planLower.contains('ui') || planLower.contains('interface') || planLower.contains('component')) {
+      files.addAll(['components/Component.js', 'styles/style.css']);
+    }
+    
+    // Database tasks
+    if (planLower.contains('database') || planLower.contains('model') || planLower.contains('schema')) {
+      files.addAll(['models/schema.js', 'migrations/migration.sql']);
+    }
+    
+    // Configuration tasks
+    if (planLower.contains('config') || planLower.contains('setting') || planLower.contains('environment')) {
+      files.addAll(['config/config.js', '.env', 'settings.json']);
+    }
+    
+    return files;
+  }
+  
+  // Provide default files when nothing else is detected
+  List<String> _getDefaultFilesForTask(String plan) {
+    final planLower = plan.toLowerCase();
+    
+    // Try to determine what the user wants based on keywords
+    if (planLower.contains('flutter') || planLower.contains('dart')) {
+      return ['lib/main.dart'];
+    } else if (planLower.contains('react') || planLower.contains('component')) {
+      return ['src/App.js'];
+    } else if (planLower.contains('python') || planLower.contains('script')) {
+      return ['main.py'];
+    } else if (planLower.contains('html') || planLower.contains('web') || planLower.contains('page')) {
+      return ['index.html'];
+    } else if (planLower.contains('css') || planLower.contains('style')) {
+      return ['style.css'];
+    } else if (planLower.contains('javascript') || planLower.contains('js')) {
+      return ['script.js'];
+    } else if (planLower.contains('api') || planLower.contains('server')) {
+      return ['server.js'];
+    } else if (planLower.contains('database') || planLower.contains('sql')) {
+      return ['database.sql'];
+    } else {
+      // Ask AI to suggest a filename based on the task
+      return ['implementation.txt']; // Fallback that works for any content
+    }
+  }
+  
+  // Verify changes with comprehensive operation tracking
   Future<Map<String, dynamic>> _verifyChanges(CoderTask task) async {
-    if (_modifiedFiles.isEmpty) {
+    final createdFiles = _fileOperations.entries.where((e) => e.value == 'creating').map((e) => e.key).toList();
+    final modifiedFiles = _fileOperations.entries.where((e) => e.value == 'modifying').map((e) => e.key).toList();
+    final deletedFiles = _fileOperations.entries.where((e) => e.value == 'deleted').map((e) => e.key).toList();
+    final failedFiles = _fileOperations.entries.where((e) => e.value.startsWith('failed_')).map((e) => e.key).toList();
+    
+    final totalSuccessful = createdFiles.length + modifiedFiles.length + deletedFiles.length;
+    
+    if (totalSuccessful == 0 && failedFiles.isEmpty) {
       return {
         'success': false,
-        'message': 'No files were modified',
+        'message': 'No file operations were completed. Task may need more specific implementation details.',
       };
     }
     
+    final operationsSummary = <String>[];
+    if (createdFiles.isNotEmpty) operationsSummary.add('${createdFiles.length} created');
+    if (modifiedFiles.isNotEmpty) operationsSummary.add('${modifiedFiles.length} modified');
+    if (deletedFiles.isNotEmpty) operationsSummary.add('${deletedFiles.length} deleted');
+    if (failedFiles.isNotEmpty) operationsSummary.add('${failedFiles.length} failed');
+    
     return {
-      'success': true,
-      'message': 'Successfully processed ${_modifiedFiles.length} files: ${_modifiedFiles.keys.join(', ')}',
+      'success': totalSuccessful > 0,
+      'message': 'File operations: ${operationsSummary.join(', ')}. Total processed: $totalSuccessful files.',
+      'details': {
+        'created': createdFiles,
+        'modified': modifiedFiles,
+        'deleted': deletedFiles,
+        'failed': failedFiles,
+      }
     };
   }
   
   // Generate AI summary of completed task
   Future<void> _generateTaskSummary(CoderTask task) async {
     try {
-      if (_modifiedFiles.isEmpty && _fileOperations.isEmpty) {
-        await _updateTaskStep(task, 'Task completed - no files were modified.', TaskStatus.completed);
+      // Count all operations including deletes
+      final totalOperations = _modifiedFiles.length + _fileOperations.values.where((op) => op == 'deleted').length;
+      
+      if (totalOperations == 0) {
+        await _updateTaskStep(task, 'Task completed - implementation analysis complete, ready for next steps.', TaskStatus.completed);
         return;
       }
 
