@@ -52,7 +52,7 @@ class AhamAIApp extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        cardTheme: const CardThemeData(
+        cardTheme: const CardTheme(
           color: Color(0xFFEAE9E5),
           elevation: 0,
           shape: RoundedRectangleBorder(
