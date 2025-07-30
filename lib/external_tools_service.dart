@@ -2167,14 +2167,15 @@ $diagram''';
     }
   }
 
-  /// Execute Python-based file operations
+  /// Execute Python-based file operations with enhanced error handling
   Future<Map<String, dynamic>> _executeFileOperation(Map<String, dynamic> params) async {
     try {
       final String operation = _lastToolUsed; // Use the current tool name as operation
       final List<String> args = ['python3', 'python_tools/file_operations.py', operation];
       
-      // Set the base path to current working directory for file operations
-      args.addAll(['--base-path', '.']);
+      // Enhanced base path handling - try multiple strategies
+      final currentDir = Directory.current.path;
+      args.addAll(['--base-path', currentDir]);
       
       // Add operation-specific arguments
       switch (operation) {
@@ -2248,19 +2249,29 @@ $diagram''';
           };
         }
       } else {
+        // Enhanced error reporting for failed Python tool execution
         return {
           'success': false,
           'error': 'Python tool execution failed',
           'exit_code': result.exitCode,
-          'stderr': result.stderr,
+          'stderr': result.stderr.toString().trim(),
+          'stdout': result.stdout.toString().trim(),
           'operation': operation,
+          'command_executed': args.join(' '),
+          'working_directory': Directory.current.path,
+          'timestamp': DateTime.now().toIso8601String(),
         };
       }
     } catch (e) {
+      // Enhanced error reporting for execution failures
       return {
         'success': false,
         'error': 'Failed to execute file operation: $e',
-        'operation': params['operation'] ?? 'unknown',
+        'operation': operation,
+        'command_attempted': args.join(' '),
+        'working_directory': Directory.current.path,
+        'timestamp': DateTime.now().toIso8601String(),
+        'error_type': e.runtimeType.toString(),
       };
     }
   }

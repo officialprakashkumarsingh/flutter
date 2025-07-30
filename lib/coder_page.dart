@@ -819,8 +819,10 @@ Always ensure your implementations are complete and ready to run.''',
         // Step 1: Use Python tool to read current file content
         await _updateTaskStep(task, 'Analyzing $filePath with Python tools...', TaskStatus.executing);
         
+        // Normalize file path to handle different formats
+        final normalizedPath = filePath.replaceAll('\\', '/');
         final readResult = await _toolsService.executeTool('read_file', {
-          'file_path': filePath,
+          'file_path': normalizedPath,
         });
         
         final currentContent = readResult['success'] ? (readResult['content'] ?? '') : '';
@@ -874,7 +876,7 @@ The content will be passed directly to Python external tools for file operations
           
           // Use Python tool to delete file
           final deleteResult = await _toolsService.executeTool('delete_file', {
-            'file_path': filePath,
+            'file_path': normalizedPath,
           });
           
           if (deleteResult['success']) {
