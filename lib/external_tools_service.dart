@@ -2192,39 +2192,37 @@ $diagram''';
       
       final List<String> args = ['python3', pythonScriptPath, operation];
       
-      // CRITICAL FIX: Ensure we're working in the project root directory
-      // The Flutter app might be running from /data/data/... on Android
-      // We need to ensure Python tools work in a writable location
+      // CRITICAL FIX: Set up repository-specific working directory
+      // Create a workspace for the specific repository and branch
       
-      String workingDir = Directory.current.path;
+      final repoName = params['repository_name'] ?? 'unknown_repo';
+      final branchName = params['branch_name'] ?? 'main';
       
-      // Try to find the actual project root or use a reliable working directory
-      final possibleRoots = [
-        '/workspace',
-        '/tmp/coder_workspace', 
-        Directory.current.path,
-        '${Directory.current.path}/coder_files',
-      ];
+      // Create repository-specific workspace
+      final repoWorkspace = '/tmp/coder_workspace/${repoName}_${branchName}';
       
-      String finalWorkingDir = workingDir;
-      for (final root in possibleRoots) {
-        final dir = Directory(root);
-        if (dir.existsSync() || root.startsWith('/tmp')) {
-          try {
-            if (!dir.existsSync()) {
-              dir.createSync(recursive: true);
-            }
-            // Test if writable
-            final testFile = File('$root/.test_write');
-            testFile.writeAsStringSync('test');
-            testFile.deleteSync();
-            finalWorkingDir = root;
-            break;
-          } catch (e) {
-            // Continue to next option
-            continue;
-          }
+      String finalWorkingDir = repoWorkspace;
+      
+      try {
+        final workspaceDir = Directory(repoWorkspace);
+        if (!workspaceDir.existsSync()) {
+          workspaceDir.createSync(recursive: true);
         }
+        
+        // Test if writable
+        final testFile = File('$repoWorkspace/.test_write');
+        testFile.writeAsStringSync('test');
+        testFile.deleteSync();
+        
+        print('DEBUG FILE OPS: Using repository workspace: $finalWorkingDir');
+      } catch (e) {
+        // Fallback to generic workspace
+        finalWorkingDir = '/tmp/coder_workspace/default';
+        final fallbackDir = Directory(finalWorkingDir);
+        if (!fallbackDir.existsSync()) {
+          fallbackDir.createSync(recursive: true);
+        }
+        print('DEBUG FILE OPS: Fallback to default workspace: $finalWorkingDir');
       }
       
       args.addAll(['--base-path', finalWorkingDir]);

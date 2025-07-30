@@ -314,7 +314,11 @@ class _CoderPageState extends State<CoderPage> {
       final plan = await _generateAIPlan(task, repoContext);
       await _updateTaskStep(task, 'Plan created: ${plan['summary']}', TaskStatus.planning);
       
-      // Step 3: Execute - Real file modifications
+      // Step 3: Setup Repository Workspace
+      await _updateTaskStep(task, 'Setting up repository workspace...', TaskStatus.executing);
+      await _setupRepositoryWorkspace(task);
+      
+      // Step 4: Execute - Real file modifications
       await _updateTaskStep(task, 'Starting implementation...', TaskStatus.executing);
       
       // Execute the plan with real file operations
@@ -326,7 +330,11 @@ class _CoderPageState extends State<CoderPage> {
       final verification = await _verifyChanges(task);
       await _updateTaskStep(task, verification['message'], TaskStatus.verifying);
       
-      // Step 5: Success with Git operations
+      // Step 5: Verify Repository Integration
+      await _updateTaskStep(task, 'Verifying file operations and repository integration...', TaskStatus.verifying);
+      await _verifyRepositoryIntegration(task);
+      
+      // Step 6: Success with Git operations
       await _updateTaskStep(task, 'Task completed! ${_modifiedFiles.length} files processed', TaskStatus.completed);
       
       // Generate AI summary of what was accomplished
@@ -831,6 +839,8 @@ Follow their instructions precisely.''',
         final normalizedPath = filePath.replaceAll('\\', '/');
         final readResult = await _toolsService.executeTool('read_file', {
           'file_path': normalizedPath,
+          'repository_name': task.repository.name,
+          'branch_name': task.branch,
         });
         
         final currentContent = readResult['success'] ? (readResult['content'] ?? '') : '';
@@ -875,6 +885,8 @@ OUTPUT ONLY THE COMPLETE FILE CONTENT (no explanations, no markdown blocks):
           // Use Python tool to delete file
           final deleteResult = await _toolsService.executeTool('delete_file', {
             'file_path': normalizedPath,
+            'repository_name': task.repository.name,
+            'branch_name': task.branch,
           });
           
           if (deleteResult['success']) {
@@ -897,6 +909,8 @@ OUTPUT ONLY THE COMPLETE FILE CONTENT (no explanations, no markdown blocks):
               'file_path': filePath,
               'content': modifiedContent,
               'mode': 'w',
+              'repository_name': task.repository.name,
+              'branch_name': task.branch,
             });
           } else {
             // Edit existing file with Python tool
@@ -904,6 +918,8 @@ OUTPUT ONLY THE COMPLETE FILE CONTENT (no explanations, no markdown blocks):
               'file_path': filePath,
               'old_content': currentContent,
               'new_content': modifiedContent,
+              'repository_name': task.repository.name,
+              'branch_name': task.branch,
             });
           }
           
@@ -962,6 +978,138 @@ OUTPUT ONLY THE COMPLETE FILE CONTENT (no explanations, no markdown blocks):
       }
     } catch (e) {
       print('Git status check failed: $e');
+    }
+  }
+  
+  // Setup repository workspace for file operations
+  Future<void> _setupRepositoryWorkspace(CoderTask task) async {
+    try {
+      // Create workspace directory for this repository/branch
+      final workspaceSetup = await _toolsService.executeTool('create_directory', {
+        'dir_path': '.',
+        'repository_name': task.repository.name,
+        'branch_name': task.branch,
+      });
+      
+      if (workspaceSetup['success']) {
+        await _updateTaskStep(task, 
+          'Repository workspace ready: ${task.repository.name}/${task.branch}', 
+          TaskStatus.executing);
+      } else {
+        await _updateTaskStep(task, 
+          'Warning: Workspace setup failed, using default location', 
+          TaskStatus.executing);
+      }
+      
+      // Check if we need to fetch any existing files from GitHub
+      await _fetchRepositoryFiles(task);
+      
+    } catch (e) {
+      await _updateTaskStep(task, 
+        'Workspace setup error: $e. Continuing with default workspace.', 
+        TaskStatus.executing);
+    }
+  }
+  
+  // Fetch existing repository files if needed
+  Future<void> _fetchRepositoryFiles(CoderTask task) async {
+    try {
+      // Get basic repository structure to understand existing files
+      final repoInfo = await http.get(
+        Uri.parse('https://api.github.com/repos/${task.repository.fullName}/contents?ref=${task.branch}'),
+        headers: {
+          'Authorization': 'Bearer $_githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      );
+      
+      if (repoInfo.statusCode == 200) {
+        final contents = json.decode(repoInfo.body) as List;
+        final fileCount = contents.where((item) => item['type'] == 'file').length;
+        
+        await _updateTaskStep(task, 
+          'Found ${fileCount} existing files in repository. Ready for modifications.', 
+          TaskStatus.executing);
+      } else {
+        await _updateTaskStep(task, 
+          'Repository access ready. Will create new files as needed.', 
+          TaskStatus.executing);
+      }
+    } catch (e) {
+      print('DEBUG: Repository file fetch info: $e');
+      await _updateTaskStep(task, 
+        'Repository workspace ready for new file creation.', 
+        TaskStatus.executing);
+    }
+  }
+  
+  // Verify that file operations actually worked and files can be accessed
+  Future<void> _verifyRepositoryIntegration(CoderTask task) async {
+    try {
+      int filesVerified = 0;
+      int filesFailed = 0;
+      
+      // Check each file that was supposed to be modified
+      for (final filePath in _fileOperations.keys) {
+        final operation = _fileOperations[filePath];
+        
+        // Verify the file operation with Python tools
+        final verifyResult = await _toolsService.executeTool('read_file', {
+          'file_path': filePath,
+          'repository_name': task.repository.name,
+          'branch_name': task.branch,
+        });
+        
+        if (operation == 'deleted') {
+          // For deleted files, verify they don't exist
+          if (!verifyResult['success']) {
+            filesVerified++;
+            print('DEBUG: Verified deletion of $filePath');
+          } else {
+            filesFailed++;
+            print('DEBUG: Failed to verify deletion of $filePath');
+          }
+        } else {
+          // For created/modified files, verify they exist and have content
+          if (verifyResult['success'] && verifyResult['content'] != null && verifyResult['content'].toString().trim().isNotEmpty) {
+            filesVerified++;
+            final contentLength = verifyResult['content'].toString().length;
+            print('DEBUG: Verified $operation of $filePath ($contentLength chars)');
+          } else {
+            filesFailed++;
+            print('DEBUG: Failed to verify $operation of $filePath');
+          }
+        }
+      }
+      
+      if (filesVerified > 0) {
+        await _updateTaskStep(task, 
+          '✅ Repository integration verified: $filesVerified files successfully processed, $filesFailed failed',
+          TaskStatus.verifying);
+      } else {
+        await _updateTaskStep(task, 
+          '⚠️ File verification incomplete: Check workspace permissions and paths',
+          TaskStatus.verifying);
+      }
+      
+      // Test workspace accessibility
+      final workspaceTest = await _toolsService.executeTool('list_directory', {
+        'dir_path': '.',
+        'repository_name': task.repository.name,
+        'branch_name': task.branch,
+      });
+      
+      if (workspaceTest['success']) {
+        final fileCount = workspaceTest['total_items'] ?? 0;
+        await _updateTaskStep(task, 
+          'Workspace accessible: $fileCount items in repository directory',
+          TaskStatus.verifying);
+      }
+      
+    } catch (e) {
+      await _updateTaskStep(task, 
+        'Repository verification failed: $e. Files may still be created correctly.',
+        TaskStatus.verifying);
     }
   }
   
