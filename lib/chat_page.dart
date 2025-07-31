@@ -1435,6 +1435,8 @@ $priceChart
       }
     });
   }
+  
+
 
 
 
@@ -2026,6 +2028,11 @@ $priceChart
     final List<CodeContent> codes = [];
     String displayText = text;
     
+    // Debug: Check if text contains code blocks
+    if (text.contains('```')) {
+      print('🔍 Found code blocks in text (${text.length} chars)');
+    }
+    
     // Regex patterns for different thought types - including partial matches
     final thoughtPatterns = {
       'thinking': RegExp(r'<thinking>(.*?)</thinking>', dotAll: true),
@@ -2047,55 +2054,56 @@ $priceChart
     };
     
     // Code block patterns for real-time parsing (complete blocks)
+    // More flexible patterns - allow optional spaces and newlines
     final codePatterns = {
-      'html': RegExp(r'```html\n(.*?)```', dotAll: true),
-      'css': RegExp(r'```css\n(.*?)```', dotAll: true),
-      'javascript': RegExp(r'```(?:javascript|js)\n(.*?)```', dotAll: true),
-      'typescript': RegExp(r'```(?:typescript|ts)\n(.*?)```', dotAll: true),
-      'python': RegExp(r'```(?:python|py)\n(.*?)```', dotAll: true),
-      'dart': RegExp(r'```dart\n(.*?)```', dotAll: true),
-      'java': RegExp(r'```java\n(.*?)```', dotAll: true),
-      'kotlin': RegExp(r'```(?:kotlin|kt)\n(.*?)```', dotAll: true),
-      'swift': RegExp(r'```swift\n(.*?)```', dotAll: true),
-      'cpp': RegExp(r'```(?:cpp|c\+\+|cxx)\n(.*?)```', dotAll: true),
-      'c': RegExp(r'```c\n(.*?)```', dotAll: true),
-      'csharp': RegExp(r'```(?:csharp|cs|c#)\n(.*?)```', dotAll: true),
-      'php': RegExp(r'```php\n(.*?)```', dotAll: true),
-      'ruby': RegExp(r'```(?:ruby|rb)\n(.*?)```', dotAll: true),
-      'go': RegExp(r'```(?:go|golang)\n(.*?)```', dotAll: true),
-      'rust': RegExp(r'```(?:rust|rs)\n(.*?)```', dotAll: true),
-      'sql': RegExp(r'```sql\n(.*?)```', dotAll: true),
-      'json': RegExp(r'```json\n(.*?)```', dotAll: true),
-      'xml': RegExp(r'```xml\n(.*?)```', dotAll: true),
-      'yaml': RegExp(r'```(?:yaml|yml)\n(.*?)```', dotAll: true),
-      'bash': RegExp(r'```(?:bash|shell|sh)\n(.*?)```', dotAll: true),
-      'powershell': RegExp(r'```(?:powershell|ps1)\n(.*?)```', dotAll: true),
+      'html': RegExp(r'```html\s*(.*?)```', dotAll: true),
+      'css': RegExp(r'```css\s*(.*?)```', dotAll: true),
+      'javascript': RegExp(r'```(?:javascript|js)\s*(.*?)```', dotAll: true),
+      'typescript': RegExp(r'```(?:typescript|ts)\s*(.*?)```', dotAll: true),
+      'python': RegExp(r'```(?:python|py)\s*(.*?)```', dotAll: true),
+      'dart': RegExp(r'```dart\s*(.*?)```', dotAll: true),
+      'java': RegExp(r'```java\s*(.*?)```', dotAll: true),
+      'kotlin': RegExp(r'```(?:kotlin|kt)\s*(.*?)```', dotAll: true),
+      'swift': RegExp(r'```swift\s*(.*?)```', dotAll: true),
+      'cpp': RegExp(r'```(?:cpp|c\+\+|cxx)\s*(.*?)```', dotAll: true),
+      'c': RegExp(r'```c\s*(.*?)```', dotAll: true),
+      'csharp': RegExp(r'```(?:csharp|cs|c#)\s*(.*?)```', dotAll: true),
+      'php': RegExp(r'```php\s*(.*?)```', dotAll: true),
+      'ruby': RegExp(r'```(?:ruby|rb)\s*(.*?)```', dotAll: true),
+      'go': RegExp(r'```(?:go|golang)\s*(.*?)```', dotAll: true),
+      'rust': RegExp(r'```(?:rust|rs)\s*(.*?)```', dotAll: true),
+      'sql': RegExp(r'```sql\s*(.*?)```', dotAll: true),
+      'json': RegExp(r'```json\s*(.*?)```', dotAll: true),
+      'xml': RegExp(r'```xml\s*(.*?)```', dotAll: true),
+      'yaml': RegExp(r'```(?:yaml|yml)\s*(.*?)```', dotAll: true),
+      'bash': RegExp(r'```(?:bash|shell|sh)\s*(.*?)```', dotAll: true),
+      'powershell': RegExp(r'```(?:powershell|ps1)\s*(.*?)```', dotAll: true),
     };
     
     // Partial code patterns for streaming (unclosed blocks)
     final partialCodePatterns = {
-      'html': RegExp(r'```html\n(.*?)$', dotAll: true),
-      'css': RegExp(r'```css\n(.*?)$', dotAll: true),
-      'javascript': RegExp(r'```(?:javascript|js)\n(.*?)$', dotAll: true),
-      'typescript': RegExp(r'```(?:typescript|ts)\n(.*?)$', dotAll: true),
-      'python': RegExp(r'```(?:python|py)\n(.*?)$', dotAll: true),
-      'dart': RegExp(r'```dart\n(.*?)$', dotAll: true),
-      'java': RegExp(r'```java\n(.*?)$', dotAll: true),
-      'kotlin': RegExp(r'```(?:kotlin|kt)\n(.*?)$', dotAll: true),
-      'swift': RegExp(r'```swift\n(.*?)$', dotAll: true),
-      'cpp': RegExp(r'```(?:cpp|c\+\+|cxx)\n(.*?)$', dotAll: true),
-      'c': RegExp(r'```c\n(.*?)$', dotAll: true),
-      'csharp': RegExp(r'```(?:csharp|cs|c#)\n(.*?)$', dotAll: true),
-      'php': RegExp(r'```php\n(.*?)$', dotAll: true),
-      'ruby': RegExp(r'```(?:ruby|rb)\n(.*?)$', dotAll: true),
-      'go': RegExp(r'```(?:go|golang)\n(.*?)$', dotAll: true),
-      'rust': RegExp(r'```(?:rust|rs)\n(.*?)$', dotAll: true),
-      'sql': RegExp(r'```sql\n(.*?)$', dotAll: true),
-      'json': RegExp(r'```json\n(.*?)$', dotAll: true),
-      'xml': RegExp(r'```xml\n(.*?)$', dotAll: true),
-      'yaml': RegExp(r'```(?:yaml|yml)\n(.*?)$', dotAll: true),
-      'bash': RegExp(r'```(?:bash|shell|sh)\n(.*?)$', dotAll: true),
-      'powershell': RegExp(r'```(?:powershell|ps1)\n(.*?)$', dotAll: true),
+      'html': RegExp(r'```html\s*(.*?)$', dotAll: true),
+      'css': RegExp(r'```css\s*(.*?)$', dotAll: true),
+      'javascript': RegExp(r'```(?:javascript|js)\s*(.*?)$', dotAll: true),
+      'typescript': RegExp(r'```(?:typescript|ts)\s*(.*?)$', dotAll: true),
+      'python': RegExp(r'```(?:python|py)\s*(.*?)$', dotAll: true),
+      'dart': RegExp(r'```dart\s*(.*?)$', dotAll: true),
+      'java': RegExp(r'```java\s*(.*?)$', dotAll: true),
+      'kotlin': RegExp(r'```(?:kotlin|kt)\s*(.*?)$', dotAll: true),
+      'swift': RegExp(r'```swift\s*(.*?)$', dotAll: true),
+      'cpp': RegExp(r'```(?:cpp|c\+\+|cxx)\s*(.*?)$', dotAll: true),
+      'c': RegExp(r'```c\s*(.*?)$', dotAll: true),
+      'csharp': RegExp(r'```(?:csharp|cs|c#)\s*(.*?)$', dotAll: true),
+      'php': RegExp(r'```php\s*(.*?)$', dotAll: true),
+      'ruby': RegExp(r'```(?:ruby|rb)\s*(.*?)$', dotAll: true),
+      'go': RegExp(r'```(?:go|golang)\s*(.*?)$', dotAll: true),
+      'rust': RegExp(r'```(?:rust|rs)\s*(.*?)$', dotAll: true),
+      'sql': RegExp(r'```sql\s*(.*?)$', dotAll: true),
+      'json': RegExp(r'```json\s*(.*?)$', dotAll: true),
+      'xml': RegExp(r'```xml\s*(.*?)$', dotAll: true),
+      'yaml': RegExp(r'```(?:yaml|yml)\s*(.*?)$', dotAll: true),
+      'bash': RegExp(r'```(?:bash|shell|sh)\s*(.*?)$', dotAll: true),
+      'powershell': RegExp(r'```(?:powershell|ps1)\s*(.*?)$', dotAll: true),
     };
     
     // Extract complete thoughts and remove them from display text
@@ -2134,6 +2142,7 @@ $priceChart
       for (final match in matches) {
         final code = match.group(1)?.trim() ?? '';
         if (code.isNotEmpty) {
+          print('🔍 Found complete code block: $language (${code.length} chars)');
           codes.add(CodeContent(
             code: code,
             language: language,
@@ -2154,6 +2163,7 @@ $priceChart
           // Only add if we don't already have a complete code block of this language
           final hasCompleteCode = codes.any((c) => c.language == language);
           if (!hasCompleteCode) {
+            print('🔍 Found partial code block: $language (${code.length} chars)');
             codes.add(CodeContent(
               code: code,
               language: language,
@@ -2164,6 +2174,10 @@ $priceChart
         // Remove the partial code block from display text
         displayText = displayText.replaceAll(match.group(0)!, '');
       }
+    }
+    
+    if (codes.isNotEmpty || thoughts.isNotEmpty) {
+      print('🔍 Parse result: ${thoughts.length} thoughts, ${codes.length} codes');
     }
     
     return {
@@ -3118,7 +3132,17 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
     final text = widget.message.text;
     final codes = widget.message.codes;
     
+    print('🔍 DEBUG: Building bot message with codes:');
+    print('  Text length: ${text.length}');
+    print('  Codes count: ${codes.length}');
+    print('  Message ID: ${widget.message.id}');
+    print('  Is streaming: ${widget.message.isStreaming}');
+    if (codes.isNotEmpty) {
+      print('  Code languages: ${codes.map((c) => c.language).join(', ')}');
+    }
+    
     if (codes.isEmpty) {
+      print('  📝 No codes found, using regular content');
       return _buildBotMessageContent(widget.message.displayText);
     }
     
