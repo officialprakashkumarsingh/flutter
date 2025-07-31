@@ -497,8 +497,7 @@ Be conversational and helpful!'''
                 
                 // DON'T clean Python blocks during streaming - let _processToolCallsDuringStreaming handle it
                 
-                print('🔍 STREAMING UPDATE: ${streamingParseResult['thoughts'].length} thoughts, ${streamingParseResult['codes'].length} codes');
-                
+
                 setState(() {
                   _messages[botMessageIndex] = Message(
                     id: botMessage.id,
@@ -532,9 +531,7 @@ Be conversational and helpful!'''
         // Parse final content to preserve codes and thoughts
         final finalParseResult = _parseContentStreaming(textToUse);
         
-        print('🔍 FINAL MESSAGE: ${finalParseResult['thoughts'].length} thoughts, ${finalParseResult['codes'].length} codes');
-        print('🔍 Final text preview: ${textToUse.length > 100 ? textToUse.substring(0, 100) : textToUse}...');
-        
+
         setState(() {
           _messages[botMessageIndex] = Message(
             id: _messages[botMessageIndex].id,
@@ -693,18 +690,23 @@ Be conversational and helpful!'''
           
 
           
-          // Update the message with results directly
-          setState(() {
-            final updatedText = processedText.replaceAll(
-              fullMatch,
-              resultText
-            );
-            
-            _messages[messageIndex] = _messages[messageIndex].copyWith(
-              text: updatedText, // FIXED: Don't clean streaming text to preserve tool results
-              isStreaming: true,
-            );
-          });
+          // MODIFIED: Only replace code blocks that contain execute_tool calls
+          // Keep regular code blocks for coding panels
+          if (pythonCode.contains('execute_tool')) {
+            // This is a tool execution block - replace with results
+            setState(() {
+              final updatedText = processedText.replaceAll(
+                fullMatch,
+                resultText
+              );
+              
+              _messages[messageIndex] = _messages[messageIndex].copyWith(
+                text: updatedText,
+                isStreaming: true,
+              );
+            });
+          }
+          // If no execute_tool, keep the code block as-is for coding panels
           _scrollToBottom();
           
           // Wait a bit before next tool to prevent overwhelming
@@ -1416,9 +1418,8 @@ $priceChart
     if(mounted) {
       setState(() {
         if (_awaitingReply && _messages.isNotEmpty && _messages.last.isStreaming) {
-           final lastIndex = _messages.length - 1;
-           print('🔍 STOP STREAMING: Message has ${_messages.last.thoughts.length} thoughts, ${_messages.last.codes.length} codes');
-           _messages[lastIndex] = _messages.last.copyWith(isStreaming: false);
+                        final lastIndex = _messages.length - 1;
+             _messages[lastIndex] = _messages.last.copyWith(isStreaming: false);
         }
         _awaitingReply = false;
       });
@@ -2006,16 +2007,10 @@ $priceChart
   }
 
   String _cleanStreamingText(String text) {
-    // SIMPLE APPROACH: Just remove Python code blocks and execution messages
-    // Show everything naturally in message UI without panels
+    // MODIFIED: Only remove tool execution messages, NOT code blocks
+    // Keep all code blocks for the coding panel feature
     
-    // Remove Python code blocks completely
-    text = text.replaceAll(RegExp(r'```python[\s\S]*?```', multiLine: true), '');
-    
-    // Remove partial Python blocks that might appear during streaming
-    text = text.replaceAll(RegExp(r'```python[\s\S]*$', multiLine: true), '');
-    
-    // Remove tool executing messages
+    // Remove tool executing messages only
     text = text.replaceAll(RegExp(r'\[Tool executing\.\.\.?\]', multiLine: true), '');
     text = text.replaceAll(RegExp(r'\[Tools executing\.\.\.?\]', multiLine: true), '');
     
@@ -2036,7 +2031,7 @@ $priceChart
     
     // Debug: Check if text contains code blocks
     if (text.contains('```')) {
-      print('🔍 Found code blocks in text (${text.length} chars)');
+      print('🔍 PARSING: Found code blocks in text (${text.length} chars)');
     }
     
     // Regex patterns for different thought types - including partial matches
@@ -2183,7 +2178,7 @@ $priceChart
     }
     
     if (codes.isNotEmpty || thoughts.isNotEmpty) {
-      print('🔍 Parse result: ${thoughts.length} thoughts, ${codes.length} codes');
+      print('✅ PARSE RESULT: ${thoughts.length} thoughts, ${codes.length} codes');
     }
     
     return {
@@ -3138,14 +3133,9 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
     final text = widget.message.text;
     final codes = widget.message.codes;
     
-    print('🔍 DEBUG MESSAGE BUBBLE:');
-    print('  Text length: ${text.length}');
-    print('  Codes count: ${codes.length}');
-    print('  Thoughts count: ${widget.message.thoughts.length}');
-    print('  Message ID: ${widget.message.id}');
-    print('  Is streaming: ${widget.message.isStreaming}');
+    // Debug: Show when code panels should appear
     if (codes.isNotEmpty) {
-      print('  Code languages: ${codes.map((c) => c.language).join(', ')}');
+      print('✅ CODE PANELS: Found ${codes.length} code blocks (${codes.map((c) => c.language).join(', ')})');
     }
     
     if (codes.isEmpty) {
