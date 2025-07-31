@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:archive/archive.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as pathLib;
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 class FileAttachment {
   final String id;
@@ -122,6 +123,7 @@ class FileAttachmentService {
       final isZip = supportedArchiveExtensions.contains(extension);
       final isText = supportedTextExtensions.contains(extension);
       final isCode = supportedCodeExtensions.contains(extension);
+      final isPdf = supportedPdfExtensions.contains(extension);
 
       String? textContent;
       List<FileAttachment>? extractedFiles;
@@ -131,6 +133,24 @@ class FileAttachmentService {
           textContent = utf8.decode(bytes);
         } catch (e) {
           textContent = 'Binary file - cannot preview';
+      }
+
+      // Extract text from PDF files
+      if (isPdf) {
+        try {
+          textContent = await _extractPdfText(bytes);
+        } catch (e) {
+          textContent = 'PDF content could not be extracted';
+        }
+        }
+      }
+
+      // Extract text from PDF files
+      if (isPdf) {
+        try {
+          textContent = await _extractPdfText(bytes);
+        } catch (e) {
+          textContent = 'PDF content could not be extracted';
         }
       }
 
@@ -156,6 +176,7 @@ class FileAttachmentService {
         isZip: isZip,
         isText: isText,
         isCode: isCode,
+        isPdf: isPdf,
       );
     } catch (e) {
       return null;
@@ -184,6 +205,15 @@ class FileAttachmentService {
               textContent = utf8.decode(bytes);
             } catch (e) {
               textContent = 'Binary file - cannot preview';
+      }
+
+      // Extract text from PDF files
+      if (isPdf) {
+        try {
+          textContent = await _extractPdfText(bytes);
+        } catch (e) {
+          textContent = 'PDF content could not be extracted';
+        }
             }
           }
 
@@ -200,6 +230,7 @@ class FileAttachmentService {
             isZip: false,
             isText: isText,
             isCode: isCode,
+        isPdf: isPdf,
           ));
         } catch (e) {
           // Handle error silently
@@ -215,6 +246,7 @@ class FileAttachmentService {
     if (file.isZip) return 'Archive';
     if (file.isCode) return 'Code File';
     if (file.isText) return 'Text File';
+    if (file.isPdf) return 'PDF Document';
     return 'File';
   }
 
@@ -245,5 +277,34 @@ class FileAttachmentService {
       '.yaml': 'yaml',
     };
     return languageMap[ext] ?? 'text';
+  }
+}
+
+  /// Extract text content from PDF files
+  static Future<String> _extractPdfText(Uint8List pdfBytes) async {
+    try {
+      // Load the PDF document from bytes
+      final PdfDocument document = PdfDocument(inputBytes: pdfBytes);
+      
+      // Extract text from all pages
+      final StringBuffer textBuffer = StringBuffer();
+      
+      for (int i = 0; i < document.pages.count; i++) {
+        final PdfPage page = document.pages[i];
+        final String pageText = PdfTextExtractor.extractText(page);
+        textBuffer.writeln("--- Page ${i + 1} ---");
+        textBuffer.writeln(pageText);
+        textBuffer.writeln();
+      }
+      
+      // Dispose the document
+      document.dispose();
+      
+      final extractedText = textBuffer.toString().trim();
+      return extractedText.isNotEmpty ? extractedText : "No text content found in PDF";
+      
+    } catch (e) {
+      return "Error extracting PDF text: $e";
+    }
   }
 }
