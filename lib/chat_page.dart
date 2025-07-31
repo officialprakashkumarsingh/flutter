@@ -3055,7 +3055,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
               decoration: BoxDecoration(
                 color: const Color(0xFFF0F0F0),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF333333), width: 1),
+                border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -3066,7 +3066,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
                     child: const Icon(
                       Icons.chevron_right,
                       size: 16,
-                      color: Color(0xFFE6E6E6), // Light color for dark background
+                      color: Color(0xFF666666),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -3075,7 +3075,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFFE6E6E6), // Light color for dark background
+                      color: Color(0xFF666666),
                     ),
                   ),
                 ],
@@ -3091,9 +3091,9 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
               margin: const EdgeInsets.only(top: 4),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF000000), // Pure AMOLED black
+                color: const Color(0xFFF8F8F8), // Original light background for header
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF333333), width: 1),
+                border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3215,7 +3215,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
                     child: const Icon(
                       Icons.chevron_right,
                       size: 16,
-                      color: Color(0xFFE6E6E6), // Light color for dark background
+                      color: Color(0xFF666666),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -3225,7 +3225,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFE6E6E6), // Light color for dark background
+                        color: Color(0xFF666666),
                       ),
                     ),
                   ),
@@ -3281,7 +3281,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
               decoration: BoxDecoration(
                 color: const Color(0xFF1e1e1e),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF333333), width: 1),
+                border: Border.all(color: const Color(0xFFE0E0E0), width: 1), // Keep light border for content
               ),
               child: Container(
                 width: double.infinity,
