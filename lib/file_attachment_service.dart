@@ -43,7 +43,6 @@ class FileAttachment {
 
   String get fileIcon {
     if (isApk) return '📱';
-    if (isApk) return '📱';
     if (isImage) return '🖼️';
     if (isZip) return '📦';
     if (isPdf) return '📕';
@@ -76,29 +75,27 @@ class FileAttachmentService {
   ];
 
   static const List<String> supportedArchiveExtensions = [
-    '.zip', '.rar', '.7z', '.tar', '.gz', '.apk', '.apk'
+    '.zip', '.rar', '.7z', '.tar', '.gz', '.apk'
   ];
 
   static const List<String> supportedPdfExtensions = ['.pdf'];
 
   static Future<List<FileAttachment>?> pickFiles() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.any,
         withData: true,
       );
 
-      if (result != null && result.files.isNotEmpty) {
-        final List<FileAttachment> attachments = [];
-        
-        for (final file in result.files) {
+      if (result != null) {
+        List<FileAttachment> attachments = [];
+        for (PlatformFile file in result.files) {
           final attachment = await _processFile(file);
           if (attachment != null) {
             attachments.add(attachment);
           }
         }
-        
         return attachments;
       }
     } catch (e) {
@@ -141,19 +138,11 @@ class FileAttachmentService {
           extractedFiles = await _extractZipFile(bytes);
         } catch (e) {
           print('Error extracting ZIP: $e');
-
-      // Extract APK files
-      if (extension == '.apk') {
-        try {
-          final apkResult = await ApkExtractionService.extractApk(bytes, fileName);
-          textContent = ApkExtractionService.generateAnalysisReport(apkResult);
-        } catch (e) {
-          textContent = 'Error extracting APK: $e';
         }
       }
 
       // Extract APK files
-      if (extension == '.apk') {
+      if (isApk) {
         try {
           final apkResult = await ApkExtractionService.extractApk(bytes, fileName);
           textContent = ApkExtractionService.generateAnalysisReport(apkResult);
@@ -181,7 +170,7 @@ class FileAttachmentService {
         isZip: isZip,
         isText: isText,
         isCode: isCode,
-        isApk: extension == '.apk',
+        isApk: isApk,
         isPdf: isPdf,
       );
     } catch (e) {
@@ -213,14 +202,14 @@ class FileAttachmentService {
             try {
               textContent = utf8.decode(bytes);
             } catch (e) {
-              textContent = 'Binary file - cannot preview';
+              textContent = 'Binary content';
             }
           }
 
           extractedFiles.add(FileAttachment(
-            id: '${DateTime.now().millisecondsSinceEpoch}_${file.name}',
+            id: DateTime.now().millisecondsSinceEpoch.toString() + '_' + fileName.hashCode.toString(),
             name: fileName,
-            filePath: 'extracted:${file.name}',
+            filePath: fileName,
             mimeType: mimeType,
             size: bytes.length,
             uploadedAt: DateTime.now(),
@@ -230,34 +219,25 @@ class FileAttachmentService {
             isZip: false,
             isText: isText,
             isCode: isCode,
-            isApk: extension == '.apk',
+            isApk: false,
             isPdf: isPdf,
           ));
         }
       }
     } catch (e) {
       print('Error extracting ZIP: $e');
-
-      // Extract APK files
-      if (extension == '.apk') {
-        try {
-          final apkResult = await ApkExtractionService.extractApk(bytes, fileName);
-          textContent = ApkExtractionService.generateAnalysisReport(apkResult);
-        } catch (e) {
-          textContent = 'Error extracting APK: $e';
-        }
-      }
     }
     
     return extractedFiles;
   }
 
   static String getFileTypeDescription(FileAttachment file) {
+    if (file.isApk) return 'Android APK';
     if (file.isImage) return 'Image';
     if (file.isZip) return 'Archive';
+    if (file.isPdf) return 'PDF Document';
     if (file.isCode) return 'Code File';
     if (file.isText) return 'Text File';
-    if (file.isPdf) return 'PDF Document';
     return 'File';
   }
 
