@@ -380,7 +380,11 @@ class SimpleFileAttachmentWidget extends StatelessWidget {
       children: attachments.map((attachment) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: null,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -405,6 +409,36 @@ class SimpleFileAttachmentWidget extends StatelessWidget {
                   color: const Color(0xFF666666),
                 ),
               ),
+              // Add remove icon if onRemove callback is provided
+              if (onRemove != null) ...[
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => onRemove!(attachment),
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    child: const Icon(
+                      Icons.close,
+                      size: 16,
+                      color: Color(0xFF666666),
+                    ),
+                  ),
+                ),
+              ],
+              // Add remove icon if onRemove callback is provided
+              if (onRemove != null) ...[
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => onRemove!(attachment),
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    child: const Icon(
+                      Icons.close,
+                      size: 16,
+                      color: Color(0xFF666666),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         );
