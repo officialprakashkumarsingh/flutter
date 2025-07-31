@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
 import 'external_tools_service.dart';
 import 'coder_logic_service.dart';
+import 'package:diff_match_patch/diff_match_patch.dart';
 
 class CoderPage extends StatefulWidget {
   final String selectedModel;
@@ -980,6 +981,10 @@ OUTPUT ONLY THE COMPLETE FILE CONTENT - no explanations, no markdown blocks, jus
               TaskStatus.executing);
         }
 
+        // Compute diff stats for summary
+        final diffStats = _diffStats(currentContent, modifiedContent);
+        await _updateTaskStep(task, 'Diff: $diffStats', TaskStatus.executing);
+
         processedCount += 1;
 
         // Small delay for streaming effect
@@ -991,6 +996,25 @@ OUTPUT ONLY THE COMPLETE FILE CONTENT - no explanations, no markdown blocks, jus
     }
 
     return processedCount;
+  }
+
+  // Helper to compute added/deleted line counts between old and new content
+  String _diffStats(String oldContent, String newContent) {
+    final dmp = DiffMatchPatch();
+    final diffs = dmp.diffMain(oldContent, newContent);
+    dmp.diffCleanupSemantic(diffs);
+
+    int added = 0;
+    int removed = 0;
+    for (final d in diffs) {
+      if (d.operation == DIFF_INSERT) {
+        added += d.text.split('\n').length - 1;
+      } else if (d.operation == DIFF_DELETE) {
+        removed += d.text.split('\n').length - 1;
+      }
+    }
+
+    return '+$added / -$removed lines';
   }
 
   // Get file content from GitHub
