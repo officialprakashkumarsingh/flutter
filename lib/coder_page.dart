@@ -10,6 +10,7 @@ import 'package:path/path.dart' as path;
 import 'external_tools_service.dart';
 import 'coder_logic_service.dart';
 import 'package:diff_match_patch/diff_match_patch.dart';
+import 'code_index_service.dart';
 
 class CoderPage extends StatefulWidget {
   final String selectedModel;
@@ -69,6 +70,8 @@ class _CoderPageState extends State<CoderPage> {
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
   List<Map<String, dynamic>> _searchResults = [];
+  CodeIndexService? _indexService;
+  bool _isIndexing = false;
   
   @override
   void initState() {
@@ -87,6 +90,7 @@ class _CoderPageState extends State<CoderPage> {
     _searchController.dispose();
     _httpClient.close();
     _logicService?.dispose();
+    _indexService?.dispose();
     super.dispose();
   }
   
@@ -264,6 +268,15 @@ class _CoderPageState extends State<CoderPage> {
               repoFullName: repo.fullName,
               branch: _selectedBranch!,
             );
+
+            // Prepare local index service in background
+            _indexService = CodeIndexService(
+              githubToken: _githubToken!,
+              repoFullName: repo.fullName,
+              branch: _selectedBranch!,
+            );
+
+            _buildLocalIndex();
           }
         });
       }
@@ -274,6 +287,18 @@ class _CoderPageState extends State<CoderPage> {
     }
     
     setState(() => _isLoading = false);
+  }
+  
+  // Build local code index asynchronously
+  Future<void> _buildLocalIndex() async {
+    if (_indexService == null || _indexService!.isReady) return;
+    setState(() => _isIndexing = true);
+    try {
+      await _indexService!.buildIndex();
+    } catch (_) {}
+    if (mounted) {
+      setState(() => _isIndexing = false);
+    }
   }
   
   // Process user task with AI
@@ -1557,7 +1582,20 @@ no changes added to commit (use "git add ." or "git commit -a")
       _searchResults = [];
     });
     try {
-      final results = await _logicService!.searchCode(query, maxResults: 50);
+      List<Map<String, dynamic>> results = [];
+
+      // Prefer GitHub search for cross-repo scale
+      try {
+        results = await _logicService!.searchCode(query, maxResults: 50);
+      } catch (_) {
+        // ignore and fallback
+      }
+
+      // Fallback to local index if API fails or returns nothing
+      if (results.isEmpty && _indexService != null && _indexService!.isReady) {
+        results = _indexService!.search(query, maxResults: 50);
+      }
+
       setState(() {
         _searchResults = results;
       });
@@ -1592,6 +1630,11 @@ no changes added to commit (use "git add ." or "git commit -a")
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          if (_isIndexing)
+            const Padding(
+              padding: EdgeInsets.only(right: 12),
+              child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+            ),
           if (_isTokenValid)
             IconButton(
               icon: const FaIcon(FontAwesomeIcons.gear, size: 16, color: Color(0xFF718096)),
