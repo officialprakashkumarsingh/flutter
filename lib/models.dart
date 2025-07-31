@@ -1,6 +1,8 @@
 /* ----------------------------------------------------------
    MODELS
 ---------------------------------------------------------- */
+import 'file_attachment_service.dart';
+
 enum Sender { user, bot }
 
 class ThoughtContent {
@@ -28,6 +30,7 @@ class Message {
   final List<CodeContent> codes;
   final String displayText; // Text without thought and code content
   final Map<String, dynamic> toolData; // External tools data
+  final List<FileAttachment> attachments; // File attachments
 
   Message({
     required this.id,

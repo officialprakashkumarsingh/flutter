@@ -531,7 +531,7 @@
     },
     {
       "name": "mime",
-      "rootUri": "file:///home/ubuntu/.pub-cache/hosted/pub.dev/mime-2.0.0",
+      "rootUri": "file:///home/ubuntu/.pub-cache/hosted/pub.dev/mime-1.0.6",
       "packageUri": "lib/",
       "languageVersion": "3.2"
     },
@@ -1106,7 +1106,7 @@
       "languageVersion": "3.1"
     }
   ],
-  "generated": "2025-07-31T19:08:18.118611Z",
+  "generated": "2025-07-31T19:55:02.281091Z",
   "generator": "pub",
   "generatorVersion": "3.5.4",
   "flutterRoot": "file:///opt/flutter",
