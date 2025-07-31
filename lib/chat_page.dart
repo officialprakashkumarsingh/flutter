@@ -20,7 +20,7 @@ import 'models.dart';
 import 'character_service.dart';
 import 'image_generation_dialog.dart';
 import 'image_generation_service.dart';
-import 'external_tools_service.dart';
+// REMOVED: External tools service import
 import 'crypto_chart_widget.dart';
 
 import 'cache_manager.dart';
@@ -74,7 +74,7 @@ class ChatPageState extends State<ChatPage> {
 
   http.Client? _httpClient;
   final CharacterService _characterService = CharacterService();
-  final ExternalToolsService _externalToolsService = ExternalToolsService();
+  // REMOVED: External tools service
 
   final _prompts = ['Explain quantum computing', 'Write a Python snippet', 'Draft an email to my boss', 'Ideas for weekend trip'];
   
@@ -99,7 +99,7 @@ class ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
     _characterService.addListener(_onCharacterChanged);
-    _externalToolsService.addListener(_onExternalToolsServiceChanged);
+    // REMOVED: External tools service listener
     
     _updateGreetingForCharacter();
     _loadConversationMemory();
@@ -169,7 +169,7 @@ class ChatPageState extends State<ChatPage> {
   @override
   void dispose() {
     _characterService.removeListener(_onCharacterChanged);
-    _externalToolsService.removeListener(_onExternalToolsServiceChanged);
+    // REMOVED: External tools service listener removal
     _controller.dispose();
     _scroll.dispose();
     _httpClient?.close();
@@ -193,11 +193,7 @@ class ChatPageState extends State<ChatPage> {
     }
   }
 
-  void _onExternalToolsServiceChanged() {
-    if (mounted) {
-      setState(() {}); // Refresh UI when external tools service state changes
-    }
-  }
+  // REMOVED: External tools service change handler
 
   void _updateGreetingForCharacter() {
     final selectedCharacter = _characterService.selectedCharacter;
@@ -327,114 +323,16 @@ class ChatPageState extends State<ChatPage> {
         messageContent = {'role': 'user', 'content': fullPrompt};
       }
 
-      // Build system prompt with external tools information
-      final availableTools = _externalToolsService.getAvailableTools();
-      final toolsInfo = availableTools.map((tool) => 
-        '- ${tool.name}: ${tool.description}'
-      ).join('\n');
-      
+      // Build simplified system prompt without external tools
       final systemMessage = {
         'role': 'system',
-        'content': '''You are AhamAI, an intelligent assistant with access to external tools and image generation capabilities. You can execute tools to help users with various tasks.
+        'content': '''You are AhamAI, an intelligent assistant focused on helpful conversations and image generation capabilities.
 
 🎨 IMAGE GENERATION CAPABILITY:
 This app has a built-in image generator with model selection (Flux, Turbo) and follow-up options for consistent style. Users can access it through the attachment button or you can mention this feature when relevant.
 
-Available External Tools:
-$toolsInfo
-
-🔧 PYTHON-BASED TOOL EXECUTION:
-When you need to use tools, write Python code using the execute_tool() function:
-
-Single tool execution:
-```python
-# Create a diagram
-diagram = execute_tool('plantuml_chart', diagram='Alice -> Bob: Hello')
-print(f"Diagram created: {diagram}")
-```
-
-Sequential tools execution:
-```python
-# Execute tools ONE BY ONE (no parallel execution)  
-# Get crypto data  
-crypto_data = execute_tool('crypto_market_data', symbols='bitcoin,ethereum')
-
-# Finally create diagram
-chart = execute_tool('plantuml_chart', diagram='User -> API: Request\\nAPI -> Database: Query')
-```
-
-🎯 WHEN TO USE TOOLS:
-- **plantuml_chart**: Generate technical diagrams ONLY - use for flowcharts, UML diagrams, system architecture, process flows
-- **crypto_market_data**: Get real-time crypto prices, market cap, volume, and 24h changes (automatically converts symbols like BTC→bitcoin, ETH→ethereum, ADA→cardano)
-- **crypto_price_history**: Get historical crypto data with charts over different time periods (use coin IDs like bitcoin, ethereum, cardano)
-- **crypto_global_stats**: Get global market statistics and DeFi data
-- **crypto_trending**: Get trending coins, top gainers/losers, and market sentiment
-
 🎨 FOR IMAGE GENERATION:
 When users want to create images, photos, artwork, or illustrations, guide them to use the attachment button (📎) to access the built-in image generator. Say something like: "I can help you create images! Please click the attachment button (📎) and select 'Generate Image' to access our image generator with different models like Flux and Turbo."
-
-⚠️ CRITICAL EXECUTION RULES:
-1. **SEQUENTIAL ONLY**: Execute tools ONE BY ONE, never simultaneously
-2. **NO DUPLICATES**: Execute each tool only ONCE per request
-3. **Diagram Generation**: Execute plantuml_chart ONCE, wait for completion, THEN explain
-4. **WAIT FOR COMPLETION**: NEVER provide responses before tools complete execution
-
-CORRECT PYTHON TOOL EXAMPLES:
-```python
-# Diagram creation example
-diagram_result = execute_tool('plantuml_chart', diagram='Alice -> Bob: Hello\\nBob -> Alice: Hi there')
-print("Diagram created:", diagram_result)
-```
-
-⚠️ IMPORTANT: Use tools appropriately:
-- **plantuml_chart**: For technical diagrams, flowcharts, UML diagrams, system designs
-
-🔍 ENHANCED FEATURES:
-- Image generation now uses unique seeds to prevent duplicate images
-- Screenshot analysis supports multiple images via automatic collage creation
-- PlantUML diagrams with multiple fallback services and auto-enhancement
-- All tools optimized for parallel execution when appropriate
-- **fetch_ai_models**: List available AI chat models
-- **switch_ai_model**: Change to different AI model
-- **Crypto data**: Real-time prices, historical charts, market statistics, and trending analysis using CoinGecko API (no API key required)
-
-🔗 SEQUENTIAL TOOL EXECUTION ONLY:
-Execute tools ONE BY ONE in sequence. NO parallel execution! For example:
-```python
-# First get crypto data
-crypto_data = execute_tool('crypto_market_data', symbols='bitcoin,ethereum')
-# Finally get trending data
-trend_data = execute_tool('crypto_trending')
-```
-
-```python
-# Create diagram
-diagram = execute_tool('plantuml_chart', diagram='User -> Computer: Work\\nComputer -> User: Results')
-```
-
-📋 CRYPTO TOOL USAGE GUIDELINES:
-- **Symbol Conversion**: Automatically convert symbols to coin IDs (BTC→bitcoin, ETH→ethereum, ADA→cardano, etc.)
-- **Multiple Coins**: For crypto_market_data, use comma-separated coin IDs: "bitcoin,ethereum,cardano"
-- **Time Periods**: For crypto_price_history, use days: "1", "7", "30", "90", "365", "max"
-- **Data Display**: Always show prices clearly with currency symbols and percentage changes
-- **Silent Tool Execution**: Tools run silently - only show the final results in natural language
-
-🌐 NETWORK UTILITIES:
-- **get_local_ip**: Get device IP address for network connections
-
-🎨 PLANTUML DIAGRAM GUIDELINES:
-- **Always include diagram parameter**: Never leave diagram parameter empty
-- **Auto-enhancement**: Set auto_enhance to true for better styling
-- **Diagram Types**: Use appropriate types: sequence, class, usecase, activity, component, deployment, state
-- **Display Results**: Always show the generated diagram image in the chat response
-- **Silent Generation**: Don't show tool execution details - only the final diagram
-
-🔄 TOOL EXECUTION BEHAVIOR:
-- ALL tools should execute silently without showing execution panels
-- Only display final results in natural conversational format
-- For diagrams: Show the generated image directly in chat
-- For crypto data: Present data in clean, formatted tables or descriptions
-- Never expose raw tool JSON responses to users
 
 Always use proper JSON format and explain what you're doing to help the user understand the process.
 
@@ -652,12 +550,8 @@ Be conversational and helpful!'''
           
           // Tool execution starting
           
-          // Execute the tool immediately
-          final result = await _externalToolsService.executeTool(toolName, parameters);
-          debugPrint('Tool $toolName result: $result');
-          
-          // Format the result
-          String resultText = _formatToolResult(toolName, result);
+          // REMOVED: External tools execution
+          String resultText = "External tools have been removed from this application.";
           
           // Add execution result directly
           executionResults += '$resultText\n\n';
@@ -806,15 +700,16 @@ Be conversational and helpful!'''
           
           if (validToolCalls.isNotEmpty) {
             // Execute tools in parallel
-            final results = await _externalToolsService.executeToolsParallel(validToolCalls);
-            toolData.addAll(results);
+            // REMOVED: External tools execution - parallel
+            final results = <String, Map<String, dynamic>>{};
+            // No tool execution - empty results
             
             // Build combined result text without execution headers
             String combinedResultText = '';
             for (final call in validToolCalls) {
               final toolName = call['tool_name'] as String;
-              final result = results[toolName];
-              combinedResultText += _formatToolResult(toolName, result ?? {}) + '\n\n';
+              final result = {"success": false, "message": "External tools have been removed"};
+              combinedResultText += _formatToolResult(toolName, result) + '\n\n';
             }
             
             processedText = processedText.replaceAll(match.group(0)!, combinedResultText.trim());
@@ -853,7 +748,8 @@ Be conversational and helpful!'''
             toolCall['tool_use'] = true;
             
             // Execute the tool
-            final result = await _externalToolsService.executeTool(toolName, parameters);
+            // REMOVED: External tools execution - single
+            final result = {"success": false, "message": "External tools removed"};
             toolData[toolName] = result;
             
             // Replace the JSON block with the tool execution result
@@ -2384,7 +2280,7 @@ $priceChart
               awaitingReply: _awaitingReply,
               isEditing: _editingMessageId != null,
               onCancelEdit: _cancelEditing,
-              externalToolsService: _externalToolsService,
+              // REMOVED: External tools service
               onImageUpload: _showAttachmentOptions,
               uploadedImagePath: _uploadedImagePath,
               onClearImage: _clearUploadedImage,
@@ -3570,7 +3466,6 @@ class _InputBar extends StatelessWidget {
     required this.awaitingReply,
     required this.isEditing,
     required this.onCancelEdit,
-    required this.externalToolsService,
     required this.onImageUpload,
     this.uploadedImagePath,
     required this.onClearImage,
@@ -3590,7 +3485,7 @@ class _InputBar extends StatelessWidget {
   final bool awaitingReply;
   final bool isEditing;
   final VoidCallback onCancelEdit;
-  final ExternalToolsService externalToolsService;
+  // REMOVED: External tools service declaration
   final VoidCallback onImageUpload;
   final String? uploadedImagePath;
   final VoidCallback onClearImage;
@@ -3866,7 +3761,7 @@ class _InputBar extends StatelessWidget {
                               ? 'Generating image...'
                               : isImageGenerationMode
                                   ? 'Enter your image prompt...'
-                              : externalToolsService.isExecuting
+                              : false
                                   ? 'External tool is running...'
                                   : uploadedImagePath != null
                                       ? 'Image uploaded - Describe or ask about it...'

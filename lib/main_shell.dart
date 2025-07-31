@@ -12,7 +12,7 @@ import 'saved_page.dart';
 import 'models.dart';
 import 'auth_service.dart';
 import 'auth_and_profile_pages.dart';
-import 'external_tools_service.dart';
+// REMOVED: External tools service import
 
 
 /* ----------------------------------------------------------
@@ -52,7 +52,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     _fetchModels();
     
     // Set up external tools callback for model switching
-    ExternalToolsService().setModelSwitchCallback(switchModel);
+    // REMOVED: External tools service model switch callback
     
     _fabAnimationController = AnimationController(
       duration: const Duration(milliseconds: 400),
