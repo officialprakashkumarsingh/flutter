@@ -86,11 +86,7 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 400),
-      decoration: widget.isFromUser ? BoxDecoration(
-        color: const Color(0xFFF8F8F8),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-      ) : null,
+      decoration: null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -201,11 +197,7 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
               child: Container(
                 width: double.infinity,
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                decoration: widget.isFromUser ? BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-                ) : null,
+                decoration: null,
                 child: _buildPreviewContent(attachment),
               ),
             ),
@@ -266,11 +258,7 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
           ...attachment.extractedFiles!.map((file) => Container(
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
-            decoration: widget.isFromUser ? BoxDecoration(
-              color: const Color(0xFFF8F8F8),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-            ) : null,
+            decoration: null,
             child: Row(
               children: [
                 Text(
@@ -382,11 +370,7 @@ class SimpleFileAttachmentWidget extends StatelessWidget {
       children: attachments.map((attachment) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: isFromUser ? BoxDecoration(
-            color: const Color(0xFFF0F0F0),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-          ) : null,
+          decoration: null,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

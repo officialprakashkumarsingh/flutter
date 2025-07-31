@@ -337,7 +337,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAE9E5),
+        color: const Color(0xFFF4F3F0),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -345,7 +345,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
         children: [
           Text(
             widget.message.text,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
+            style: const TextStyle(color: Colors.black, fontSize: 16),
           ),
           if (widget.message.attachments.isNotEmpty) ...[
             const SizedBox(height: 12),
