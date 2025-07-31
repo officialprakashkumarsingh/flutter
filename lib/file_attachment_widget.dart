@@ -201,11 +201,11 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
               child: Container(
                 width: double.infinity,
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                decoration: BoxDecoration(
+                decoration: widget.isFromUser ? BoxDecoration(
                   color: attachment.isCode ? const Color(0xFF1a1a1a) : const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-                ),
+                ) : null,
                 child: _buildPreviewContent(attachment),
               ),
             ),
@@ -266,11 +266,11 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
           ...attachment.extractedFiles!.map((file) => Container(
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
+            decoration: widget.isFromUser ? BoxDecoration(
               color: const Color(0xFFF8F8F8),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-            ),
+            ) : null,
             child: Row(
               children: [
                 Text(
@@ -346,11 +346,7 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
   }
 
   Color _getFileColor(FileAttachment attachment) {
-    if (attachment.isImage) return const Color(0xFFE8F5E8);
-    if (attachment.isZip) return const Color(0xFFFFF3E0);
-    if (attachment.isCode) return const Color(0xFFE3F2FD);
-    if (attachment.isText) return const Color(0xFFF3E5F5);
-    return const Color(0xFFF5F5F5);
+    return Colors.transparent;
   }
 
   void _copyContent(FileAttachment attachment) {
@@ -370,10 +366,12 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
 
 class SimpleFileAttachmentWidget extends StatelessWidget {
   final List<FileAttachment> attachments;
+  final bool isFromUser;
 
   const SimpleFileAttachmentWidget({
     super.key,
     required this.attachments,
+    this.isFromUser = true,
   });
 
   @override
@@ -384,11 +382,11 @@ class SimpleFileAttachmentWidget extends StatelessWidget {
       children: attachments.map((attachment) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
+          decoration: isFromUser ? BoxDecoration(
             color: const Color(0xFFF0F0F0),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-          ),
+          ) : null,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
