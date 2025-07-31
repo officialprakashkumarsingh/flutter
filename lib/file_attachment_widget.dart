@@ -163,7 +163,7 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2D2D2D),
+                              color: Colors.transparent,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const FaIcon(
@@ -202,7 +202,7 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
                 width: double.infinity,
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 decoration: widget.isFromUser ? BoxDecoration(
-                  color: attachment.isCode ? const Color(0xFF1a1a1a) : const Color(0xFFFFFFFF),
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
                 ) : null,

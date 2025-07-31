@@ -337,7 +337,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A),
+        color: const Color(0xFFEAE9E5),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -403,9 +403,9 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
           child: MarkdownBody(
             data: currentText,
             styleSheet: MarkdownStyleSheet(
-              p: const TextStyle(color: Colors.white, fontSize: 16),
-              strong: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              em: const TextStyle(color: Colors.white, fontStyle: FontStyle.italic),
+              p: const TextStyle(color: Colors.black, fontSize: 16),
+              strong: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+              em: const TextStyle(color: Colors.black, fontStyle: FontStyle.italic),
               code: TextStyle(
                 backgroundColor: Colors.grey[800],
                 color: Colors.green,
