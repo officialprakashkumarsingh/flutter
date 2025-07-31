@@ -374,10 +374,41 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // AI message content (no background)
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: _buildBotMessageContent(widget.message.text),
+        // AI message content
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Flexible(
+              child: Container(
+                decoration: null, // Transparent background for AI messages
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Thinking Panel - if thoughts exist
+                    if (widget.message.thoughts.isNotEmpty) ...[
+                      _buildThinkingPanel(),
+                      const SizedBox(height: 12),
+                    ],
+                    
+                    // Main message content
+                    _buildBotMessageContent(widget.message.displayText),
+                    
+                    // Code Panels - if codes exist
+                    if (widget.message.codes.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      ...widget.message.codes.asMap().entries.map((entry) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _buildCodePanel(entry.value, entry.key),
+                        );
+                      }).toList(),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
         // File attachments below the message (if any)
         if (widget.message.attachments.isNotEmpty) ...[
@@ -442,6 +473,276 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: widgets,
+    );
+  }
+
+  // Thinking Panel Widget
+  Widget _buildThinkingPanel() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FA), // Light background for thinking
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
+      ),
+      child: Column(
+        children: [
+          // Header with toggle
+          GestureDetector(
+                         onTap: _toggleThinking,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  FaIcon(
+                    FontAwesomeIcons.brain,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'AI Thinking Process',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                      fontSize: 14,
+                    ),
+                  ),
+                  const Spacer(),
+                  AnimatedRotation(
+                    turns: _isThinkingExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 300),
+                    child: FaIcon(
+                      FontAwesomeIcons.chevronDown,
+                      size: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Expandable content
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            child: _isThinkingExpanded
+                ? Container(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: widget.message.thoughts.map((thought) {
+                        return Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
+                          ),
+                          child: Text(
+                            thought.text,
+                            style: TextStyle(
+                              color: Colors.grey[800],
+                              fontSize: 14,
+                              height: 1.4,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Code Panel Widget with AMOLED Black Styling
+  Widget _buildCodePanel(CodeContent codeContent, int index) {
+    final isExpanded = _codeExpandedStates[index] ?? false;
+    
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.black, // AMOLED Black background
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[800]!, width: 1),
+      ),
+      child: Column(
+        children: [
+          // Header with language, copy, and preview buttons
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[900],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              children: [
+                // Language badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[600],
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    codeContent.language.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                
+                // Copy button
+                GestureDetector(
+                  onTap: () => _copyCode(codeContent.code),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black, // Black copy button
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const FaIcon(
+                      FontAwesomeIcons.copy,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(width: 8),
+                
+                // Preview button (for HTML)
+                if (codeContent.language.toLowerCase() == 'html') ...[
+                  GestureDetector(
+                    onTap: () => _previewHtml(codeContent.code),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.black, // Black preview button
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const FaIcon(
+                        FontAwesomeIcons.eye,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                
+                                 // Expand/Collapse button
+                 GestureDetector(
+                                       onTap: () => _toggleCode(index),
+                  child: AnimatedRotation(
+                    turns: isExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 300),
+                    child: const FaIcon(
+                      FontAwesomeIcons.chevronDown,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Code content with animation
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            child: isExpanded
+                ? Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    child: HighlightView(
+                      codeContent.code,
+                      language: codeContent.language,
+                      theme: vs2015Theme, // Dark theme for black background
+                      padding: const EdgeInsets.all(0),
+                      textStyle: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 14,
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _copyCode(String code) {
+    HapticFeedback.lightImpact();
+    Clipboard.setData(ClipboardData(text: code));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          '📋 Code copied to clipboard!',
+          style: TextStyle(
+            color: Color(0xFF000000),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        elevation: 4,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _previewHtml(String htmlCode) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          height: 500,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'HTML Preview',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: html_widget.HtmlWidget(
+                  htmlCode,
+                  onTapUrl: (url) {
+                    return false; // Don't handle URL taps in preview
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
