@@ -497,6 +497,8 @@ Be conversational and helpful!'''
                 
                 // DON'T clean Python blocks during streaming - let _processToolCallsDuringStreaming handle it
                 
+                print('🔍 STREAMING UPDATE: ${streamingParseResult['thoughts'].length} thoughts, ${streamingParseResult['codes'].length} codes');
+                
                 setState(() {
                   _messages[botMessageIndex] = Message(
                     id: botMessage.id,
@@ -529,6 +531,9 @@ Be conversational and helpful!'''
         // Don't clean the final text - just use it directly to preserve tool results
         // Parse final content to preserve codes and thoughts
         final finalParseResult = _parseContentStreaming(textToUse);
+        
+        print('🔍 FINAL MESSAGE: ${finalParseResult['thoughts'].length} thoughts, ${finalParseResult['codes'].length} codes');
+        print('🔍 Final text preview: ${textToUse.length > 100 ? textToUse.substring(0, 100) : textToUse}...');
         
         setState(() {
           _messages[botMessageIndex] = Message(
@@ -1412,6 +1417,7 @@ $priceChart
       setState(() {
         if (_awaitingReply && _messages.isNotEmpty && _messages.last.isStreaming) {
            final lastIndex = _messages.length - 1;
+           print('🔍 STOP STREAMING: Message has ${_messages.last.thoughts.length} thoughts, ${_messages.last.codes.length} codes');
            _messages[lastIndex] = _messages.last.copyWith(isStreaming: false);
         }
         _awaitingReply = false;
@@ -3132,9 +3138,10 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
     final text = widget.message.text;
     final codes = widget.message.codes;
     
-    print('🔍 DEBUG: Building bot message with codes:');
+    print('🔍 DEBUG MESSAGE BUBBLE:');
     print('  Text length: ${text.length}');
     print('  Codes count: ${codes.length}');
+    print('  Thoughts count: ${widget.message.thoughts.length}');
     print('  Message ID: ${widget.message.id}');
     print('  Is streaming: ${widget.message.isStreaming}');
     if (codes.isNotEmpty) {
