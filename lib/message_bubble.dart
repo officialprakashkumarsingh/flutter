@@ -337,7 +337,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue,
+        color: const Color(0xFF2A2A2A),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -351,7 +351,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
             const SizedBox(height: 12),
             FileAttachmentWidget(
               attachments: widget.message.attachments,
-              isFromUser: true,
+              isFromUser: widget.message.sender == Sender.user,
             ),
           ],
         ],
@@ -362,11 +362,19 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   Widget _buildBotMessage() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[800],
-        borderRadius: BorderRadius.circular(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildBotMessageContent(widget.message.text),
+          if (widget.message.attachments.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            FileAttachmentWidget(
+              attachments: widget.message.attachments,
+              isFromUser: false,
+            ),
+          ],
+        ],
       ),
-      child: _buildBotMessageContent(widget.message.text),
     );
   }
 

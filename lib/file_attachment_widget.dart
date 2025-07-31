@@ -86,11 +86,11 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 400),
-      decoration: BoxDecoration(
+      decoration: widget.isFromUser ? BoxDecoration(
         color: const Color(0xFFF8F8F8),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-      ),
+      ) : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
