@@ -5,7 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/vs2015.dart';
-import 'package:flutter_widget_from_html/flutter_widget_from_html.dart' as html_widget hide ImageSource;
+
 import 'dart:convert';
 
 import 'models.dart';
@@ -531,7 +531,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
           em: const TextStyle(color: Colors.black, fontStyle: FontStyle.italic),
           code: TextStyle(
             backgroundColor: Colors.grey[800],
-            color: Colors.green,
+            color: Colors.white, // Match code panel styling
             fontFamily: 'monospace',
           ),
           codeblockDecoration: BoxDecoration(
@@ -631,7 +631,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     );
   }
 
-  // Code Panel Widget with Clean Styling (like thinking panel)
+  // Code Panel Widget with Clean Styling (independent, no web preview)
   Widget _buildCodePanel(CodeContent codeContent, int index) {
     final isExpanded = _codeExpandedStates[index] ?? false;
     
@@ -644,7 +644,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
       ),
       child: Column(
         children: [
-          // Header with language, copy, and preview buttons (no separate background)
+          // Header with language and copy button (no preview)
           GestureDetector(
             onTap: () => _toggleCode(index),
             child: Container(
@@ -669,7 +669,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
                   ),
                   const Spacer(),
                   
-                  // Copy button
+                  // Copy button only
                   GestureDetector(
                     onTap: () => _copyCode(codeContent.code),
                     child: Container(
@@ -687,26 +687,6 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
                   ),
                   
                   const SizedBox(width: 8),
-                  
-                  // Preview button (for HTML/CSS/JS)
-                  if (_isWebCode(codeContent.language)) ...[
-                    GestureDetector(
-                      onTap: () => _previewWebCode(codeContent, index),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[800], // Subtle gray for contrast
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const FaIcon(
-                          FontAwesomeIcons.eye,
-                          size: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
                   
                   // Expand/Collapse button
                   AnimatedRotation(
@@ -744,125 +724,6 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
                 : const SizedBox.shrink(),
           ),
         ],
-      ),
-    );
-  }
-
-  // Check if code is web-related (HTML, CSS, JS)
-  bool _isWebCode(String language) {
-    return ['html', 'css', 'javascript', 'js'].contains(language.toLowerCase());
-  }
-
-  // Enhanced web code preview that combines HTML/CSS/JS
-  void _previewWebCode(CodeContent currentCode, int index) {
-    // Collect all web-related code blocks from the message
-    String htmlContent = '';
-    String cssContent = '';
-    String jsContent = '';
-    
-    // Get all code blocks from the message
-    for (final code in widget.message.codes) {
-      final lang = code.language.toLowerCase();
-      if (lang == 'html') {
-        htmlContent += code.code + '\n';
-      } else if (lang == 'css') {
-        cssContent += code.code + '\n';
-      } else if (lang == 'javascript' || lang == 'js') {
-        jsContent += code.code + '\n';
-      }
-    }
-    
-    // If current code is one of the web languages and not found in loop, use current
-    final currentLang = currentCode.language.toLowerCase();
-    if (currentLang == 'html' && htmlContent.isEmpty) {
-      htmlContent = currentCode.code;
-    } else if (currentLang == 'css' && cssContent.isEmpty) {
-      cssContent = currentCode.code;
-    } else if ((currentLang == 'javascript' || currentLang == 'js') && jsContent.isEmpty) {
-      jsContent = currentCode.code;
-    }
-    
-    // Create combined HTML file
-    String combinedHtml = htmlContent;
-    
-    // If no HTML but we have CSS/JS, create a basic HTML structure
-    if (combinedHtml.isEmpty && (cssContent.isNotEmpty || jsContent.isNotEmpty)) {
-      combinedHtml = '''<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Preview</title>
-</head>
-<body>
-    <h1>CSS/JS Preview</h1>
-    <p>This preview contains the CSS and JavaScript code blocks.</p>
-</body>
-</html>''';
-    }
-    
-    // Add CSS if present
-    if (cssContent.isNotEmpty) {
-      if (combinedHtml.contains('</head>')) {
-        combinedHtml = combinedHtml.replaceFirst(
-          '</head>',
-          '    <style>\n$cssContent\n    </style>\n</head>'
-        );
-      } else {
-        // If no head tag, add style at the beginning
-        combinedHtml = '<style>\n$cssContent\n</style>\n$combinedHtml';
-      }
-    }
-    
-    // Add JavaScript if present
-    if (jsContent.isNotEmpty) {
-      if (combinedHtml.contains('</body>')) {
-        combinedHtml = combinedHtml.replaceFirst(
-          '</body>',
-          '    <script>\n$jsContent\n    </script>\n</body>'
-        );
-      } else {
-        // If no body tag, add script at the end
-        combinedHtml = '$combinedHtml\n<script>\n$jsContent\n</script>';
-      }
-    }
-    
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Container(
-          height: 500,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Web Preview (${currentCode.language.toUpperCase()})',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: html_widget.HtmlWidget(
-                  combinedHtml,
-                  onTapUrl: (url) {
-                    return false; // Don't handle URL taps in preview
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
