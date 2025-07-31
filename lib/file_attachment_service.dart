@@ -19,6 +19,7 @@ class FileAttachment {
   final bool isZip;
   final bool isText;
   final bool isCode;
+  final bool isPdf;
 
   FileAttachment({
     required this.id,
@@ -34,6 +35,7 @@ class FileAttachment {
     required this.isZip,
     required this.isText,
     required this.isCode,
+    required this.isPdf,
   });
 
   String get sizeFormatted {
@@ -52,6 +54,7 @@ class FileAttachment {
     if (isZip) return '📦';
     if (isCode) return '💻';
     if (isText) return '📄';
+    if (isPdf) return '📕';
     return '📁';
   }
 }
@@ -73,6 +76,10 @@ class FileAttachmentService {
 
   static const List<String> supportedArchiveExtensions = [
     '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2'
+  ];
+
+  static const List<String> supportedPdfExtensions = [
+    '.pdf'
   ];
 
   static Future<List<FileAttachment>?> pickFiles() async {
