@@ -127,9 +127,18 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: widget.message.sender == Sender.user 
-          ? _buildUserMessage() 
-          : _buildBotMessage(),
+      child: Row(
+        mainAxisAlignment: widget.message.sender == Sender.user 
+            ? MainAxisAlignment.end 
+            : MainAxisAlignment.start,
+        children: [
+          Flexible(
+            child: widget.message.sender == Sender.user 
+                ? _buildUserMessage() 
+                : _buildBotMessage(),
+          ),
+        ],
+      ),
     );
   }
   
@@ -337,7 +346,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F3F0),
+        color: const Color(0xFFEAE9E5),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(

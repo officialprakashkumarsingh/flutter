@@ -197,7 +197,11 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
               child: Container(
                 width: double.infinity,
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                decoration: null,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+                ),
                 child: _buildPreviewContent(attachment),
               ),
             ),
