@@ -450,9 +450,12 @@ Be conversational and helpful!'''
       final response = await _httpClient!.send(request);
 
       if (response.statusCode == 200) {
+        print('🟢 STEP 1: Starting streaming response');
         final stream = response.stream.transform(utf8.decoder).transform(const LineSplitter());
         var botMessage = Message.bot('', isStreaming: true);
         final botMessageIndex = _messages.length;
+        
+        print('🟢 STEP 2: Created initial bot message with ${botMessage.thoughts.length} thoughts, ${botMessage.codes.length} codes');
         
         setState(() {
           _messages.add(botMessage);
@@ -460,31 +463,35 @@ Be conversational and helpful!'''
 
         String accumulatedText = '';
         String finalProcessedText = '';
-        await for (final line in stream) {
-          if (!mounted || _httpClient == null) break;
-          
+        
+        print('🟢 STEP 3: Starting to process stream data...');
+        
+        await for (String line in stream) {
           if (line.startsWith('data: ')) {
-            final jsonStr = line.substring(6);
-            if (jsonStr.trim() == '[DONE]') break;
+            final data = line.substring(6);
+            if (data == '[DONE]') {
+              print('🟢 STEP 4: Stream marked as [DONE]');
+              break;
+            }
             
             try {
-              final data = json.decode(jsonStr);
-              final content = data['choices']?[0]?['delta']?['content'];
+              final json = jsonDecode(data);
+              final content = json['choices']?[0]?['delta']?['content'];
               if (content != null) {
-                // DIAGRAM FIX: Stop streaming if diagram was generated to prevent AI overriding it
-                if (_diagramGeneratedInCurrentResponse) {
-                  print('🛑 DIAGRAM GENERATED - STOPPING FURTHER STREAMING to prevent override');
-                  break; // Stop processing further content
-                }
-                
                 accumulatedText += _fixServerEncoding(content);
+                
+                print('🟢 STEP 5: Accumulated text now ${accumulatedText.length} chars, parsing...');
                 
                 // Parse thinking content in real-time during streaming
                 final streamingParseResult = _parseContentStreaming(accumulatedText);
                 
+                print('🟢 STEP 6: Streaming parse found ${streamingParseResult['thoughts'].length} thoughts, ${streamingParseResult['codes'].length} codes');
+                
                 // Process tools and create panels
                 final processedStreamingMessage = await _processToolCallsDuringStreaming(streamingParseResult['displayText'], botMessageIndex);
                 finalProcessedText = processedStreamingMessage; // Store the latest processed text
+                
+                print('🟢 STEP 7: After tool processing, text length: ${processedStreamingMessage.length}');
                 
                 // DIAGRAM FIX: If diagram was generated during tool processing, stop streaming
                 if (_diagramGeneratedInCurrentResponse) {
@@ -495,8 +502,7 @@ Be conversational and helpful!'''
                 // Use processed text directly - NO CLEANING during streaming to preserve tool results
                 String displayText = processedStreamingMessage;
                 
-                // DON'T clean Python blocks during streaming - let _processToolCallsDuringStreaming handle it
-                
+                print('🟢 STEP 8: Creating message with thoughts: ${streamingParseResult['thoughts'].length}, codes: ${streamingParseResult['codes'].length}');
 
                 setState(() {
                   _messages[botMessageIndex] = Message(
@@ -511,6 +517,8 @@ Be conversational and helpful!'''
                     toolData: botMessage.toolData,
                   );
                 });
+                
+                print('🟢 STEP 9: Message updated in UI');
                 _scrollToBottom();
               }
             } catch (e) {
@@ -519,19 +527,18 @@ Be conversational and helpful!'''
           }
         }
 
-        // Streaming completed
+        print('🟢 STEP 10: Streaming completed, processing final message...');
 
-        // FIXED: Only process final message, tools already executed during streaming
         // Use the final processed text that includes all tool results
         final textToUse = finalProcessedText.isNotEmpty ? finalProcessedText : accumulatedText;
         
-
+        print('🟢 STEP 11: Final text to use length: ${textToUse.length}');
         
-        // Don't clean the final text - just use it directly to preserve tool results
         // Parse final content to preserve codes and thoughts
         final finalParseResult = _parseContentStreaming(textToUse);
-        
 
+        print('🟢 STEP 12: Final parse result - thoughts: ${finalParseResult['thoughts'].length}, codes: ${finalParseResult['codes'].length}');
+        
         setState(() {
           _messages[botMessageIndex] = Message(
             id: _messages[botMessageIndex].id,
@@ -545,6 +552,9 @@ Be conversational and helpful!'''
             toolData: _messages[botMessageIndex].toolData,
           );
         });
+
+        print('🟢 STEP 13: Final message set with isStreaming: false');
+        print('🟢 FINAL MESSAGE HAS: ${_messages[botMessageIndex].thoughts.length} thoughts, ${_messages[botMessageIndex].codes.length} codes');
 
         // Update memory with the completed conversation (can clean for memory)
         final memoryText = finalProcessedText.isNotEmpty ? finalProcessedText : accumulatedText;
@@ -2144,6 +2154,7 @@ $priceChart
         final code = match.group(1)?.trim() ?? '';
         if (code.isNotEmpty) {
           print('🔍 Found complete code block: $language (${code.length} chars)');
+          print('    Code preview: ${code.length > 50 ? code.substring(0, 50) : code}...');
           codes.add(CodeContent(
             code: code,
             language: language,
@@ -2165,6 +2176,7 @@ $priceChart
           final hasCompleteCode = codes.any((c) => c.language == language);
           if (!hasCompleteCode) {
             print('🔍 Found partial code block: $language (${code.length} chars)');
+            print('    Partial code preview: ${code.length > 50 ? code.substring(0, 50) : code}...');
             codes.add(CodeContent(
               code: code,
               language: language,
@@ -3133,15 +3145,26 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
     final text = widget.message.text;
     final codes = widget.message.codes;
     
-    // Debug: Show when code panels should appear
+    print('📱 MESSAGE BUBBLE BUILD:');
+    print('  Message ID: ${widget.message.id}');
+    print('  Is streaming: ${widget.message.isStreaming}');
+    print('  Text length: ${text.length}');
+    print('  Thoughts count: ${widget.message.thoughts.length}');
+    print('  Codes count: ${codes.length}');
     if (codes.isNotEmpty) {
-      print('✅ CODE PANELS: Found ${codes.length} code blocks (${codes.map((c) => c.language).join(', ')})');
+      print('  Code languages: ${codes.map((c) => c.language).join(', ')}');
+      for (int i = 0; i < codes.length; i++) {
+        print('    Code $i: ${codes[i].language} (${codes[i].code.length} chars)');
+      }
     }
+    print('  Text preview: ${text.length > 100 ? text.substring(0, 100) : text}...');
     
     if (codes.isEmpty) {
-      print('  📝 No codes found, using regular content');
+      print('  ❌ NO CODES - Using regular content');
       return _buildBotMessageContent(widget.message.displayText);
     }
+    
+    print('  ✅ BUILDING CODE PANELS');
     
     // Build content by replacing code blocks with panels and showing other content normally
     List<Widget> contentWidgets = [];
@@ -3150,7 +3173,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
     
     // Find all code block positions in the original text
     for (final code in codes) {
-      final pattern = RegExp('```${code.language}\\n.*?```', dotAll: true);
+      final pattern = RegExp('```${code.language}\\s*.*?```', dotAll: true);
       final match = pattern.firstMatch(remainingText);
       
       if (match != null) {
@@ -3162,12 +3185,15 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
         }
         
         // Add the code panel
+        print('  📦 Adding code panel $codeIndex for ${code.language}');
         contentWidgets.add(_buildCodePanel(code, codeIndex));
         contentWidgets.add(const SizedBox(height: 8));
         
         // Update remaining text
         remainingText = remainingText.substring(match.end).trim();
         codeIndex++;
+      } else {
+        print('  ⚠️ Pattern not found for ${code.language} code');
       }
     }
     
@@ -3175,6 +3201,8 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
     if (remainingText.isNotEmpty) {
       contentWidgets.add(_buildMarkdownText(remainingText));
     }
+    
+    print('  📦 Built ${contentWidgets.length} content widgets');
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
