@@ -527,10 +527,20 @@ Be conversational and helpful!'''
 
         
         // Don't clean the final text - just use it directly to preserve tool results
+        // Parse final content to preserve codes and thoughts
+        final finalParseResult = _parseContentStreaming(textToUse);
+        
         setState(() {
-          _messages[botMessageIndex] = Message.bot(
-            textToUse, // NO CLEANING - preserve tool results
+          _messages[botMessageIndex] = Message(
+            id: _messages[botMessageIndex].id,
+            sender: Sender.bot,
+            text: textToUse,
             isStreaming: false,
+            timestamp: _messages[botMessageIndex].timestamp,
+            thoughts: finalParseResult['thoughts'],
+            codes: finalParseResult['codes'],
+            displayText: finalParseResult['displayText'],
+            toolData: _messages[botMessageIndex].toolData,
           );
         });
 
