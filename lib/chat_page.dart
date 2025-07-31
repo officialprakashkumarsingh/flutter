@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
-import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -13,7 +12,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
+
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/github.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart' as html_widget hide ImageSource;
@@ -534,6 +533,9 @@ Be conversational and helpful!'''
             isStreaming: false,
           );
         });
+        
+        // Schedule thinking panel removal after streaming naturally completes
+        _scheduleThinkingPanelRemoval(botMessageIndex);
 
         // Update memory with the completed conversation (can clean for memory)
         final memoryText = finalProcessedText.isNotEmpty ? finalProcessedText : accumulatedText;
