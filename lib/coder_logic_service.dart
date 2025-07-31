@@ -20,6 +20,12 @@ class CoderLogicService {
   final String _repo; // e.g. owner/repo
   final String _branch;
   final http.Client _client;
+  // Cached repository file list to avoid repeated network calls when the user
+  // performs multiple searches. The cache is automatically invalidated after
+  // [_indexTtl].
+  List<String>? _cachedFilePaths;
+  DateTime? _indexFetchedAt;
+  static const Duration _indexTtl = Duration(minutes: 15);
 
   /// Collects a bird’s-eye view of the repository such as number of files,
   /// file names, unique extensions, detected project type and main
@@ -92,6 +98,100 @@ class CoderLogicService {
         'error': e.toString(),
       };
     }
+  }
+
+  /// Returns **all** file paths in the current branch of the repository. The
+  /// result is cached in-memory for a short period so that multiple look-ups do
+  /// not trigger additional GitHub API calls. Callers can force a refresh by
+  /// setting [forceRefresh] to true.
+  Future<List<String>> listRepositoryFiles({bool forceRefresh = false}) async {
+    if (!forceRefresh &&
+        _cachedFilePaths != null &&
+        _indexFetchedAt != null &&
+        DateTime.now().difference(_indexFetchedAt!) < _indexTtl) {
+      return _cachedFilePaths!;
+    }
+
+    // STEP 1: fetch latest commit SHA for the branch
+    final branchRes = await _client.get(
+      Uri.parse('https://api.github.com/repos/$_repo/branches/$_branch'),
+      headers: _headers,
+    );
+    if (branchRes.statusCode != 200) {
+      throw 'Unable to fetch branch info';
+    }
+    final branchJson = json.decode(branchRes.body);
+    final String commitSha = branchJson['commit']['sha'];
+
+    // STEP 2: get the complete tree (recursive)
+    final treeRes = await _client.get(
+      Uri.parse('https://api.github.com/repos/$_repo/git/trees/$commitSha?recursive=1'),
+      headers: _headers,
+    );
+    if (treeRes.statusCode != 200) {
+      throw 'Unable to fetch repository tree';
+    }
+    final treeJson = json.decode(treeRes.body);
+    final List<dynamic> tree = treeJson['tree'] as List<dynamic>;
+
+    _cachedFilePaths = tree
+        .where((t) => t['type'] == 'blob')
+        .map<String>((t) => t['path'] as String)
+        .toList(growable: false);
+    _indexFetchedAt = DateTime.now();
+
+    return _cachedFilePaths!;
+  }
+
+  /// Performs a full-text search inside the repository using GitHub's `search`
+  /// API. This approach scales to very large monorepos because the heavy work
+  /// is done by GitHub and we only transfer a trimmed JSON payload. The method
+  /// automatically adds the `repo:` qualifier to the query so callers can focus
+  /// on the actual search term.
+  ///
+  /// The returned list contains maps with the following keys:
+  ///   - `path`   : file path of the match
+  ///   - `snippet`: code fragment where the match occurred (may be empty)
+  ///   - `score`  : GitHub relevance score (higher = better)
+  Future<List<Map<String, dynamic>>> searchCode(
+    String query, {
+    int maxResults = 50,
+  }) async {
+    final capped = maxResults.clamp(1, 100); // GitHub allows up to 100 per page
+    final encodedQuery =
+        Uri.encodeQueryComponent('$query repo:$_repo in:file');
+    final uri = Uri.parse(
+        'https://api.github.com/search/code?q=$encodedQuery&per_page=$capped');
+
+    final res = await _client.get(
+      uri,
+      headers: {
+        ..._headers,
+        // Request code fragments around matches for a better user experience
+        'Accept': 'application/vnd.github.v3.text-match+json',
+      },
+    );
+
+    if (res.statusCode != 200) {
+      throw 'GitHub code search failed (${res.statusCode}): ${res.body}';
+    }
+
+    final decoded = json.decode(res.body);
+    final List<dynamic> items = decoded['items'] as List<dynamic>;
+
+    return items.map<Map<String, dynamic>>((item) {
+      final path = item['path'] as String? ?? '';
+      String snippet = '';
+      final matches = item['text_matches'] as List<dynamic>?;
+      if (matches != null && matches.isNotEmpty) {
+        snippet = matches.first['fragment'] ?? '';
+      }
+      return {
+        'path': path,
+        'snippet': snippet,
+        'score': item['score'],
+      };
+    }).toList(growable: false);
   }
 
   Map<String, String> get _headers => {
