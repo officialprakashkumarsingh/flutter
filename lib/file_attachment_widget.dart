@@ -424,21 +424,6 @@ class SimpleFileAttachmentWidget extends StatelessWidget {
                   ),
                 ),
               ],
-              // Add remove icon if onRemove callback is provided
-              if (onRemove != null) ...[
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => onRemove!(attachment),
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    child: const Icon(
-                      Icons.close,
-                      size: 16,
-                      color: Color(0xFF666666),
-                    ),
-                  ),
-                ),
-              ],
             ],
           ),
         );

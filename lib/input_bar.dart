@@ -237,7 +237,10 @@ class InputBar extends StatelessWidget {
               margin: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: SimpleFileAttachmentWidget(
                 attachments: attachedFiles,
-                onRemove: (attachment) => onClearFile(attachment.id),
+                onRemove: (attachment) {
+                  // Remove the specific attachment by ID
+                  onClearFile(attachment.id);
+                },
               ),
             ),
           
