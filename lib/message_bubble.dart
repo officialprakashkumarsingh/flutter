@@ -343,47 +343,51 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   }
 
   Widget _buildUserMessage() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEAE9E5),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // File attachments OUTSIDE the bubble (first, above the message)
+        if (widget.message.attachments.isNotEmpty) ...[
+          FileAttachmentWidget(
+            attachments: widget.message.attachments,
+            isFromUser: widget.message.sender == Sender.user,
+          ),
+          const SizedBox(height: 8),
+        ],
+        // User message bubble (separate from attachments)
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEAE9E5),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
             widget.message.text,
             style: const TextStyle(color: Colors.black, fontSize: 16),
           ),
-          if (widget.message.attachments.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            FileAttachmentWidget(
-              attachments: widget.message.attachments,
-              isFromUser: widget.message.sender == Sender.user,
-            ),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildBotMessage() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildBotMessageContent(widget.message.text),
-          if (widget.message.attachments.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            FileAttachmentWidget(
-              attachments: widget.message.attachments,
-              isFromUser: false,
-            ),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // AI message content (no background)
+        Container(
+          padding: const EdgeInsets.all(16),
+          child: _buildBotMessageContent(widget.message.text),
+        ),
+        // File attachments below the message (if any)
+        if (widget.message.attachments.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          FileAttachmentWidget(
+            attachments: widget.message.attachments,
+            isFromUser: false,
+          ),
         ],
-      ),
+      ],
     );
   }
 
