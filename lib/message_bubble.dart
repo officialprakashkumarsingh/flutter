@@ -346,15 +346,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // File attachments OUTSIDE the bubble (first, above the message)
-        if (widget.message.attachments.isNotEmpty) ...[
-          FileAttachmentWidget(
-            attachments: widget.message.attachments,
-            isFromUser: widget.message.sender == Sender.user,
-          ),
-          const SizedBox(height: 8),
-        ],
-        // User message bubble (separate from attachments)
+        // User message bubble (first)
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -366,6 +358,14 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
             style: const TextStyle(color: Colors.black, fontSize: 16),
           ),
         ),
+        // File attachments BELOW the message bubble
+        if (widget.message.attachments.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          FileAttachmentWidget(
+            attachments: widget.message.attachments,
+            isFromUser: widget.message.sender == Sender.user,
+          ),
+        ],
       ],
     );
   }
