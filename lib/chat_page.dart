@@ -14,6 +14,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_highlight/flutter_highlight.dart';
+import 'package:flutter_highlight/themes/github.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart' as html_widget hide ImageSource;
 import 'models.dart';
 import 'character_service.dart';
 import 'image_generation_dialog.dart';
@@ -503,6 +506,7 @@ Be conversational and helpful!'''
                     isStreaming: true,
                     timestamp: botMessage.timestamp,
                     thoughts: streamingParseResult['thoughts'],
+                    codes: streamingParseResult['codes'],
                     displayText: displayText,
                     toolData: botMessage.toolData,
                   );
@@ -2010,6 +2014,7 @@ $priceChart
   // Parse thoughts and content in real-time during streaming
   Map<String, dynamic> _parseContentStreaming(String text) {
     final List<ThoughtContent> thoughts = [];
+    final List<CodeContent> codes = [];
     String displayText = text;
     
     // Regex patterns for different thought types - including partial matches
@@ -2030,6 +2035,58 @@ $priceChart
       'thought': RegExp(r'<thought>(.*?)$', dotAll: true),
       'reason': RegExp(r'<reason>(.*?)$', dotAll: true),
       'reasoning': RegExp(r'<reasoning>(.*?)$', dotAll: true),
+    };
+    
+    // Code block patterns for real-time parsing (complete blocks)
+    final codePatterns = {
+      'html': RegExp(r'```html\n(.*?)```', dotAll: true),
+      'css': RegExp(r'```css\n(.*?)```', dotAll: true),
+      'javascript': RegExp(r'```(?:javascript|js)\n(.*?)```', dotAll: true),
+      'typescript': RegExp(r'```(?:typescript|ts)\n(.*?)```', dotAll: true),
+      'python': RegExp(r'```(?:python|py)\n(.*?)```', dotAll: true),
+      'dart': RegExp(r'```dart\n(.*?)```', dotAll: true),
+      'java': RegExp(r'```java\n(.*?)```', dotAll: true),
+      'kotlin': RegExp(r'```(?:kotlin|kt)\n(.*?)```', dotAll: true),
+      'swift': RegExp(r'```swift\n(.*?)```', dotAll: true),
+      'cpp': RegExp(r'```(?:cpp|c\+\+|cxx)\n(.*?)```', dotAll: true),
+      'c': RegExp(r'```c\n(.*?)```', dotAll: true),
+      'csharp': RegExp(r'```(?:csharp|cs|c#)\n(.*?)```', dotAll: true),
+      'php': RegExp(r'```php\n(.*?)```', dotAll: true),
+      'ruby': RegExp(r'```(?:ruby|rb)\n(.*?)```', dotAll: true),
+      'go': RegExp(r'```(?:go|golang)\n(.*?)```', dotAll: true),
+      'rust': RegExp(r'```(?:rust|rs)\n(.*?)```', dotAll: true),
+      'sql': RegExp(r'```sql\n(.*?)```', dotAll: true),
+      'json': RegExp(r'```json\n(.*?)```', dotAll: true),
+      'xml': RegExp(r'```xml\n(.*?)```', dotAll: true),
+      'yaml': RegExp(r'```(?:yaml|yml)\n(.*?)```', dotAll: true),
+      'bash': RegExp(r'```(?:bash|shell|sh)\n(.*?)```', dotAll: true),
+      'powershell': RegExp(r'```(?:powershell|ps1)\n(.*?)```', dotAll: true),
+    };
+    
+    // Partial code patterns for streaming (unclosed blocks)
+    final partialCodePatterns = {
+      'html': RegExp(r'```html\n(.*?)$', dotAll: true),
+      'css': RegExp(r'```css\n(.*?)$', dotAll: true),
+      'javascript': RegExp(r'```(?:javascript|js)\n(.*?)$', dotAll: true),
+      'typescript': RegExp(r'```(?:typescript|ts)\n(.*?)$', dotAll: true),
+      'python': RegExp(r'```(?:python|py)\n(.*?)$', dotAll: true),
+      'dart': RegExp(r'```dart\n(.*?)$', dotAll: true),
+      'java': RegExp(r'```java\n(.*?)$', dotAll: true),
+      'kotlin': RegExp(r'```(?:kotlin|kt)\n(.*?)$', dotAll: true),
+      'swift': RegExp(r'```swift\n(.*?)$', dotAll: true),
+      'cpp': RegExp(r'```(?:cpp|c\+\+|cxx)\n(.*?)$', dotAll: true),
+      'c': RegExp(r'```c\n(.*?)$', dotAll: true),
+      'csharp': RegExp(r'```(?:csharp|cs|c#)\n(.*?)$', dotAll: true),
+      'php': RegExp(r'```php\n(.*?)$', dotAll: true),
+      'ruby': RegExp(r'```(?:ruby|rb)\n(.*?)$', dotAll: true),
+      'go': RegExp(r'```(?:go|golang)\n(.*?)$', dotAll: true),
+      'rust': RegExp(r'```(?:rust|rs)\n(.*?)$', dotAll: true),
+      'sql': RegExp(r'```sql\n(.*?)$', dotAll: true),
+      'json': RegExp(r'```json\n(.*?)$', dotAll: true),
+      'xml': RegExp(r'```xml\n(.*?)$', dotAll: true),
+      'yaml': RegExp(r'```(?:yaml|yml)\n(.*?)$', dotAll: true),
+      'bash': RegExp(r'```(?:bash|shell|sh)\n(.*?)$', dotAll: true),
+      'powershell': RegExp(r'```(?:powershell|ps1)\n(.*?)$', dotAll: true),
     };
     
     // Extract complete thoughts and remove them from display text
@@ -2062,10 +2119,77 @@ $priceChart
       }
     }
     
+    // Extract complete code blocks and remove them from display text
+    for (String language in codePatterns.keys) {
+      final matches = codePatterns[language]!.allMatches(text);
+      for (final match in matches) {
+        final code = match.group(1)?.trim() ?? '';
+        if (code.isNotEmpty) {
+          codes.add(CodeContent(
+            code: code,
+            language: language,
+            extension: _getFileExtension(language),
+          ));
+        }
+        // Remove the entire complete code block from display text
+        displayText = displayText.replaceAll(match.group(0)!, '');
+      }
+    }
+    
+    // Handle partial/streaming code blocks (unclosed blocks)
+    for (String language in partialCodePatterns.keys) {
+      final match = partialCodePatterns[language]!.firstMatch(text);
+      if (match != null) {
+        final code = match.group(1)?.trim() ?? '';
+        if (code.isNotEmpty) {
+          // Only add if we don't already have a complete code block of this language
+          final hasCompleteCode = codes.any((c) => c.language == language);
+          if (!hasCompleteCode) {
+            codes.add(CodeContent(
+              code: code,
+              language: language,
+              extension: _getFileExtension(language),
+            ));
+          }
+        }
+        // Remove the partial code block from display text
+        displayText = displayText.replaceAll(match.group(0)!, '');
+      }
+    }
+    
     return {
       'thoughts': thoughts,
+      'codes': codes,
       'displayText': displayText.trim(),
     };
+  }
+  
+  String _getFileExtension(String language) {
+    const extensions = {
+      'html': '.html',
+      'css': '.css',
+      'javascript': '.js',
+      'typescript': '.ts',
+      'python': '.py',
+      'dart': '.dart',
+      'java': '.java',
+      'kotlin': '.kt',
+      'swift': '.swift',
+      'cpp': '.cpp',
+      'c': '.c',
+      'csharp': '.cs',
+      'php': '.php',
+      'ruby': '.rb',
+      'go': '.go',
+      'rust': '.rs',
+      'sql': '.sql',
+      'json': '.json',
+      'xml': '.xml',
+      'yaml': '.yaml',
+      'bash': '.sh',
+      'powershell': '.ps1',
+    };
+    return extensions[language] ?? '.txt';
   }
 
   @override
@@ -2194,6 +2318,11 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
   bool _isThinkingExpanded = false;
   late AnimationController _thinkingAnimationController;
   late Animation<double> _thinkingAnimation;
+  
+  // Code panel state
+  Map<int, bool> _codeExpandedStates = {};
+  Map<int, AnimationController> _codeAnimationControllers = {};
+  Map<int, Animation<double>> _codeAnimations = {};
 
   @override
   void initState() {
@@ -2224,6 +2353,24 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
       parent: _thinkingAnimationController,
       curve: Curves.easeInOut,
     );
+    
+    // Initialize code panel controllers
+    _initializeCodePanels();
+  }
+  
+  void _initializeCodePanels() {
+    final codes = widget.message.codes;
+    for (int i = 0; i < codes.length; i++) {
+      _codeExpandedStates[i] = false;
+      _codeAnimationControllers[i] = AnimationController(
+        duration: const Duration(milliseconds: 300),
+        vsync: this,
+      );
+      _codeAnimations[i] = CurvedAnimation(
+        parent: _codeAnimationControllers[i]!,
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   @override
@@ -2231,7 +2378,27 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
     _actionsAnimationController.dispose();
     _userActionsAnimationController.dispose();
     _thinkingAnimationController.dispose();
+    _disposeCodeControllers();
     super.dispose();
+  }
+  
+  @override
+  void didUpdateWidget(_MessageBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reinitialize if codes changed
+    if (oldWidget.message.codes.length != widget.message.codes.length) {
+      _disposeCodeControllers();
+      _initializeCodePanels();
+    }
+  }
+  
+  void _disposeCodeControllers() {
+    for (final controller in _codeAnimationControllers.values) {
+      controller.dispose();
+    }
+    _codeAnimationControllers.clear();
+    _codeAnimations.clear();
+    _codeExpandedStates.clear();
   }
 
   void _toggleActions() {
@@ -2263,6 +2430,17 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
         _thinkingAnimationController.forward();
       } else {
         _thinkingAnimationController.reverse();
+      }
+    });
+  }
+
+  void _toggleCode(int index) {
+    setState(() {
+      _codeExpandedStates[index] = !(_codeExpandedStates[index] ?? false);
+      if (_codeExpandedStates[index]!) {
+        _codeAnimationControllers[index]?.forward();
+      } else {
+        _codeAnimationControllers[index]?.reverse();
       }
     });
   }
@@ -2680,7 +2858,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
         borderRadius: BorderRadius.circular(20),
       ),
       child: isBot
-          ? _buildBotMessageContent(widget.message.displayText)
+          ? _buildBotMessageWithCodePanels()
           : Text(
               widget.message.text, 
               style: const TextStyle(
@@ -2914,6 +3092,240 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
             ),
           ),
         ],
+      ),
+    );
+  }
+  
+  Widget _buildBotMessageWithCodePanels() {
+    final text = widget.message.text;
+    final codes = widget.message.codes;
+    
+    if (codes.isEmpty) {
+      return _buildBotMessageContent(widget.message.displayText);
+    }
+    
+    // Build content by replacing code blocks with panels and showing other content normally
+    List<Widget> contentWidgets = [];
+    String remainingText = text;
+    int codeIndex = 0;
+    
+    // Find all code block positions in the original text
+    for (final code in codes) {
+      final pattern = RegExp('```${code.language}\\n.*?```', dotAll: true);
+      final match = pattern.firstMatch(remainingText);
+      
+      if (match != null) {
+        // Add text before the code block
+        final beforeText = remainingText.substring(0, match.start).trim();
+        if (beforeText.isNotEmpty) {
+          contentWidgets.add(_buildMarkdownText(beforeText));
+          contentWidgets.add(const SizedBox(height: 8));
+        }
+        
+        // Add the code panel
+        contentWidgets.add(_buildCodePanel(code, codeIndex));
+        contentWidgets.add(const SizedBox(height: 8));
+        
+        // Update remaining text
+        remainingText = remainingText.substring(match.end).trim();
+        codeIndex++;
+      }
+    }
+    
+    // Add any remaining text after all code blocks
+    if (remainingText.isNotEmpty) {
+      contentWidgets.add(_buildMarkdownText(remainingText));
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: contentWidgets,
+    );
+  }
+  
+  Widget _buildCodePanel(CodeContent code, int index) {
+    final isExpanded = _codeExpandedStates[index] ?? false;
+    final isHtml = code.language.toLowerCase() == 'html';
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      constraints: const BoxConstraints(maxWidth: 320),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with language and actions
+          GestureDetector(
+            onTap: () => _toggleCode(index),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F8F8),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+              ),
+              child: Row(
+                children: [
+                  AnimatedRotation(
+                    turns: isExpanded ? 0.25 : 0,
+                    duration: const Duration(milliseconds: 300),
+                    child: const Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: Color(0xFF666666),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      code.language.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF666666),
+                      ),
+                    ),
+                  ),
+                  // Copy button
+                  GestureDetector(
+                    onTap: () => _copyCode(code.code),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8E8E8),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(
+                        Icons.copy,
+                        size: 14,
+                        color: Color(0xFF666666),
+                      ),
+                    ),
+                  ),
+                  if (isHtml) ...[
+                    const SizedBox(width: 8),
+                    // Preview button for HTML
+                    GestureDetector(
+                      onTap: () => _previewHtml(code.code),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8E8E8),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.visibility,
+                          size: 14,
+                          color: Color(0xFF666666),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          
+          // Expandable code content
+          SizeTransition(
+            sizeFactor: _codeAnimations[index] ?? const AlwaysStoppedAnimation(0),
+            axisAlignment: -1,
+            child: Container(
+              margin: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1e1e1e),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+              ),
+              child: HighlightView(
+                code.code,
+                language: code.language,
+                theme: githubTheme,
+                padding: EdgeInsets.zero,
+                textStyle: const TextStyle(
+                  fontSize: 13,
+                  fontFamily: 'Courier',
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _copyCode(String code) {
+    Clipboard.setData(ClipboardData(text: code));
+    // Show feedback
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Code copied to clipboard!',
+            style: TextStyle(
+              color: Color(0xFF000000),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          backgroundColor: Colors.white,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+          elevation: 4,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+  
+  void _previewHtml(String htmlCode) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.7,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'HTML Preview',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF000000),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFE0E0E0)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: html_widget.HtmlWidget(
+                      htmlCode,
+                      enableCaching: false,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
