@@ -399,7 +399,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     );
   }
 
-  // Build message content with inline code panels
+  // Build message content with inline code panels at correct positions
   Widget _buildBotMessageWithInlinePanels() {
     final widgets = <Widget>[];
     
@@ -409,13 +409,14 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
       widgets.add(const SizedBox(height: 12));
     }
     
+    // Parse the original text in real-time to find code positions
+    final originalText = widget.message.text;
     final codes = widget.message.codes;
-    final displayText = widget.message.displayText;
     
-    // If no code blocks detected yet, show display text (handles streaming properly)
+    // If no codes detected yet, show original text (for streaming)
     if (codes.isEmpty) {
-      if (displayText.isNotEmpty) {
-        widgets.add(_buildMarkdownContent(displayText));
+      if (originalText.isNotEmpty) {
+        widgets.add(_buildMarkdownContent(originalText));
       }
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -423,24 +424,99 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
       );
     }
     
-    // Show display text first (text without code blocks)
-    if (displayText.isNotEmpty) {
-      widgets.add(_buildMarkdownContent(displayText));
-      widgets.add(const SizedBox(height: 12));
-    }
-    
-    // Then show all code panels
-    for (int i = 0; i < codes.length; i++) {
-      widgets.add(_buildCodePanel(codes[i], i));
-      if (i < codes.length - 1) {
-        widgets.add(const SizedBox(height: 12));
-      }
-    }
+    // Parse text to show content with inline code panels at correct positions
+    widgets.addAll(_parseTextWithInlineCodePanels(originalText, codes));
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: widgets,
     );
+  }
+
+  // Parse text and insert code panels at their exact positions
+  List<Widget> _parseTextWithInlineCodePanels(String text, List<CodeContent> codes) {
+    final widgets = <Widget>[];
+    String remainingText = text;
+    
+    // Process each code block and find its position
+    for (int i = 0; i < codes.length; i++) {
+      final code = codes[i];
+      
+      // Try different code block formats that might appear during streaming
+      final possiblePatterns = [
+        '```${code.language}\n${code.code}\n```',
+        '```${code.language}\n${code.code}```',
+        '```${code.language}\n${code.code}',
+        '```${code.language.toLowerCase()}\n${code.code}\n```',
+        '```${code.language.toLowerCase()}\n${code.code}```',
+        '```${code.language.toLowerCase()}\n${code.code}',
+      ];
+      
+      String? foundPattern;
+      int position = -1;
+      
+      // Find which pattern exists in the text
+      for (final pattern in possiblePatterns) {
+        position = remainingText.indexOf(pattern);
+        if (position != -1) {
+          foundPattern = pattern;
+          break;
+        }
+      }
+      
+      if (foundPattern != null && position != -1) {
+        // Add text before the code block
+        final textBefore = remainingText.substring(0, position).trim();
+        if (textBefore.isNotEmpty) {
+          // Remove thinking tags from the text before
+          final cleanTextBefore = _removeThinkingTags(textBefore);
+          if (cleanTextBefore.isNotEmpty) {
+            widgets.add(_buildMarkdownContent(cleanTextBefore));
+            widgets.add(const SizedBox(height: 12));
+          }
+        }
+        
+        // Add the code panel at its exact position
+        widgets.add(_buildCodePanel(code, i));
+        widgets.add(const SizedBox(height: 12));
+        
+        // Update remaining text (remove the processed part)
+        remainingText = remainingText.substring(position + foundPattern.length);
+      } else {
+        // If pattern not found, this might be a streaming code block
+        // Add the code panel at the end for now
+        widgets.add(_buildCodePanel(code, i));
+        widgets.add(const SizedBox(height: 12));
+      }
+    }
+    
+    // Add any remaining text after all code blocks
+    if (remainingText.trim().isNotEmpty) {
+      final cleanRemainingText = _removeThinkingTags(remainingText.trim());
+      if (cleanRemainingText.isNotEmpty) {
+        widgets.add(_buildMarkdownContent(cleanRemainingText));
+      }
+    }
+    
+    return widgets;
+  }
+
+  // Remove thinking tags from text
+  String _removeThinkingTags(String text) {
+    return text
+        .replaceAll(RegExp(r'<thinking>.*?</thinking>', dotAll: true), '')
+        .replaceAll(RegExp(r'<thoughts>.*?</thoughts>', dotAll: true), '')
+        .replaceAll(RegExp(r'<think>.*?</think>', dotAll: true), '')
+        .replaceAll(RegExp(r'<thought>.*?</thought>', dotAll: true), '')
+        .replaceAll(RegExp(r'<reason>.*?</reason>', dotAll: true), '')
+        .replaceAll(RegExp(r'<reasoning>.*?</reasoning>', dotAll: true), '')
+        .replaceAll(RegExp(r'<thinking>', dotAll: true), '') // Unclosed tags
+        .replaceAll(RegExp(r'<thoughts>', dotAll: true), '')
+        .replaceAll(RegExp(r'<think>', dotAll: true), '')
+        .replaceAll(RegExp(r'<thought>', dotAll: true), '')
+        .replaceAll(RegExp(r'<reason>', dotAll: true), '')
+        .replaceAll(RegExp(r'<reasoning>', dotAll: true), '')
+        .trim();
   }
 
   // Build markdown content widget
