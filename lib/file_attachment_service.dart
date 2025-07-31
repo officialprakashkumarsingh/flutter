@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:archive/archive.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as pathLib;
+import 'apk_extraction_service.dart';
 
 class FileAttachment {
   final String id;
@@ -20,6 +21,7 @@ class FileAttachment {
   final bool isText;
   final bool isCode;
   final bool isPdf;
+  final bool isApk;
 
   FileAttachment({
     required this.id,
@@ -36,9 +38,12 @@ class FileAttachment {
     required this.isText,
     required this.isCode,
     required this.isPdf,
+    required this.isApk,
   });
 
   String get fileIcon {
+    if (isApk) return '📱';
+    if (isApk) return '📱';
     if (isImage) return '🖼️';
     if (isZip) return '📦';
     if (isPdf) return '📕';
@@ -71,7 +76,7 @@ class FileAttachmentService {
   ];
 
   static const List<String> supportedArchiveExtensions = [
-    '.zip', '.rar', '.7z', '.tar', '.gz'
+    '.zip', '.rar', '.7z', '.tar', '.gz', '.apk', '.apk'
   ];
 
   static const List<String> supportedPdfExtensions = ['.pdf'];
@@ -116,6 +121,7 @@ class FileAttachmentService {
       final isText = supportedTextExtensions.contains(extension);
       final isCode = supportedCodeExtensions.contains(extension);
       final isPdf = supportedPdfExtensions.contains(extension);
+      final isApk = extension == '.apk';
 
       String? textContent;
       List<FileAttachment>? extractedFiles;
@@ -135,6 +141,24 @@ class FileAttachmentService {
           extractedFiles = await _extractZipFile(bytes);
         } catch (e) {
           print('Error extracting ZIP: $e');
+
+      // Extract APK files
+      if (extension == '.apk') {
+        try {
+          final apkResult = await ApkExtractionService.extractApk(bytes, fileName);
+          textContent = ApkExtractionService.generateAnalysisReport(apkResult);
+        } catch (e) {
+          textContent = 'Error extracting APK: $e';
+        }
+      }
+
+      // Extract APK files
+      if (extension == '.apk') {
+        try {
+          final apkResult = await ApkExtractionService.extractApk(bytes, fileName);
+          textContent = ApkExtractionService.generateAnalysisReport(apkResult);
+        } catch (e) {
+          textContent = 'Error extracting APK: $e';
         }
       }
 
@@ -157,6 +181,7 @@ class FileAttachmentService {
         isZip: isZip,
         isText: isText,
         isCode: isCode,
+        isApk: extension == '.apk',
         isPdf: isPdf,
       );
     } catch (e) {
@@ -205,12 +230,23 @@ class FileAttachmentService {
             isZip: false,
             isText: isText,
             isCode: isCode,
+            isApk: extension == '.apk',
             isPdf: isPdf,
           ));
         }
       }
     } catch (e) {
       print('Error extracting ZIP: $e');
+
+      // Extract APK files
+      if (extension == '.apk') {
+        try {
+          final apkResult = await ApkExtractionService.extractApk(bytes, fileName);
+          textContent = ApkExtractionService.generateAnalysisReport(apkResult);
+        } catch (e) {
+          textContent = 'Error extracting APK: $e';
+        }
+      }
     }
     
     return extractedFiles;

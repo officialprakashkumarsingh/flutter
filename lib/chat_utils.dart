@@ -180,6 +180,7 @@ class ChatUtils {
         isText: false,
         isCode: false,
         isPdf: false,
+        isApk: false,
       );
     } catch (e) {
       print('Error converting image to attachment: $e');
