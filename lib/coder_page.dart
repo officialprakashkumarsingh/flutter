@@ -469,8 +469,8 @@ Keep responses under 200 words and be friendly but professional.
       // Show follow-up and Git options
       setState(() {
         _showFollowUp = true;
-        _showGitOptions = false; // No uncommitted changes after real-time sync
-        _hasUncommittedChanges = false;
+        _showGitOptions = true; // Keep GitHub actions visible
+        _hasUncommittedChanges = true; // Allow commit/push (will noop if none)
       });
       
     } catch (e) {
@@ -971,7 +971,8 @@ OUTPUT ONLY THE COMPLETE FILE CONTENT - no explanations, no markdown blocks, jus
           await _upsertFile(task, filePath, modifiedContent,
               isNewFile: isNewFile);
 
-          // Track operation for history only (no pending commits)
+          // Track operation for history and summaries
+          _modifiedFiles[filePath] = modifiedContent;
           _fileOperations[filePath] = isNewFile ? 'created' : 'updated';
 
           final operationText = isNewFile ? 'Created' : 'Updated';
