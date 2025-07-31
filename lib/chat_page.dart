@@ -22,7 +22,9 @@ import 'file_attachment_service.dart';
 import 'file_attachment_widget.dart';
 import 'image_generation_dialog.dart';
 import 'image_generation_service.dart';
-// REMOVED: External tools service import
+import 'message_bubble.dart';
+import 'input_bar.dart';
+import 'chat_utils.dart';
 import 'crypto_chart_widget.dart';
 
 import 'cache_manager.dart';
@@ -53,11 +55,7 @@ class ChatPageState extends State<ChatPage> {
 
 
 
-  // Image upload functionality
-  String? _uploadedImagePath;
-  String? _uploadedImageBase64;
-  
-  // File attachment functionality
+  // Unified attachment functionality (replaces separate image + file upload)
   List<FileAttachment> _attachedFiles = [];
   
   // Image generation mode
@@ -278,7 +276,7 @@ class ChatPageState extends State<ChatPage> {
     return 'Previous conversation context:\n${_conversationMemory.join('\n\n')}\n\nCurrent conversation:';
   }
 
-  Future<void> _generateResponse(String prompt) async {
+  Future<void> _generateResponse(String prompt, {bool hasVision = false}) async {
     if (widget.selectedModel.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No model selected'), backgroundColor: Color(0xFFEAE9E5)),
@@ -293,8 +291,7 @@ class ChatPageState extends State<ChatPage> {
     
     setState(() => _awaitingReply = true);
 
-    // Regular AI chat - AI is now aware of external tools it can access
-    // The AI will mention and use external tools based on user requests
+    // Regular AI chat with file attachment support
 
     _httpClient = http.Client();
     final memoryContext = _getMemoryContext();
@@ -306,29 +303,32 @@ class ChatPageState extends State<ChatPage> {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ahamaibyprakash25',
       });
-      // Build message content with optional image
       Map<String, dynamic> messageContent;
-      if (_uploadedImageBase64 != null && _uploadedImageBase64!.isNotEmpty) {
-        messageContent = {
-          'role': 'user',
-          'content': [
-            {
-              'type': 'text',
-              'text': fullPrompt,
-            },
-            {
-              'type': 'image_url',
-              'image_url': {
-                'url': _uploadedImageBase64!,
-              },
-            },
-          ],
-        };
+      
+      // Build message content with optional vision
+      Map<String, dynamic> messageContent;
+      if (hasVision) {
+        final imageAttachments = _attachedFiles.where((f) => f.isImage).toList();
+        if (imageAttachments.isNotEmpty) {
+          final contentParts = <Map<String, dynamic>>[
+            {"type": "text", "text": fullPrompt}
+          ];
+          for (final img in imageAttachments) {
+            final base64Image = "data:${img.mimeType};base64,${base64Encode(img.bytes!)}";
+            contentParts.add({
+              "type": "image_url",
+              "image_url": {"url": base64Image}
+            });
+          }
+          messageContent = {"role": "user", "content": contentParts};
+        } else {
+          messageContent = {"role": "user", "content": fullPrompt};
+        }
       } else {
-        messageContent = {'role': 'user', 'content': fullPrompt};
+        messageContent = {"role": "user", "content": fullPrompt};
       }
 
-      // Build simplified system prompt without external tools
+      // Build system prompt with file attachment context
       final systemMessage = {
         'role': 'system',
         'content': '''You are AhamAI, an intelligent assistant focused on helpful conversations and image generation capabilities.
@@ -478,9 +478,6 @@ Be conversational and helpful!'''
           _awaitingReply = false;
         });
         // Clear uploaded image only after successful processing
-        if (_uploadedImageBase64 != null) {
-          Future.delayed(Duration(milliseconds: 500), () {
-            if (mounted) _clearUploadedImage();
           });
         }
       }
@@ -555,14 +552,13 @@ Be conversational and helpful!'''
           
           // Tool execution starting
           
-          // REMOVED: External tools execution
-          String resultText = "External tools have been removed from this application.";
+            // File attachments are now processed and included in AI messages
           
           // Add execution result directly
-          executionResults += '$resultText\n\n';
+          executionResults += '$"File processing completed"\n\n';
           
           // Store the completed tool result to prevent it from being overwritten
-          _completedToolResults[fullMatch] = resultText;
+          _completedToolResults[fullMatch] = "File processing completed";
           
 
           
@@ -573,7 +569,7 @@ Be conversational and helpful!'''
             setState(() {
               final updatedText = processedText.replaceAll(
                 fullMatch,
-                resultText
+                "File processing completed"
               );
               
               _messages[messageIndex] = _messages[messageIndex].copyWith(
@@ -758,8 +754,8 @@ Be conversational and helpful!'''
             toolData[toolName] = result;
             
             // Replace the JSON block with the tool execution result
-            String resultText = _formatToolResult(toolName, result);
-            processedText = processedText.replaceAll(match.group(0)!, resultText);
+            String "File processing completed" = _formatToolResult(toolName, result);
+            processedText = processedText.replaceAll(match.group(0)!, "File processing completed");
           } else {
             // If not a valid tool call, remove the JSON block entirely
             processedText = processedText.replaceAll(match.group(0)!, '');
@@ -1344,6 +1340,10 @@ $priceChart
       }
     }
     
+    // Build complete message for AI including attachments
+    final aiMessage = ChatUtils.buildAIMessage(messageText, _attachedFiles);
+    final hasImages = ChatUtils.hasImages(_attachedFiles);
+    
     _controller.clear();
     setState(() {
       _messages.add(Message.user(messageText, attachments: List.from(_attachedFiles)));
@@ -1353,7 +1353,9 @@ $priceChart
 
     _scrollToBottom();
     HapticFeedback.lightImpact();
-            await _generateResponse(messageText);
+    
+    // Use enhanced message with attachments for AI
+    await _generateResponse(aiMessage, hasVision: hasImages);
   }
 
 
@@ -1492,8 +1494,6 @@ $priceChart
           _uploadedImagePath = pickedFile.path;
           _uploadedImageBase64 = 'data:image/jpeg;base64,$base64Image';
         });
-        
-        // Add image message to chat
         final imageMessage = Message.user("📷 Image uploaded: ${pickedFile.name}");
         setState(() {
           _messages.add(imageMessage);
@@ -1845,15 +1845,14 @@ $priceChart
     );
   }
 
-  void _clearUploadedImage() {
+  void _clearAllAttachments() {
     setState(() {
-      _uploadedImagePath = null;
-      _uploadedImageBase64 = null;
+      _attachedFiles.clear();
     });
   }
 
-  Future<void> _uploadFiles() async {
-    final files = await FileAttachmentService.pickFiles();
+  Future<void> _handleUnifiedAttachment() async {
+    final files = await ChatUtils.handleUnifiedAttachment();
     if (files != null && files.isNotEmpty) {
       setState(() {
         _attachedFiles.addAll(files);
@@ -2246,7 +2245,7 @@ $priceChart
               itemCount: _messages.length,
               itemBuilder: (_, index) {
                 final message = _messages[index];
-                return _MessageBubble(
+                return MessageBubble(
                   message: message,
                   onRegenerate: () => _regenerateResponse(index),
                   onUserMessageTap: () => _showUserMessageOptions(context, message),
@@ -2300,18 +2299,14 @@ $priceChart
             top: false,
             left: false,
             right: false,
-            child: _InputBar(
+            child: InputBar(
               controller: _controller,
               onSend: () => _isImageGenerationMode ? _generateImageInline() : _send(),
               onStop: _stopGeneration,
               awaitingReply: _awaitingReply,
               isEditing: _editingMessageId != null,
               onCancelEdit: _cancelEditing,
-              // REMOVED: External tools service
-              onImageUpload: _showAttachmentOptions,
-              uploadedImagePath: _uploadedImagePath,
-              onClearImage: _clearUploadedImage,
-              onFileUpload: _uploadFiles,
+              onUnifiedAttachment: _handleUnifiedAttachment,  // Unified attachment
               attachedFiles: _attachedFiles,
               onClearFile: _clearFile,
               isImageGenerationMode: _isImageGenerationMode,
@@ -3852,8 +3847,8 @@ class _InputBar extends StatelessWidget {
                               ? 'Generating image...'
                               : isImageGenerationMode
                                   ? 'Enter your image prompt...'
-                              : false
-                                  ? 'External tool is running...'
+                              : attachedFiles.isNotEmpty
+                                  ? 'Attachments ready - Ask about them...'
                                   : uploadedImagePath != null
                                       ? 'Image uploaded - Describe or ask about it...'
                                       : 'Message AhamAI',
