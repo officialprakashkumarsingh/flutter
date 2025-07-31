@@ -559,92 +559,85 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     );
   }
 
-  // Code Panel Widget with AMOLED Black Styling
+  // Code Panel Widget with Clean Styling (like thinking panel)
   Widget _buildCodePanel(CodeContent codeContent, int index) {
     final isExpanded = _codeExpandedStates[index] ?? false;
     
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.black, // AMOLED Black background
+        color: Colors.black, // Single AMOLED Black background
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[800]!, width: 1),
       ),
       child: Column(
         children: [
-          // Header with language, copy, and preview buttons
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[900],
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-            ),
-            child: Row(
-              children: [
-                // Language badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[600],
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    codeContent.language.toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                
-                // Copy button
-                GestureDetector(
-                  onTap: () => _copyCode(codeContent.code),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
+          // Header with language, copy, and preview buttons (no separate background)
+          GestureDetector(
+            onTap: () => _toggleCode(index),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // Language badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.black, // Black copy button
+                      color: Colors.blue[600],
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const FaIcon(
-                      FontAwesomeIcons.copy,
-                      size: 16,
-                      color: Colors.white,
+                    child: Text(
+                      codeContent.language.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-                
-                const SizedBox(width: 8),
-                
-                // Preview button (for HTML)
-                if (codeContent.language.toLowerCase() == 'html') ...[
+                  const Spacer(),
+                  
+                  // Copy button
                   GestureDetector(
-                    onTap: () => _previewHtml(codeContent.code),
+                    onTap: () => _copyCode(codeContent.code),
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.black, // Black preview button
+                        color: Colors.grey[800], // Subtle gray for contrast
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const FaIcon(
-                        FontAwesomeIcons.eye,
+                        FontAwesomeIcons.copy,
                         size: 16,
                         color: Colors.white,
                       ),
                     ),
                   ),
+                  
                   const SizedBox(width: 8),
-                ],
-                
-                                 // Expand/Collapse button
-                 GestureDetector(
-                                       onTap: () => _toggleCode(index),
-                  child: AnimatedRotation(
+                  
+                  // Preview button (for HTML/CSS/JS)
+                  if (_isWebCode(codeContent.language)) ...[
+                    GestureDetector(
+                      onTap: () => _previewWebCode(codeContent, index),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[800], // Subtle gray for contrast
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const FaIcon(
+                          FontAwesomeIcons.eye,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  
+                  // Expand/Collapse button
+                  AnimatedRotation(
                     turns: isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 300),
                     child: const FaIcon(
@@ -653,8 +646,8 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
                       color: Colors.white,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           
@@ -664,12 +657,12 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
             child: isExpanded
                 ? Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     child: HighlightView(
                       codeContent.code,
                       language: codeContent.language,
                       theme: vs2015Theme, // Dark theme for black background
-                      padding: const EdgeInsets.all(0),
+                      padding: const EdgeInsets.all(12),
                       textStyle: const TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 14,
@@ -679,6 +672,106 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
                 : const SizedBox.shrink(),
           ),
         ],
+      ),
+    );
+  }
+
+  // Check if code is web-related (HTML, CSS, JS)
+  bool _isWebCode(String language) {
+    return ['html', 'css', 'javascript', 'js'].contains(language.toLowerCase());
+  }
+
+  // Enhanced web code preview that combines HTML/CSS/JS
+  void _previewWebCode(CodeContent currentCode, int index) {
+    // Collect all web-related code blocks from the message
+    String htmlContent = '';
+    String cssContent = '';
+    String jsContent = '';
+    
+    // Get all code blocks from the message
+    for (final code in widget.message.codes) {
+      final lang = code.language.toLowerCase();
+      if (lang == 'html') {
+        htmlContent += code.code + '\n';
+      } else if (lang == 'css') {
+        cssContent += code.code + '\n';
+      } else if (lang == 'javascript' || lang == 'js') {
+        jsContent += code.code + '\n';
+      }
+    }
+    
+    // If current code is HTML and no separate HTML found, use current
+    if (htmlContent.isEmpty && currentCode.language.toLowerCase() == 'html') {
+      htmlContent = currentCode.code;
+    }
+    
+    // Create combined HTML file
+    String combinedHtml = htmlContent;
+    
+    // Add CSS if present
+    if (cssContent.isNotEmpty) {
+      if (!combinedHtml.contains('<style>') && !combinedHtml.contains('</style>')) {
+        combinedHtml = combinedHtml.replaceFirst(
+          '</head>',
+          '<style>\n$cssContent\n</style>\n</head>'
+        );
+        // If no head tag, add style at the beginning
+        if (!combinedHtml.contains('</head>')) {
+          combinedHtml = '<style>\n$cssContent\n</style>\n$combinedHtml';
+        }
+      }
+    }
+    
+    // Add JavaScript if present
+    if (jsContent.isNotEmpty) {
+      if (!combinedHtml.contains('<script>') && !combinedHtml.contains('</script>')) {
+        combinedHtml = combinedHtml.replaceFirst(
+          '</body>',
+          '<script>\n$jsContent\n</script>\n</body>'
+        );
+        // If no body tag, add script at the end
+        if (!combinedHtml.contains('</body>')) {
+          combinedHtml = '$combinedHtml\n<script>\n$jsContent\n</script>';
+        }
+      }
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          height: 500,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Web Preview (${currentCode.language.toUpperCase()})',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: html_widget.HtmlWidget(
+                  combinedHtml,
+                  onTapUrl: (url) {
+                    return false; // Don't handle URL taps in preview
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -705,44 +798,5 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     );
   }
 
-  void _previewHtml(String htmlCode) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        child: Container(
-          height: 500,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'HTML Preview',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: html_widget.HtmlWidget(
-                  htmlCode,
-                  onTapUrl: (url) {
-                    return false; // Don't handle URL taps in preview
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 }

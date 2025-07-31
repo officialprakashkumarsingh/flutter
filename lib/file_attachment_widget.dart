@@ -173,7 +173,7 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
                             child: const FaIcon(
                               FontAwesomeIcons.copy,
                               size: 12,
-                              color: Color(0xFFE6E6E6),
+                              color: Colors.black, // Black copy button
                             ),
                           ),
                         ),
