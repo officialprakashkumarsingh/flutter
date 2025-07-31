@@ -374,7 +374,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // AI message content
+        // AI message content with inline code panels
         Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
@@ -382,30 +382,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
               child: Container(
                 decoration: null, // Transparent background for AI messages
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Thinking Panel - if thoughts exist
-                    if (widget.message.thoughts.isNotEmpty) ...[
-                      _buildThinkingPanel(),
-                      const SizedBox(height: 12),
-                    ],
-                    
-                    // Main message content
-                    _buildBotMessageContent(widget.message.displayText),
-                    
-                    // Code Panels - if codes exist
-                    if (widget.message.codes.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      ...widget.message.codes.asMap().entries.map((entry) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _buildCodePanel(entry.value, entry.key),
-                        );
-                      }).toList(),
-                    ],
-                  ],
-                ),
+                child: _buildBotMessageWithInlinePanels(),
               ),
             ),
           ],
@@ -422,57 +399,91 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     );
   }
 
-  Widget _buildBotMessageContent(String text) {
+  // Build message content with inline code panels
+  Widget _buildBotMessageWithInlinePanels() {
     final widgets = <Widget>[];
-    final lines = text.split('\n');
-    String currentText = '';
     
-    // Simple content rendering without shimmer effects
-    for (int i = 0; i < lines.length; i++) {
-      final line = lines[i];
-      
-      // Add line to current text
-      if (currentText.isNotEmpty) {
-        currentText += '\n';
-      }
-      currentText += line;
+    // Add thinking panel first if exists
+    if (widget.message.thoughts.isNotEmpty) {
+      widgets.add(_buildThinkingPanel());
+      widgets.add(const SizedBox(height: 12));
     }
     
-    // Add the accumulated text as markdown
-    if (currentText.isNotEmpty) {
-      widgets.add(
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(0),
-          child: MarkdownBody(
-            data: currentText,
-            styleSheet: MarkdownStyleSheet(
-              p: const TextStyle(color: Colors.black, fontSize: 16),
-              strong: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-              em: const TextStyle(color: Colors.black, fontStyle: FontStyle.italic),
-              code: TextStyle(
-                backgroundColor: Colors.grey[800],
-                color: Colors.green,
-                fontFamily: 'monospace',
-              ),
-              codeblockDecoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius: BorderRadius.circular(8),
-              ),
-              blockquoteDecoration: BoxDecoration(
-                color: Colors.grey[800],
-                borderRadius: BorderRadius.circular(4),
-                border: Border(left: BorderSide(color: Colors.blue, width: 4)),
-              ),
-            ),
-          ),
-        ),
+    // Parse the original text to find where code blocks appear
+    String remainingText = widget.message.text;
+    final codes = widget.message.codes;
+    
+    // If no code blocks, just show the display text
+    if (codes.isEmpty) {
+      widgets.add(_buildMarkdownContent(widget.message.displayText));
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: widgets,
       );
+    }
+    
+    // Build content with inline code panels
+    int codeIndex = 0;
+    for (final code in codes) {
+      // Find the code block in the original text
+      final codePattern = '```${code.language}\n${code.code}\n```';
+      final codePosition = remainingText.indexOf(codePattern);
+      
+      if (codePosition != -1) {
+        // Add text before the code block
+        final textBefore = remainingText.substring(0, codePosition).trim();
+        if (textBefore.isNotEmpty) {
+          widgets.add(_buildMarkdownContent(textBefore));
+          widgets.add(const SizedBox(height: 12));
+        }
+        
+        // Add the code panel right where the code appears
+        widgets.add(_buildCodePanel(code, codeIndex));
+        widgets.add(const SizedBox(height: 12));
+        
+        // Update remaining text
+        remainingText = remainingText.substring(codePosition + codePattern.length);
+        codeIndex++;
+      }
+    }
+    
+    // Add any remaining text after all code blocks
+    if (remainingText.trim().isNotEmpty) {
+      widgets.add(_buildMarkdownContent(remainingText.trim()));
     }
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: widgets,
+    );
+  }
+
+  // Build markdown content widget
+  Widget _buildMarkdownContent(String text) {
+    return Container(
+      width: double.infinity,
+      child: MarkdownBody(
+        data: text,
+        styleSheet: MarkdownStyleSheet(
+          p: const TextStyle(color: Colors.black, fontSize: 16),
+          strong: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          em: const TextStyle(color: Colors.black, fontStyle: FontStyle.italic),
+          code: TextStyle(
+            backgroundColor: Colors.grey[800],
+            color: Colors.green,
+            fontFamily: 'monospace',
+          ),
+          codeblockDecoration: BoxDecoration(
+            color: Colors.grey[900],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          blockquoteDecoration: BoxDecoration(
+            color: Colors.grey[800],
+            borderRadius: BorderRadius.circular(4),
+            border: Border(left: BorderSide(color: Colors.blue, width: 4)),
+          ),
+        ),
+      ),
     );
   }
 
@@ -700,39 +711,58 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
       }
     }
     
-    // If current code is HTML and no separate HTML found, use current
-    if (htmlContent.isEmpty && currentCode.language.toLowerCase() == 'html') {
+    // If current code is one of the web languages and not found in loop, use current
+    final currentLang = currentCode.language.toLowerCase();
+    if (currentLang == 'html' && htmlContent.isEmpty) {
       htmlContent = currentCode.code;
+    } else if (currentLang == 'css' && cssContent.isEmpty) {
+      cssContent = currentCode.code;
+    } else if ((currentLang == 'javascript' || currentLang == 'js') && jsContent.isEmpty) {
+      jsContent = currentCode.code;
     }
     
     // Create combined HTML file
     String combinedHtml = htmlContent;
     
+    // If no HTML but we have CSS/JS, create a basic HTML structure
+    if (combinedHtml.isEmpty && (cssContent.isNotEmpty || jsContent.isNotEmpty)) {
+      combinedHtml = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview</title>
+</head>
+<body>
+    <h1>CSS/JS Preview</h1>
+    <p>This preview contains the CSS and JavaScript code blocks.</p>
+</body>
+</html>''';
+    }
+    
     // Add CSS if present
     if (cssContent.isNotEmpty) {
-      if (!combinedHtml.contains('<style>') && !combinedHtml.contains('</style>')) {
+      if (combinedHtml.contains('</head>')) {
         combinedHtml = combinedHtml.replaceFirst(
           '</head>',
-          '<style>\n$cssContent\n</style>\n</head>'
+          '    <style>\n$cssContent\n    </style>\n</head>'
         );
+      } else {
         // If no head tag, add style at the beginning
-        if (!combinedHtml.contains('</head>')) {
-          combinedHtml = '<style>\n$cssContent\n</style>\n$combinedHtml';
-        }
+        combinedHtml = '<style>\n$cssContent\n</style>\n$combinedHtml';
       }
     }
     
     // Add JavaScript if present
     if (jsContent.isNotEmpty) {
-      if (!combinedHtml.contains('<script>') && !combinedHtml.contains('</script>')) {
+      if (combinedHtml.contains('</body>')) {
         combinedHtml = combinedHtml.replaceFirst(
           '</body>',
-          '<script>\n$jsContent\n</script>\n</body>'
+          '    <script>\n$jsContent\n    </script>\n</body>'
         );
+      } else {
         // If no body tag, add script at the end
-        if (!combinedHtml.contains('</body>')) {
-          combinedHtml = '$combinedHtml\n<script>\n$jsContent\n</script>';
-        }
+        combinedHtml = '$combinedHtml\n<script>\n$jsContent\n</script>';
       }
     }
     
