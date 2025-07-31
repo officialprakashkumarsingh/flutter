@@ -42,15 +42,17 @@ class Message {
     this.codes = const [],
     String? displayText,
     this.toolData = const {},
+    this.attachments = const [],
   }) : displayText = displayText ?? text;
 
-  factory Message.user(String text) {
+  factory Message.user(String text, {List<FileAttachment>? attachments}) {
     final timestamp = DateTime.now();
     return Message(
       id: 'user_${timestamp.toIso8601String()}',
       sender: Sender.user,
       text: text,
       timestamp: timestamp,
+      attachments: attachments ?? [],
     );
   }
 

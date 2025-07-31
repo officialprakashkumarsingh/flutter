@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -95,14 +94,12 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with file info
           GestureDetector(
             onTap: canPreview ? () => _toggleExpansion(attachment.id) : null,
             child: Container(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  // File icon
                   Container(
                     width: 40,
                     height: 40,
@@ -119,7 +116,6 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
                   ),
                   const SizedBox(width: 12),
                   
-                  // File info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,11 +154,9 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
                     ),
                   ),
                   
-                  // Action buttons
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Copy button for text/code files
                       if (attachment.textContent != null) ...[
                         GestureDetector(
                           onTap: () => _copyContent(attachment),
@@ -182,7 +176,6 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
                         const SizedBox(width: 8),
                       ],
                       
-                      // Expand/collapse button
                       if (canPreview) ...[
                         AnimatedRotation(
                           turns: isExpanded ? 0.25 : 0,
@@ -201,7 +194,6 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
             ),
           ),
           
-          // Expandable content
           if (canPreview) ...[
             SizeTransition(
               sizeFactor: _animations[attachment.id] ?? const AlwaysStoppedAnimation(0),
@@ -376,7 +368,6 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
   }
 }
 
-// Simple file attachment display for message list
 class SimpleFileAttachmentWidget extends StatelessWidget {
   final List<FileAttachment> attachments;
 

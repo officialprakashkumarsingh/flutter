@@ -18,6 +18,8 @@ import 'package:flutter_highlight/themes/vs2015.dart'; // Dark theme for AMOLED
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart' as html_widget hide ImageSource;
 import 'models.dart';
 import 'character_service.dart';
+import 'file_attachment_service.dart';
+import 'file_attachment_widget.dart';
 import 'image_generation_dialog.dart';
 import 'image_generation_service.dart';
 // REMOVED: External tools service import
@@ -54,6 +56,9 @@ class ChatPageState extends State<ChatPage> {
   // Image upload functionality
   String? _uploadedImagePath;
   String? _uploadedImageBase64;
+  
+  // File attachment functionality
+  List<FileAttachment> _attachedFiles = [];
   
   // Image generation mode
   bool _isImageGenerationMode = false;
@@ -1341,8 +1346,9 @@ $priceChart
     
     _controller.clear();
     setState(() {
-      _messages.add(Message.user(messageText));
+      _messages.add(Message.user(messageText, attachments: List.from(_attachedFiles)));
       _editingMessageId = null;
+      _attachedFiles.clear(); // Clear attachments after sending
     });
 
     _scrollToBottom();
@@ -1846,6 +1852,27 @@ $priceChart
     });
   }
 
+  Future<void> _uploadFiles() async {
+    final files = await FileAttachmentService.pickFiles();
+    if (files != null && files.isNotEmpty) {
+      setState(() {
+        _attachedFiles.addAll(files);
+      });
+    }
+  }
+
+  void _clearFile(String fileId) {
+    setState(() {
+      _attachedFiles.removeWhere((file) => file.id == fileId);
+    });
+  }
+
+  void _clearAllFiles() {
+    setState(() {
+      _attachedFiles.clear();
+    });
+  }
+
   void _editMessage(Message message) {
     // Set the text in the input field and focus on it
     _controller.text = message.text;
@@ -2284,6 +2311,9 @@ $priceChart
               onImageUpload: _showAttachmentOptions,
               uploadedImagePath: _uploadedImagePath,
               onClearImage: _clearUploadedImage,
+              onFileUpload: _uploadFiles,
+              attachedFiles: _attachedFiles,
+              onClearFile: _clearFile,
               isImageGenerationMode: _isImageGenerationMode,
               selectedImageModel: _selectedImageModel,
               availableImageModels: _availableImageModels,
@@ -2879,17 +2909,9 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
         color: isBot ? Colors.transparent : const Color(0xFFEAE9E5),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: isBot
+            child: isBot
           ? _buildBotMessageWithCodePanels()
-          : Text(
-              widget.message.text, 
-              style: const TextStyle(
-                fontSize: 15, 
-                height: 1.5, 
-                color: Color(0xFF000000),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+          : _buildUserMessageWithAttachments(),
     );
 
     return Align(
@@ -3187,6 +3209,34 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
     );
   }
   
+  Widget _buildUserMessageWithAttachments() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Message text
+        if (widget.message.text.isNotEmpty)
+          Text(
+            widget.message.text,
+            style: const TextStyle(
+              fontSize: 15,
+              height: 1.5,
+              color: Color(0xFF000000),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        
+        // File attachments
+        if (widget.message.attachments.isNotEmpty) ...[
+          if (widget.message.text.isNotEmpty) const SizedBox(height: 12),
+          FileAttachmentWidget(
+            attachments: widget.message.attachments,
+            isFromUser: true,
+          ),
+        ],
+      ],
+    );
+  }
+  
   Widget _buildCodePanel(CodeContent code, int index) {
     final isExpanded = _codeExpandedStates[index] ?? false;
     final isHtml = code.language.toLowerCase() == 'html';
@@ -3469,6 +3519,9 @@ class _InputBar extends StatelessWidget {
     required this.onImageUpload,
     this.uploadedImagePath,
     required this.onClearImage,
+    required this.onFileUpload,
+    required this.attachedFiles,
+    required this.onClearFile,
     required this.isImageGenerationMode,
     required this.selectedImageModel,
     required this.availableImageModels,
@@ -3489,6 +3542,9 @@ class _InputBar extends StatelessWidget {
   final VoidCallback onImageUpload;
   final String? uploadedImagePath;
   final VoidCallback onClearImage;
+  final VoidCallback onFileUpload;
+  final List<FileAttachment> attachedFiles;
+  final Function(String) onClearFile;
   final bool isImageGenerationMode;
   final String selectedImageModel;
   final List<String> availableImageModels;
@@ -3682,6 +3738,13 @@ class _InputBar extends StatelessWidget {
               ),
             ),
           
+          // File attachments display
+          if (attachedFiles.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: SimpleFileAttachmentWidget(attachments: attachedFiles),
+            ),
+          
           // Main input container (smaller height)
           Container(
             margin: EdgeInsets.fromLTRB(20, isEditing ? 0 : 16, 20, 0),
@@ -3731,6 +3794,34 @@ class _InputBar extends StatelessWidget {
                               : FontAwesomeIcons.plus,
                           color: uploadedImagePath != null 
                               ? Colors.red
+                              : const Color(0xFFA3A3A3),
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // File attachment button
+                if (!awaitingReply && !isImageGenerationMode)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8, bottom: 6),
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        onFileUpload();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: attachedFiles.isNotEmpty 
+                              ? const Color(0xFF4CAF50).withOpacity(0.1)
+                              : const Color(0xFFA3A3A3).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: FaIcon(
+                          FontAwesomeIcons.paperclip,
+                          color: attachedFiles.isNotEmpty 
+                              ? const Color(0xFF4CAF50)
                               : const Color(0xFFA3A3A3),
                           size: 18,
                         ),
