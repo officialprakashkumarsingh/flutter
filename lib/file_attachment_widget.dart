@@ -363,11 +363,13 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
 class SimpleFileAttachmentWidget extends StatelessWidget {
   final List<FileAttachment> attachments;
   final bool isFromUser;
+  final Function(FileAttachment)? onRemove;
 
   const SimpleFileAttachmentWidget({
     super.key,
     required this.attachments,
     this.isFromUser = true,
+    this.onRemove,
   });
 
   @override
