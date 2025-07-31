@@ -450,27 +450,20 @@ Be conversational and helpful!'''
       final response = await _httpClient!.send(request);
 
       if (response.statusCode == 200) {
-        print('🟢 STEP 1: Starting streaming response');
         final stream = response.stream.transform(utf8.decoder).transform(const LineSplitter());
         var botMessage = Message.bot('', isStreaming: true);
         final botMessageIndex = _messages.length;
-        
-        print('🟢 STEP 2: Created initial bot message with ${botMessage.thoughts.length} thoughts, ${botMessage.codes.length} codes');
         
         setState(() {
           _messages.add(botMessage);
         });
 
         String accumulatedText = '';
-        String finalProcessedText = '';
-        
-        print('🟢 STEP 3: Starting to process stream data...');
         
         await for (String line in stream) {
           if (line.startsWith('data: ')) {
             final data = line.substring(6);
             if (data == '[DONE]') {
-              print('🟢 STEP 4: Stream marked as [DONE]');
               break;
             }
             
@@ -480,29 +473,11 @@ Be conversational and helpful!'''
               if (content != null) {
                 accumulatedText += _fixServerEncoding(content);
                 
-                print('🟢 STEP 5: Accumulated text now ${accumulatedText.length} chars, parsing...');
-                
                 // Parse thinking content in real-time during streaming
                 final streamingParseResult = _parseContentStreaming(accumulatedText);
                 
-                print('🟢 STEP 6: Streaming parse found ${streamingParseResult['thoughts'].length} thoughts, ${streamingParseResult['codes'].length} codes');
-                
-                // Process tools and create panels
-                final processedStreamingMessage = await _processToolCallsDuringStreaming(streamingParseResult['displayText'], botMessageIndex);
-                finalProcessedText = processedStreamingMessage; // Store the latest processed text
-                
-                print('🟢 STEP 7: After tool processing, text length: ${processedStreamingMessage.length}');
-                
-                // DIAGRAM FIX: If diagram was generated during tool processing, stop streaming
-                if (_diagramGeneratedInCurrentResponse) {
-                  print('🛑 DIAGRAM GENERATED DURING PROCESSING - STOPPING STREAMING');
-                  break; // Exit the streaming loop
-                }
-                
-                // Use processed text directly - NO CLEANING during streaming to preserve tool results
-                String displayText = processedStreamingMessage;
-                
-                print('🟢 STEP 8: Creating message with thoughts: ${streamingParseResult['thoughts'].length}, codes: ${streamingParseResult['codes'].length}');
+                // Use original display text from parsing without any processing
+                String displayText = streamingParseResult['displayText'];
 
                 setState(() {
                   _messages[botMessageIndex] = Message(
@@ -518,7 +493,6 @@ Be conversational and helpful!'''
                   );
                 });
                 
-                print('🟢 STEP 9: Message updated in UI');
                 _scrollToBottom();
               }
             } catch (e) {
@@ -527,17 +501,11 @@ Be conversational and helpful!'''
           }
         }
 
-        print('🟢 STEP 10: Streaming completed, processing final message...');
-
-        // Use the final processed text that includes all tool results
-        final textToUse = finalProcessedText.isNotEmpty ? finalProcessedText : accumulatedText;
-        
-        print('🟢 STEP 11: Final text to use length: ${textToUse.length}');
+        // FIXED: Always use original accumulated text, no processed text
+        final textToUse = accumulatedText;
         
         // Parse final content to preserve codes and thoughts
         final finalParseResult = _parseContentStreaming(textToUse);
-
-        print('🟢 STEP 12: Final parse result - thoughts: ${finalParseResult['thoughts'].length}, codes: ${finalParseResult['codes'].length}');
         
         setState(() {
           _messages[botMessageIndex] = Message(
@@ -553,12 +521,10 @@ Be conversational and helpful!'''
           );
         });
 
-        print('🟢 STEP 13: Final message set with isStreaming: false');
-        print('🟢 FINAL MESSAGE HAS: ${_messages[botMessageIndex].thoughts.length} thoughts, ${_messages[botMessageIndex].codes.length} codes');
 
-        // Update memory with the completed conversation (can clean for memory)
-        final memoryText = finalProcessedText.isNotEmpty ? finalProcessedText : accumulatedText;
-        _updateConversationMemory(prompt, _cleanStreamingText(memoryText));
+
+        // FIXED: Use original text for memory, no cleaning of code blocks
+        _updateConversationMemory(prompt, accumulatedText);
         
         // Save complete chat history to SharedPreferences
         await _saveChatHistory();
@@ -623,8 +589,9 @@ Be conversational and helpful!'''
   // Store completed tool results to prevent them from being overwritten
   final Map<String, String> _completedToolResults = {};
   
+  /// REMOVED: This function was interfering with code panels
   /// Process Python-based tool calls during streaming - execute tools ONE BY ONE
-  Future<String> _processToolCallsDuringStreaming(String responseText, int messageIndex) async {
+  Future<String> _processToolCallsDuringStreaming_DISABLED(String responseText, int messageIndex) async {
     // Look for Python code blocks with execute_tool calls
     final pythonPattern = RegExp(r'```python\s*(.*?)\s*```', dotAll: true);
     final matches = pythonPattern.allMatches(responseText);
@@ -2016,21 +1983,10 @@ $priceChart
     return text;
   }
 
-  String _cleanStreamingText(String text) {
-    // MODIFIED: Only remove tool execution messages, NOT code blocks
-    // Keep all code blocks for the coding panel feature
-    
-    // Remove tool executing messages only
-    text = text.replaceAll(RegExp(r'\[Tool executing\.\.\.?\]', multiLine: true), '');
-    text = text.replaceAll(RegExp(r'\[Tools executing\.\.\.?\]', multiLine: true), '');
-    
-    // Remove any tool panel placeholders if they exist
-    text = text.replaceAll(RegExp(r'\[TOOL_PANEL_(?:EXECUTING|COMPLETED):[^\]]*\]', multiLine: true), '');
-    
-    // Clean up extra whitespace and newlines
-    text = text.replaceAll(RegExp(r'\n\s*\n+'), '\n\n').trim();
-    
-    return text;
+  /// REMOVED: This function was removing code blocks
+  String _cleanStreamingText_DISABLED(String text) {
+    // This function is disabled to preserve code blocks
+    return text; // Return text unchanged
   }
 
   // Parse thoughts and content in real-time during streaming
