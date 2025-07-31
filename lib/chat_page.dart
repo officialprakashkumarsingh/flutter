@@ -533,9 +533,6 @@ Be conversational and helpful!'''
             isStreaming: false,
           );
         });
-        
-        // Schedule thinking panel removal after streaming naturally completes
-        _scheduleThinkingPanelRemoval(botMessageIndex);
 
         // Update memory with the completed conversation (can clean for memory)
         final memoryText = finalProcessedText.isNotEmpty ? finalProcessedText : accumulatedText;
@@ -1406,9 +1403,6 @@ $priceChart
         if (_awaitingReply && _messages.isNotEmpty && _messages.last.isStreaming) {
            final lastIndex = _messages.length - 1;
            _messages[lastIndex] = _messages.last.copyWith(isStreaming: false);
-           
-           // Schedule thinking panel removal after streaming completes
-           _scheduleThinkingPanelRemoval(lastIndex);
         }
         _awaitingReply = false;
       });
@@ -2291,30 +2285,7 @@ $priceChart
     );
   }
 
-  void _scheduleThinkingPanelRemoval(int messageIndex) {
-    // Remove thinking panel after 3 seconds when streaming completes
-    Timer(const Duration(seconds: 3), () {
-      if (mounted && messageIndex < _messages.length) {
-        setState(() {
-          final message = _messages[messageIndex];
-          if (message.thoughts.isNotEmpty) {
-            // Clear thoughts from the message
-            _messages[messageIndex] = Message(
-              id: message.id,
-              sender: message.sender,
-              text: message.text,
-              isStreaming: false,
-              timestamp: message.timestamp,
-              thoughts: [], // Clear thoughts
-              codes: message.codes,
-              displayText: message.displayText,
-              toolData: message.toolData,
-            );
-          }
-        });
-      }
-    });
-  }
+
 
   Future<void> _sendMessage(String text) async {
     // Implement the logic to send a message to the AI
