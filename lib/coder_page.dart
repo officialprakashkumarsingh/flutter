@@ -447,8 +447,8 @@ Keep responses under 200 words and be friendly but professional.
       // Step 3: Execute - Real file modifications
       await _updateTaskStep(task, 'Starting implementation...', TaskStatus.executing);
       
-      // Execute the plan with real file operations
-      await _executeAIPlan(task, plan);
+      // Execute the plan with real-time file operations (immediately committed)
+      final processedFiles = await _executeAIPlan(task, plan);
       
       // Step 4: Verify - Check implementations
       await _updateTaskStep(task, 'Verifying changes and running checks...', TaskStatus.verifying);
@@ -456,8 +456,8 @@ Keep responses under 200 words and be friendly but professional.
       final verification = await _verifyChanges(task);
       await _updateTaskStep(task, verification['message'], TaskStatus.verifying);
       
-      // Step 5: Success with Git operations
-      await _updateTaskStep(task, 'Task completed! ${_modifiedFiles.length} files processed', TaskStatus.completed);
+      // Step 5: Success summary
+      await _updateTaskStep(task, 'Task completed! $processedFiles files processed', TaskStatus.completed);
       
       // Generate AI summary of what was accomplished
       await _generateTaskSummary(task);
@@ -468,8 +468,8 @@ Keep responses under 200 words and be friendly but professional.
       // Show follow-up and Git options
       setState(() {
         _showFollowUp = true;
-        _showGitOptions = true;
-        _hasUncommittedChanges = _modifiedFiles.isNotEmpty;
+        _showGitOptions = false; // No uncommitted changes after real-time sync
+        _hasUncommittedChanges = false;
       });
       
     } catch (e) {
@@ -912,18 +912,21 @@ Always ensure your implementations are complete and ready to run.''',
   }
   
   // Execute AI plan with enhanced file operations
-  Future<void> _executeAIPlan(CoderTask task, Map<String, dynamic> plan) async {
+  Future<int> _executeAIPlan(CoderTask task, Map<String, dynamic> plan) async {
     final filesToModify = plan['files_to_modify'] as List<String>;
-    
+    int processedCount = 0;
+
     for (final filePath in filesToModify) {
       try {
         // Check if file exists to determine operation type
         final currentContent = await _getFileContent(task, filePath);
-        final isNewFile = currentContent == '// File not found or empty' || currentContent.startsWith('// Error loading file');
-        
+        final isNewFile = currentContent == '// File not found or empty' ||
+            currentContent.startsWith('// Error loading file');
+
         final operation = isNewFile ? 'Creating' : 'Modifying';
-        await _updateTaskStep(task, '$operation $filePath...', TaskStatus.executing);
-        
+        await _updateTaskStep(
+            task, '$operation $filePath...', TaskStatus.executing);
+
         // Enhanced AI prompt for file-specific modifications
         final modificationPrompt = '''
 AUTONOMOUS FILE OPERATION
@@ -953,35 +956,43 @@ OUTPUT ONLY THE COMPLETE FILE CONTENT - no explanations, no markdown blocks, jus
 ''';
 
         final modifiedContent = await _callAIModel(modificationPrompt);
-        
+
         // Check if AI wants to delete the file
-        if (modifiedContent.toLowerCase().contains('delete this file') || 
+        if (modifiedContent.toLowerCase().contains('delete this file') ||
             modifiedContent.toLowerCase().contains('remove this file') ||
             modifiedContent.toLowerCase().contains('file should be deleted')) {
-          
           await _deleteFile(task, filePath);
+          await _updateTaskStep(
+              task, 'Deleted $filePath', TaskStatus.executing);
           _fileOperations[filePath] = 'deleted';
-          await _updateTaskStep(task, 'Deleted $filePath', TaskStatus.executing);
-          
         } else {
-          // Store modification and operation type
-          _modifiedFiles[filePath] = modifiedContent;
-          _fileContents[filePath] = currentContent;
-          _fileOperations[filePath] = operation.toLowerCase();
-          
-          final operationText = isNewFile ? 'Created' : 'Modified';
-          await _updateTaskStep(task, '$operationText $filePath (${modifiedContent.length} chars)', TaskStatus.executing);
+          // Immediately create or update the file in the repository
+          await _upsertFile(task, filePath, modifiedContent,
+              isNewFile: isNewFile);
+
+          // Track operation for history only (no pending commits)
+          _fileOperations[filePath] = isNewFile ? 'created' : 'updated';
+
+          final operationText = isNewFile ? 'Created' : 'Updated';
+          await _updateTaskStep(
+              task,
+              '$operationText $filePath (${modifiedContent.length} chars)',
+              TaskStatus.executing);
         }
-        
+
+        processedCount += 1;
+
         // Small delay for streaming effect
         await Future.delayed(const Duration(milliseconds: 800));
-        
       } catch (e) {
-        await _updateTaskStep(task, 'Failed to process $filePath: $e', TaskStatus.executing);
+        await _updateTaskStep(
+            task, 'Failed to process $filePath: $e', TaskStatus.executing);
       }
     }
+
+    return processedCount;
   }
-  
+
   // Get file content from GitHub
   Future<String> _getFileContent(CoderTask task, String filePath) async {
     try {
@@ -1042,6 +1053,61 @@ OUTPUT ONLY THE COMPLETE FILE CONTENT - no explanations, no markdown blocks, jus
       }
     } catch (e) {
       throw Exception('Error deleting file $filePath: $e');
+    }
+  }
+  
+  // NEW: Create or update a file in the repository **immediately** using GitHub Contents API
+  Future<void> _upsertFile(
+    CoderTask task,
+    String filePath,
+    String content, {
+    required bool isNewFile,
+  }) async {
+    try {
+      // Encode content in base64 as required by GitHub API
+      final encodedContent = base64Encode(utf8.encode(content));
+
+      String? sha;
+      if (!isNewFile) {
+        // Fetch current file SHA for updates
+        final getResponse = await http.get(
+          Uri.parse(
+              'https://api.github.com/repos/${task.repository.fullName}/contents/$filePath?ref=${task.branch}'),
+          headers: {
+            'Authorization': 'Bearer $_githubToken',
+            'Accept': 'application/vnd.github.v3+json',
+          },
+        );
+
+        if (getResponse.statusCode == 200) {
+          final fileData = json.decode(getResponse.body);
+          sha = fileData['sha'];
+        }
+      }
+
+      final putResponse = await http.put(
+        Uri.parse(
+            'https://api.github.com/repos/${task.repository.fullName}/contents/$filePath'),
+        headers: {
+          'Authorization': 'Bearer $_githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'message': '${isNewFile ? 'Create' : 'Update'} $filePath',
+          'content': encodedContent,
+          'branch': task.branch,
+          if (sha != null) 'sha': sha,
+        }),
+      );
+
+      if (!(putResponse.statusCode == 200 || putResponse.statusCode == 201)) {
+        final errorBody = putResponse.body;
+        throw Exception(
+            'Failed to ${isNewFile ? 'create' : 'update'} file (${putResponse.statusCode}): $errorBody');
+      }
+    } catch (e) {
+      throw Exception('Error saving file $filePath: $e');
     }
   }
   
