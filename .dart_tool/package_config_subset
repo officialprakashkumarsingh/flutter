@@ -70,10 +70,6 @@ collection
 2.18
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/collection-1.18.0/
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/collection-1.18.0/lib/
-convert
-3.4
-file:///home/ubuntu/.pub-cache/hosted/pub.dev/convert-3.1.2/
-file:///home/ubuntu/.pub-cache/hosted/pub.dev/convert-3.1.2/lib/
 cross_file
 3.3
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/cross_file-0.3.4+2/
@@ -282,10 +278,6 @@ image_picker_windows
 2.19
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.1+1/
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.1+1/lib/
-intl
-3.3
-file:///home/ubuntu/.pub-cache/hosted/pub.dev/intl-0.20.2/
-file:///home/ubuntu/.pub-cache/hosted/pub.dev/intl-0.20.2/lib/
 just_audio
 3.0
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/just_audio-0.9.46/
@@ -554,14 +546,6 @@ supabase_flutter
 3.3
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/supabase_flutter-2.9.1/
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/supabase_flutter-2.9.1/lib/
-syncfusion_flutter_core
-3.4
-file:///home/ubuntu/.pub-cache/hosted/pub.dev/syncfusion_flutter_core-29.1.38/
-file:///home/ubuntu/.pub-cache/hosted/pub.dev/syncfusion_flutter_core-29.1.38/lib/
-syncfusion_flutter_pdf
-3.4
-file:///home/ubuntu/.pub-cache/hosted/pub.dev/syncfusion_flutter_pdf-29.1.38/
-file:///home/ubuntu/.pub-cache/hosted/pub.dev/syncfusion_flutter_pdf-29.1.38/lib/
 synchronized
 3.5
 file:///home/ubuntu/.pub-cache/hosted/pub.dev/synchronized-3.3.0+3/

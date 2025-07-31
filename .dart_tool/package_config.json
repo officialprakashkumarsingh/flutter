@@ -110,12 +110,6 @@
       "languageVersion": "2.18"
     },
     {
-      "name": "convert",
-      "rootUri": "file:///home/ubuntu/.pub-cache/hosted/pub.dev/convert-3.1.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
       "name": "cross_file",
       "rootUri": "file:///home/ubuntu/.pub-cache/hosted/pub.dev/cross_file-0.3.4+2",
       "packageUri": "lib/",
@@ -444,12 +438,6 @@
       "rootUri": "file:///home/ubuntu/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.1+1",
       "packageUri": "lib/",
       "languageVersion": "2.19"
-    },
-    {
-      "name": "intl",
-      "rootUri": "file:///home/ubuntu/.pub-cache/hosted/pub.dev/intl-0.20.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.3"
     },
     {
       "name": "just_audio",
@@ -860,18 +848,6 @@
       "languageVersion": "3.3"
     },
     {
-      "name": "syncfusion_flutter_core",
-      "rootUri": "file:///home/ubuntu/.pub-cache/hosted/pub.dev/syncfusion_flutter_core-29.1.38",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
-      "name": "syncfusion_flutter_pdf",
-      "rootUri": "file:///home/ubuntu/.pub-cache/hosted/pub.dev/syncfusion_flutter_pdf-29.1.38",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
       "name": "synchronized",
       "rootUri": "file:///home/ubuntu/.pub-cache/hosted/pub.dev/synchronized-3.3.0+3",
       "packageUri": "lib/",
@@ -1100,7 +1076,7 @@
       "languageVersion": "3.1"
     }
   ],
-  "generated": "2025-07-31T20:25:15.934668Z",
+  "generated": "2025-07-31T20:40:14.541487Z",
   "generator": "pub",
   "generatorVersion": "3.5.4",
   "flutterRoot": "file:///opt/flutter",

@@ -1,10 +1,9 @@
-import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:archive/archive.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as pathLib;
-import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 class FileAttachment {
   final String id;
@@ -13,7 +12,7 @@ class FileAttachment {
   final String mimeType;
   final int size;
   final DateTime uploadedAt;
-  final Uint8List? bytes;
+  final Uint8List bytes;
   final List<FileAttachment>? extractedFiles;
   final String? textContent;
   final bool isImage;
@@ -29,7 +28,7 @@ class FileAttachment {
     required this.mimeType,
     required this.size,
     required this.uploadedAt,
-    this.bytes,
+    required this.bytes,
     this.extractedFiles,
     this.textContent,
     required this.isImage,
@@ -39,49 +38,43 @@ class FileAttachment {
     required this.isPdf,
   });
 
+  String get fileIcon {
+    if (isImage) return '🖼️';
+    if (isZip) return '📦';
+    if (isPdf) return '📕';
+    if (isCode) return '💻';
+    if (isText) return '📄';
+    return '📎';
+  }
+
   String get sizeFormatted {
     if (size < 1024) return '${size}B';
     if (size < 1024 * 1024) return '${(size / 1024).toStringAsFixed(1)}KB';
     if (size < 1024 * 1024 * 1024) return '${(size / (1024 * 1024)).toStringAsFixed(1)}MB';
     return '${(size / (1024 * 1024 * 1024)).toStringAsFixed(1)}GB';
   }
-
-  String get fileExtension {
-    return pathLib.extension(name).toLowerCase();
-  }
-
-  String get fileIcon {
-    if (isImage) return '🖼️';
-    if (isZip) return '📦';
-    if (isCode) return '💻';
-    if (isText) return '📄';
-    if (isPdf) return '📕';
-    return '📁';
-  }
 }
 
 class FileAttachmentService {
+  static const List<String> supportedImageExtensions = [
+    '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'
+  ];
+
   static const List<String> supportedTextExtensions = [
-    '.txt', '.md', '.readme', '.log', '.conf', '.config', '.ini', '.yml', '.yaml'
+    '.txt', '.md', '.rtf'
   ];
 
   static const List<String> supportedCodeExtensions = [
-    '.dart', '.js', '.ts', '.py', '.java', '.kt', '.swift', '.cpp', '.c', '.cs',
-    '.php', '.rb', '.go', '.rs', '.scala', '.pl', '.lua', '.r', '.m', '.sql',
-    '.html', '.css', '.scss', '.less', '.xml', '.json', '.toml', '.sh', '.bat'
-  ];
-
-  static const List<String> supportedImageExtensions = [
-    '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'
+    '.dart', '.js', '.ts', '.html', '.css', '.json', '.xml', '.yaml', '.yml',
+    '.py', '.java', '.c', '.cpp', '.h', '.hpp', '.cs', '.php', '.rb', '.go',
+    '.rs', '.swift', '.kt', '.scala', '.sh', '.bat', '.ps1', '.sql', '.r'
   ];
 
   static const List<String> supportedArchiveExtensions = [
-    '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2'
+    '.zip', '.rar', '.7z', '.tar', '.gz'
   ];
 
-  static const List<String> supportedPdfExtensions = [
-    '.pdf'
-  ];
+  static const List<String> supportedPdfExtensions = ['.pdf'];
 
   static Future<List<FileAttachment>?> pickFiles() async {
     try {
@@ -91,23 +84,22 @@ class FileAttachmentService {
         withData: true,
       );
 
-      if (result == null || result.files.isEmpty) return null;
-
-      final List<FileAttachment> attachments = [];
-
-      for (final file in result.files) {
-        if (file.bytes == null || file.path == null) continue;
-
-        final attachment = await _processFile(file);
-        if (attachment != null) {
-          attachments.add(attachment);
+      if (result != null && result.files.isNotEmpty) {
+        final List<FileAttachment> attachments = [];
+        
+        for (final file in result.files) {
+          final attachment = await _processFile(file);
+          if (attachment != null) {
+            attachments.add(attachment);
+          }
         }
+        
+        return attachments;
       }
-
-      return attachments.isNotEmpty ? attachments : null;
     } catch (e) {
-      return null;
+      print('Error picking files: $e');
     }
+    return null;
   }
 
   static Future<FileAttachment?> _processFile(PlatformFile file) async {
@@ -128,38 +120,27 @@ class FileAttachmentService {
       String? textContent;
       List<FileAttachment>? extractedFiles;
 
+      // Read text content for text-based files
       if (isText || isCode) {
         try {
           textContent = utf8.decode(bytes);
         } catch (e) {
           textContent = 'Binary file - cannot preview';
-      }
-
-      // Extract text from PDF files
-      if (isPdf) {
-        try {
-          textContent = await _extractPdfText(bytes);
-        } catch (e) {
-          textContent = 'PDF content could not be extracted';
-        }
         }
       }
 
-      // Extract text from PDF files
-      if (isPdf) {
-        try {
-          textContent = await _extractPdfText(bytes);
-        } catch (e) {
-          textContent = 'PDF content could not be extracted';
-        }
-      }
-
+      // Extract ZIP files
       if (isZip && extension == '.zip') {
         try {
           extractedFiles = await _extractZipFile(bytes);
         } catch (e) {
-          // Handle error silently
+          print('Error extracting ZIP: $e');
         }
+      }
+
+      // PDF placeholder for now
+      if (isPdf) {
+        textContent = 'PDF file - ${fileName} (${(fileSize / 1024).toStringAsFixed(1)}KB)';
       }
 
       return FileAttachment(
@@ -179,18 +160,20 @@ class FileAttachmentService {
         isPdf: isPdf,
       );
     } catch (e) {
+      print('Error processing file: $e');
       return null;
     }
   }
 
   static Future<List<FileAttachment>> _extractZipFile(Uint8List zipBytes) async {
-    final archive = ZipDecoder().decodeBytes(zipBytes);
-    final List<FileAttachment> extractedFiles = [];
-
-    for (final file in archive) {
-      if (file.isFile) {
-        try {
-          final bytes = Uint8List.fromList(file.content as List<int>);
+    final extractedFiles = <FileAttachment>[];
+    
+    try {
+      final archive = ZipDecoder().decodeBytes(zipBytes);
+      
+      for (final file in archive) {
+        if (file.isFile) {
+          final bytes = file.content as Uint8List;
           final fileName = file.name;
           final mimeType = lookupMimeType(fileName) ?? 'application/octet-stream';
           final extension = pathLib.extension(fileName).toLowerCase();
@@ -198,6 +181,7 @@ class FileAttachmentService {
           final isImage = supportedImageExtensions.contains(extension);
           final isText = supportedTextExtensions.contains(extension);
           final isCode = supportedCodeExtensions.contains(extension);
+          final isPdf = supportedPdfExtensions.contains(extension);
 
           String? textContent;
           if (isText || isCode) {
@@ -205,15 +189,6 @@ class FileAttachmentService {
               textContent = utf8.decode(bytes);
             } catch (e) {
               textContent = 'Binary file - cannot preview';
-      }
-
-      // Extract text from PDF files
-      if (isPdf) {
-        try {
-          textContent = await _extractPdfText(bytes);
-        } catch (e) {
-          textContent = 'PDF content could not be extracted';
-        }
             }
           }
 
@@ -230,14 +205,14 @@ class FileAttachmentService {
             isZip: false,
             isText: isText,
             isCode: isCode,
-        isPdf: isPdf,
+            isPdf: isPdf,
           ));
-        } catch (e) {
-          // Handle error silently
         }
       }
+    } catch (e) {
+      print('Error extracting ZIP: $e');
     }
-
+    
     return extractedFiles;
   }
 
@@ -251,60 +226,40 @@ class FileAttachmentService {
   }
 
   static String getCodeLanguage(FileAttachment file) {
-    final ext = file.fileExtension;
-    const Map<String, String> languageMap = {
+    if (!file.isCode) return 'text';
+    
+    final extension = pathLib.extension(file.name).toLowerCase();
+    const languageMap = {
       '.dart': 'dart',
       '.js': 'javascript',
       '.ts': 'typescript',
+      '.html': 'html',
+      '.css': 'css',
+      '.json': 'json',
+      '.xml': 'xml',
+      '.yaml': 'yaml',
+      '.yml': 'yaml',
       '.py': 'python',
       '.java': 'java',
-      '.kt': 'kotlin',
-      '.swift': 'swift',
-      '.cpp': 'cpp',
       '.c': 'c',
+      '.cpp': 'cpp',
+      '.h': 'c',
+      '.hpp': 'cpp',
       '.cs': 'csharp',
       '.php': 'php',
       '.rb': 'ruby',
       '.go': 'go',
       '.rs': 'rust',
-      '.html': 'html',
-      '.css': 'css',
-      '.json': 'json',
-      '.xml': 'xml',
-      '.sql': 'sql',
+      '.swift': 'swift',
+      '.kt': 'kotlin',
+      '.scala': 'scala',
       '.sh': 'bash',
-      '.yml': 'yaml',
-      '.yaml': 'yaml',
+      '.bat': 'batch',
+      '.ps1': 'powershell',
+      '.sql': 'sql',
+      '.r': 'r',
     };
-    return languageMap[ext] ?? 'text';
-  }
-}
-
-  /// Extract text content from PDF files
-  static Future<String> _extractPdfText(Uint8List pdfBytes) async {
-    try {
-      // Load the PDF document from bytes
-      final PdfDocument document = PdfDocument(inputBytes: pdfBytes);
-      
-      // Extract text from all pages
-      final StringBuffer textBuffer = StringBuffer();
-      
-      for (int i = 0; i < document.pages.count; i++) {
-        final PdfPage page = document.pages[i];
-        final String pageText = PdfTextExtractor.extractText(page);
-        textBuffer.writeln("--- Page ${i + 1} ---");
-        textBuffer.writeln(pageText);
-        textBuffer.writeln();
-      }
-      
-      // Dispose the document
-      document.dispose();
-      
-      final extractedText = textBuffer.toString().trim();
-      return extractedText.isNotEmpty ? extractedText : "No text content found in PDF";
-      
-    } catch (e) {
-      return "Error extracting PDF text: $e";
-    }
+    
+    return languageMap[extension] ?? 'text';
   }
 }

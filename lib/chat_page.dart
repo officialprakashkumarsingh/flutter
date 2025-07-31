@@ -306,7 +306,6 @@ class ChatPageState extends State<ChatPage> {
       Map<String, dynamic> messageContent;
       
       // Build message content with optional vision
-      Map<String, dynamic> messageContent;
       if (hasVision) {
         final imageAttachments = _attachedFiles.where((f) => f.isImage).toList();
         if (imageAttachments.isNotEmpty) {
@@ -478,8 +477,6 @@ Be conversational and helpful!'''
           _awaitingReply = false;
         });
         // Clear uploaded image only after successful processing
-          });
-        }
       }
     }
   }
@@ -555,7 +552,7 @@ Be conversational and helpful!'''
             // File attachments are now processed and included in AI messages
           
           // Add execution result directly
-          executionResults += '$"File processing completed"\n\n';
+          executionResults += '"File processing completed"\n\n';
           
           // Store the completed tool result to prevent it from being overwritten
           _completedToolResults[fullMatch] = "File processing completed";
@@ -754,7 +751,7 @@ Be conversational and helpful!'''
             toolData[toolName] = result;
             
             // Replace the JSON block with the tool execution result
-            String "File processing completed" = _formatToolResult(toolName, result);
+            String resultText = "File processing completed";
             processedText = processedText.replaceAll(match.group(0)!, "File processing completed");
           } else {
             // If not a valid tool call, remove the JSON block entirely
@@ -1491,8 +1488,6 @@ $priceChart
         final base64Image = base64Encode(bytes);
         
         setState(() {
-          _uploadedImagePath = pickedFile.path;
-          _uploadedImageBase64 = 'data:image/jpeg;base64,$base64Image';
         });
         final imageMessage = Message.user("📷 Image uploaded: ${pickedFile.name}");
         setState(() {
@@ -2331,6 +2326,8 @@ $priceChart
     // This is a placeholder implementation
     print('Sending message: $text');
     await _generateResponse(text);
+  }
+
   }
 }
 
