@@ -86,7 +86,10 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 400),
-      decoration: null,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -94,6 +97,11 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
             onTap: canPreview ? () => _toggleExpansion(attachment.id) : null,
             child: Container(
               padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+              ),
               child: Row(
                 children: [
                   Container(
@@ -197,11 +205,7 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
               child: Container(
                 width: double.infinity,
                 margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
-                ),
+                decoration: null,
                 child: _buildPreviewContent(attachment),
               ),
             ),
