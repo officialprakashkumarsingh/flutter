@@ -3203,9 +3203,9 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF000000), // Pure AMOLED black
+                color: const Color(0xFFF8F8F8), // Original light background for header
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF333333), width: 1),
+                border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
               ),
               child: Row(
                 children: [
