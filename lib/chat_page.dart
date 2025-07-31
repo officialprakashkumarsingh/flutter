@@ -924,12 +924,7 @@ Be conversational and helpful!'''
 
 
 
-        case 'plantuml_chart':
-          // For PlantUML charts, show clean diagram without technical details
-          final diagramMarkdown = '''![PlantUML Diagram](${result['image_url']})''';
-          print('📊 PlantUML diagram generated - flagging to stop AI streaming');
-  
-          return diagramMarkdown;
+                  // REMOVED: PlantUML diagram generation
 
         case 'crypto_market_data':
           // Format crypto market data with interactive chart
