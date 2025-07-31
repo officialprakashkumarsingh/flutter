@@ -22,6 +22,7 @@ class MessageBubble extends StatefulWidget {
   final VoidCallback? onRegenerate;
   final VoidCallback? onUserMessageTap;
   final Function(String)? onSaveImage;
+  final Function(Message)? onEditMessage;
   
   const MessageBubble({
     super.key,
@@ -29,6 +30,7 @@ class MessageBubble extends StatefulWidget {
     this.onRegenerate,
     this.onUserMessageTap,
     this.onSaveImage,
+    this.onEditMessage,
   });
 
   @override
@@ -629,11 +631,9 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
                         icon: Icons.edit_rounded,
                         onTap: () {
                           _toggleUserActions();
-                          // Direct edit functionality without showing copy/edit menu again
-                          final chatPageState = context.findAncestorStateOfType<ChatPageState>();
-                          if (chatPageState != null) {
-                            chatPageState._editMessage(widget.message);
-                          }
+                          _toggleUserActions();
+                          // Use the user message tap for now
+                          widget.onUserMessageTap?.call();
                         },
                         tooltip: 'Edit & Resend',
                       ),

@@ -2245,6 +2245,7 @@ $priceChart
                   onRegenerate: () => _regenerateResponse(index),
                   onUserMessageTap: () => _showUserMessageOptions(context, message),
                   onSaveImage: _saveImageToDevice,
+                  onEditMessage: _editMessage,
                 );
               },
             ),
@@ -2328,7 +2329,6 @@ $priceChart
     await _generateResponse(text);
   }
 
-  }
 }
 
 /* ----------------------------------------------------------
