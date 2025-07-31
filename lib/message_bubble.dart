@@ -409,47 +409,32 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
       widgets.add(const SizedBox(height: 12));
     }
     
-    // Parse the original text to find where code blocks appear
-    String remainingText = widget.message.text;
     final codes = widget.message.codes;
+    final displayText = widget.message.displayText;
     
-    // If no code blocks, just show the display text
+    // If no code blocks detected yet, show display text (handles streaming properly)
     if (codes.isEmpty) {
-      widgets.add(_buildMarkdownContent(widget.message.displayText));
+      if (displayText.isNotEmpty) {
+        widgets.add(_buildMarkdownContent(displayText));
+      }
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: widgets,
       );
     }
     
-    // Build content with inline code panels
-    int codeIndex = 0;
-    for (final code in codes) {
-      // Find the code block in the original text
-      final codePattern = '```${code.language}\n${code.code}\n```';
-      final codePosition = remainingText.indexOf(codePattern);
-      
-      if (codePosition != -1) {
-        // Add text before the code block
-        final textBefore = remainingText.substring(0, codePosition).trim();
-        if (textBefore.isNotEmpty) {
-          widgets.add(_buildMarkdownContent(textBefore));
-          widgets.add(const SizedBox(height: 12));
-        }
-        
-        // Add the code panel right where the code appears
-        widgets.add(_buildCodePanel(code, codeIndex));
-        widgets.add(const SizedBox(height: 12));
-        
-        // Update remaining text
-        remainingText = remainingText.substring(codePosition + codePattern.length);
-        codeIndex++;
-      }
+    // Show display text first (text without code blocks)
+    if (displayText.isNotEmpty) {
+      widgets.add(_buildMarkdownContent(displayText));
+      widgets.add(const SizedBox(height: 12));
     }
     
-    // Add any remaining text after all code blocks
-    if (remainingText.trim().isNotEmpty) {
-      widgets.add(_buildMarkdownContent(remainingText.trim()));
+    // Then show all code panels
+    for (int i = 0; i < codes.length; i++) {
+      widgets.add(_buildCodePanel(codes[i], i));
+      if (i < codes.length - 1) {
+        widgets.add(const SizedBox(height: 12));
+      }
     }
     
     return Column(
