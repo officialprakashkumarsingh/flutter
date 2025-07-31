@@ -477,25 +477,34 @@ Be conversational and helpful!'''
                 
                 accumulatedText += _fixServerEncoding(content);
                 
-                        // Process tools and create panels
-        final processedStreamingMessage = await _processToolCallsDuringStreaming(accumulatedText, botMessageIndex);
-        finalProcessedText = processedStreamingMessage; // Store the latest processed text
-        
-        // DIAGRAM FIX: If diagram was generated during tool processing, stop streaming
-        if (_diagramGeneratedInCurrentResponse) {
-          print('🛑 DIAGRAM GENERATED DURING PROCESSING - STOPPING STREAMING');
-          break; // Exit the streaming loop
-        }
-        
-        // Use processed text directly - NO CLEANING during streaming to preserve tool results
-        String displayText = processedStreamingMessage;
-        
-        // DON'T clean Python blocks during streaming - let _processToolCallsDuringStreaming handle it
+                // Parse thinking content in real-time during streaming
+                final streamingParseResult = _parseContentStreaming(accumulatedText);
+                
+                // Process tools and create panels
+                final processedStreamingMessage = await _processToolCallsDuringStreaming(streamingParseResult['displayText'], botMessageIndex);
+                finalProcessedText = processedStreamingMessage; // Store the latest processed text
+                
+                // DIAGRAM FIX: If diagram was generated during tool processing, stop streaming
+                if (_diagramGeneratedInCurrentResponse) {
+                  print('🛑 DIAGRAM GENERATED DURING PROCESSING - STOPPING STREAMING');
+                  break; // Exit the streaming loop
+                }
+                
+                // Use processed text directly - NO CLEANING during streaming to preserve tool results
+                String displayText = processedStreamingMessage;
+                
+                // DON'T clean Python blocks during streaming - let _processToolCallsDuringStreaming handle it
                 
                 setState(() {
-                  _messages[botMessageIndex] = botMessage.copyWith(
-                    text: displayText,
+                  _messages[botMessageIndex] = Message(
+                    id: botMessage.id,
+                    sender: Sender.bot,
+                    text: accumulatedText,
                     isStreaming: true,
+                    timestamp: botMessage.timestamp,
+                    thoughts: streamingParseResult['thoughts'],
+                    displayText: displayText,
+                    toolData: botMessage.toolData,
                   );
                 });
                 _scrollToBottom();
@@ -1998,13 +2007,66 @@ $priceChart
     return text;
   }
 
-
-
-
-
-
-
-
+  // Parse thoughts and content in real-time during streaming
+  Map<String, dynamic> _parseContentStreaming(String text) {
+    final List<ThoughtContent> thoughts = [];
+    String displayText = text;
+    
+    // Regex patterns for different thought types - including partial matches
+    final thoughtPatterns = {
+      'thinking': RegExp(r'<thinking>(.*?)</thinking>', dotAll: true),
+      'thoughts': RegExp(r'<thoughts>(.*?)</thoughts>', dotAll: true),
+      'think': RegExp(r'<think>(.*?)</think>', dotAll: true),
+      'thought': RegExp(r'<thought>(.*?)</thought>', dotAll: true),
+      'reason': RegExp(r'<reason>(.*?)</reason>', dotAll: true),
+      'reasoning': RegExp(r'<reasoning>(.*?)</reasoning>', dotAll: true),
+    };
+    
+    // Also check for unclosed tags (streaming in progress)
+    final partialThoughtPatterns = {
+      'thinking': RegExp(r'<thinking>(.*?)$', dotAll: true),
+      'thoughts': RegExp(r'<thoughts>(.*?)$', dotAll: true),
+      'think': RegExp(r'<think>(.*?)$', dotAll: true),
+      'thought': RegExp(r'<thought>(.*?)$', dotAll: true),
+      'reason': RegExp(r'<reason>(.*?)$', dotAll: true),
+      'reasoning': RegExp(r'<reasoning>(.*?)$', dotAll: true),
+    };
+    
+    // Extract complete thoughts and remove them from display text
+    for (String type in thoughtPatterns.keys) {
+      final matches = thoughtPatterns[type]!.allMatches(text);
+      for (final match in matches) {
+        final thoughtText = match.group(1)?.trim() ?? '';
+        if (thoughtText.isNotEmpty) {
+          thoughts.add(ThoughtContent(text: thoughtText, type: type));
+        }
+        // Remove the entire complete thought block from display text
+        displayText = displayText.replaceAll(match.group(0)!, '');
+      }
+    }
+    
+    // Handle partial/streaming thoughts (unclosed tags)
+    for (String type in partialThoughtPatterns.keys) {
+      final match = partialThoughtPatterns[type]!.firstMatch(text);
+      if (match != null) {
+        final thoughtText = match.group(1)?.trim() ?? '';
+        if (thoughtText.isNotEmpty) {
+          // Only add if we don't already have a complete thought of this type
+          final hasCompleteThought = thoughts.any((t) => t.type == type);
+          if (!hasCompleteThought) {
+            thoughts.add(ThoughtContent(text: thoughtText, type: type));
+          }
+        }
+        // Remove the partial thought block from display text
+        displayText = displayText.replaceAll(match.group(0)!, '');
+      }
+    }
+    
+    return {
+      'thoughts': thoughts,
+      'displayText': displayText.trim(),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2127,6 +2189,11 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
   bool _showUserActions = false;
   late AnimationController _userActionsAnimationController;
   late Animation<double> _userActionsAnimation;
+  
+  // Thinking panel state
+  bool _isThinkingExpanded = false;
+  late AnimationController _thinkingAnimationController;
+  late Animation<double> _thinkingAnimation;
 
   @override
   void initState() {
@@ -2148,12 +2215,22 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
       parent: _userActionsAnimationController,
       curve: Curves.easeOut,
     );
+    
+    _thinkingAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _thinkingAnimation = CurvedAnimation(
+      parent: _thinkingAnimationController,
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
   void dispose() {
     _actionsAnimationController.dispose();
     _userActionsAnimationController.dispose();
+    _thinkingAnimationController.dispose();
     super.dispose();
   }
 
@@ -2175,6 +2252,17 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
         _userActionsAnimationController.forward();
       } else {
         _userActionsAnimationController.reverse();
+      }
+    });
+  }
+
+  void _toggleThinking() {
+    setState(() {
+      _isThinkingExpanded = !_isThinkingExpanded;
+      if (_isThinkingExpanded) {
+        _thinkingAnimationController.forward();
+      } else {
+        _thinkingAnimationController.reverse();
       }
     });
   }
@@ -2581,6 +2669,7 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
     final isBot = widget.message.sender == Sender.bot;
     final isUser = widget.message.sender == Sender.user;
     final canShowActions = isBot && !widget.message.isStreaming && widget.message.text.isNotEmpty && widget.onRegenerate != null;
+    final hasThoughts = isBot && widget.message.thoughts.isNotEmpty;
 
     Widget bubbleContent = Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -2608,6 +2697,9 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
       child: Column(
         crossAxisAlignment: isBot ? CrossAxisAlignment.start : CrossAxisAlignment.end,
         children: [
+          // Thinking panel for bot messages with thoughts
+          if (hasThoughts) _buildThinkingPanel(),
+          
           // All tool panels completely removed - everything shows directly in message content
           if (isUser)
             GestureDetector(
@@ -2743,6 +2835,84 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThinkingPanel() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      constraints: const BoxConstraints(maxWidth: 320),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with toggle
+          GestureDetector(
+            onTap: _toggleThinking,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F0F0),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedRotation(
+                    turns: _isThinkingExpanded ? 0.25 : 0,
+                    duration: const Duration(milliseconds: 300),
+                    child: const Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: Color(0xFF666666),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Thinking',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF666666),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Expandable content
+          SizeTransition(
+            sizeFactor: _thinkingAnimation,
+            axisAlignment: -1,
+            child: Container(
+              margin: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F8F8),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: widget.message.thoughts.map((thought) => 
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      thought.text.trim(),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        height: 1.4,
+                        color: Color(0xFF555555),
+                      ),
+                    ),
+                  ),
+                ).toList(),
+              ),
+            ),
+          ),
         ],
       ),
     );
