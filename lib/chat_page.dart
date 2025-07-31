@@ -23,7 +23,6 @@ import 'crypto_chart_widget.dart';
 
 import 'cache_manager.dart';
 import 'cached_image_widget.dart';
-// import 'langchain_agent_service.dart';
 
 
 /* ----------------------------------------------------------
@@ -74,7 +73,6 @@ class ChatPageState extends State<ChatPage> {
   http.Client? _httpClient;
   final CharacterService _characterService = CharacterService();
   final ExternalToolsService _externalToolsService = ExternalToolsService();
-  // late LangChainAgentService _langChainAgent;
 
   final _prompts = ['Explain quantum computing', 'Write a Python snippet', 'Draft an email to my boss', 'Ideas for weekend trip'];
   
@@ -101,10 +99,6 @@ class ChatPageState extends State<ChatPage> {
     _characterService.addListener(_onCharacterChanged);
     _externalToolsService.addListener(_onExternalToolsServiceChanged);
     
-    // Initialize LangChain Agent (temporarily disabled for testing)
-    // _langChainAgent = LangChainAgentService();
-    // _initializeLangChainAgent();
-    
     _updateGreetingForCharacter();
     _loadConversationMemory();
     _loadImageModels();
@@ -112,8 +106,6 @@ class ChatPageState extends State<ChatPage> {
       setState(() {}); // Refresh UI when text changes
     });
   }
-
-  // LangChain methods temporarily disabled
   
   Future<void> _loadConversationMemory() async {
     try {
@@ -176,7 +168,6 @@ class ChatPageState extends State<ChatPage> {
   void dispose() {
     _characterService.removeListener(_onCharacterChanged);
     _externalToolsService.removeListener(_onExternalToolsServiceChanged);
-    // _langChainAgent.dispose();
     _controller.dispose();
     _scroll.dispose();
     _httpClient?.close();

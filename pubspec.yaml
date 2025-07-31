@@ -36,12 +36,8 @@ dependencies:
   webview_flutter: ^4.4.4
   shared_preferences: ^2.2.3
   cached_network_image: ^3.3.1
-  langchain: ^0.7.3
-  langchain_openai: ^0.7.1
-  langchain_community: ^0.2.1
   uuid: ^4.4.0
   path: ^1.8.3
-  diff_match_patch: ^0.4.1
 
 dev_dependencies:
   flutter_test:
