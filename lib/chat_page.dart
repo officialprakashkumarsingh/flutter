@@ -66,7 +66,7 @@ class ChatPageState extends State<ChatPage> {
   bool _followUpMode = false; // Default OFF - user can enable if needed
   
   // Diagram generation tracking
-  bool _diagramGeneratedInCurrentResponse = false;
+
 
   // Add memory system for general chat
   List<String> _conversationMemory = [];
@@ -288,7 +288,7 @@ class ChatPageState extends State<ChatPage> {
     // Clear executed tools and results for new message to prevent cross-message interference
     _executedTools.clear();
     _completedToolResults.clear();
-    _diagramGeneratedInCurrentResponse = false; // Reset diagram flag for new response
+
     
     setState(() => _awaitingReply = true);
 
@@ -928,7 +928,7 @@ Be conversational and helpful!'''
           // For PlantUML charts, show clean diagram without technical details
           final diagramMarkdown = '''![PlantUML Diagram](${result['image_url']})''';
           print('📊 PlantUML diagram generated - flagging to stop AI streaming');
-          _diagramGeneratedInCurrentResponse = true; // Mark that diagram was generated
+  
           return diagramMarkdown;
 
         case 'crypto_market_data':
@@ -2023,10 +2023,19 @@ $priceChart
     // Code block patterns for real-time parsing (complete blocks)
     // More flexible patterns - allow optional spaces and newlines
     final codePatterns = {
+      // Web Technologies
       'html': RegExp(r'```html\s*(.*?)```', dotAll: true),
       'css': RegExp(r'```css\s*(.*?)```', dotAll: true),
       'javascript': RegExp(r'```(?:javascript|js)\s*(.*?)```', dotAll: true),
       'typescript': RegExp(r'```(?:typescript|ts)\s*(.*?)```', dotAll: true),
+      'react': RegExp(r'```(?:react|jsx)\s*(.*?)```', dotAll: true),
+      'vue': RegExp(r'```vue\s*(.*?)```', dotAll: true),
+      'angular': RegExp(r'```angular\s*(.*?)```', dotAll: true),
+      'svelte': RegExp(r'```svelte\s*(.*?)```', dotAll: true),
+      'scss': RegExp(r'```(?:scss|sass)\s*(.*?)```', dotAll: true),
+      'less': RegExp(r'```less\s*(.*?)```', dotAll: true),
+      
+      // Programming Languages
       'python': RegExp(r'```(?:python|py)\s*(.*?)```', dotAll: true),
       'dart': RegExp(r'```dart\s*(.*?)```', dotAll: true),
       'java': RegExp(r'```java\s*(.*?)```', dotAll: true),
@@ -2039,39 +2048,86 @@ $priceChart
       'ruby': RegExp(r'```(?:ruby|rb)\s*(.*?)```', dotAll: true),
       'go': RegExp(r'```(?:go|golang)\s*(.*?)```', dotAll: true),
       'rust': RegExp(r'```(?:rust|rs)\s*(.*?)```', dotAll: true),
+      'scala': RegExp(r'```scala\s*(.*?)```', dotAll: true),
+      'perl': RegExp(r'```(?:perl|pl)\s*(.*?)```', dotAll: true),
+      'lua': RegExp(r'```lua\s*(.*?)```', dotAll: true),
+      'r': RegExp(r'```r\s*(.*?)```', dotAll: true),
+      'matlab': RegExp(r'```(?:matlab|m)\s*(.*?)```', dotAll: true),
+      
+      // Data & Config
       'sql': RegExp(r'```sql\s*(.*?)```', dotAll: true),
       'json': RegExp(r'```json\s*(.*?)```', dotAll: true),
       'xml': RegExp(r'```xml\s*(.*?)```', dotAll: true),
       'yaml': RegExp(r'```(?:yaml|yml)\s*(.*?)```', dotAll: true),
+      'toml': RegExp(r'```toml\s*(.*?)```', dotAll: true),
+      'ini': RegExp(r'```ini\s*(.*?)```', dotAll: true),
+      'csv': RegExp(r'```csv\s*(.*?)```', dotAll: true),
+      
+      // Shell & Scripts
       'bash': RegExp(r'```(?:bash|shell|sh)\s*(.*?)```', dotAll: true),
       'powershell': RegExp(r'```(?:powershell|ps1)\s*(.*?)```', dotAll: true),
+      'batch': RegExp(r'```(?:batch|bat|cmd)\s*(.*?)```', dotAll: true),
+      'fish': RegExp(r'```fish\s*(.*?)```', dotAll: true),
+      'zsh': RegExp(r'```zsh\s*(.*?)```', dotAll: true),
+      
+      // Markup & Documentation
+      'markdown': RegExp(r'```(?:markdown|md)\s*(.*?)```', dotAll: true),
+      'text': RegExp(r'```(?:text|txt|plain)\s*(.*?)```', dotAll: true),
+      'latex': RegExp(r'```(?:latex|tex)\s*(.*?)```', dotAll: true),
+      'rst': RegExp(r'```(?:rst|restructuredtext)\s*(.*?)```', dotAll: true),
+      'asciidoc': RegExp(r'```(?:asciidoc|adoc)\s*(.*?)```', dotAll: true),
+      
+      // Functional Languages
+      'haskell': RegExp(r'```(?:haskell|hs)\s*(.*?)```', dotAll: true),
+      'elixir': RegExp(r'```(?:elixir|ex)\s*(.*?)```', dotAll: true),
+      'erlang': RegExp(r'```(?:erlang|erl)\s*(.*?)```', dotAll: true),
+      'clojure': RegExp(r'```(?:clojure|clj)\s*(.*?)```', dotAll: true),
+      'ocaml': RegExp(r'```(?:ocaml|ml)\s*(.*?)```', dotAll: true),
+      'fsharp': RegExp(r'```(?:fsharp|fs|f#)\s*(.*?)```', dotAll: true),
+      'lisp': RegExp(r'```(?:lisp|lsp)\s*(.*?)```', dotAll: true),
+      'scheme': RegExp(r'```(?:scheme|scm)\s*(.*?)```', dotAll: true),
+      
+      // Modern Languages
+      'julia': RegExp(r'```(?:julia|jl)\s*(.*?)```', dotAll: true),
+      'nim': RegExp(r'```nim\s*(.*?)```', dotAll: true),
+      'zig': RegExp(r'```zig\s*(.*?)```', dotAll: true),
+      'crystal': RegExp(r'```(?:crystal|cr)\s*(.*?)```', dotAll: true),
+      'vlang': RegExp(r'```(?:vlang|v)\s*(.*?)```', dotAll: true),
+      
+      // Mobile Development
+      'flutter': RegExp(r'```flutter\s*(.*?)```', dotAll: true),
+      'reactnative': RegExp(r'```(?:react-native|rn)\s*(.*?)```', dotAll: true),
+      'xamarin': RegExp(r'```xamarin\s*(.*?)```', dotAll: true),
+      
+      // Game Development
+      'gdscript': RegExp(r'```(?:gdscript|gd)\s*(.*?)```', dotAll: true),
+      'hlsl': RegExp(r'```hlsl\s*(.*?)```', dotAll: true),
+      'glsl': RegExp(r'```glsl\s*(.*?)```', dotAll: true),
+      'unity': RegExp(r'```unity\s*(.*?)```', dotAll: true),
+      
+      // Blockchain
+      'solidity': RegExp(r'```(?:solidity|sol)\s*(.*?)```', dotAll: true),
+      'vyper': RegExp(r'```vyper\s*(.*?)```', dotAll: true),
+      'move': RegExp(r'```move\s*(.*?)```', dotAll: true),
+      
+      // Assembly & Low Level
+      'assembly': RegExp(r'```(?:assembly|asm|nasm)\s*(.*?)```', dotAll: true),
+      'x86': RegExp(r'```x86\s*(.*?)```', dotAll: true),
+      'arm': RegExp(r'```arm\s*(.*?)```', dotAll: true),
+      
+      // Hardware Description
+      'verilog': RegExp(r'```(?:verilog|v)\s*(.*?)```', dotAll: true),
+      'vhdl': RegExp(r'```vhdl\s*(.*?)```', dotAll: true),
+      'systemverilog': RegExp(r'```(?:systemverilog|sv)\s*(.*?)```', dotAll: true),
     };
     
-    // Partial code patterns for streaming (unclosed blocks)
-    final partialCodePatterns = {
-      'html': RegExp(r'```html\s*(.*?)$', dotAll: true),
-      'css': RegExp(r'```css\s*(.*?)$', dotAll: true),
-      'javascript': RegExp(r'```(?:javascript|js)\s*(.*?)$', dotAll: true),
-      'typescript': RegExp(r'```(?:typescript|ts)\s*(.*?)$', dotAll: true),
-      'python': RegExp(r'```(?:python|py)\s*(.*?)$', dotAll: true),
-      'dart': RegExp(r'```dart\s*(.*?)$', dotAll: true),
-      'java': RegExp(r'```java\s*(.*?)$', dotAll: true),
-      'kotlin': RegExp(r'```(?:kotlin|kt)\s*(.*?)$', dotAll: true),
-      'swift': RegExp(r'```swift\s*(.*?)$', dotAll: true),
-      'cpp': RegExp(r'```(?:cpp|c\+\+|cxx)\s*(.*?)$', dotAll: true),
-      'c': RegExp(r'```c\s*(.*?)$', dotAll: true),
-      'csharp': RegExp(r'```(?:csharp|cs|c#)\s*(.*?)$', dotAll: true),
-      'php': RegExp(r'```php\s*(.*?)$', dotAll: true),
-      'ruby': RegExp(r'```(?:ruby|rb)\s*(.*?)$', dotAll: true),
-      'go': RegExp(r'```(?:go|golang)\s*(.*?)$', dotAll: true),
-      'rust': RegExp(r'```(?:rust|rs)\s*(.*?)$', dotAll: true),
-      'sql': RegExp(r'```sql\s*(.*?)$', dotAll: true),
-      'json': RegExp(r'```json\s*(.*?)$', dotAll: true),
-      'xml': RegExp(r'```xml\s*(.*?)$', dotAll: true),
-      'yaml': RegExp(r'```(?:yaml|yml)\s*(.*?)$', dotAll: true),
-      'bash': RegExp(r'```(?:bash|shell|sh)\s*(.*?)$', dotAll: true),
-      'powershell': RegExp(r'```(?:powershell|ps1)\s*(.*?)$', dotAll: true),
-    };
+    // Partial code patterns for streaming (unclosed blocks) - mirror complete patterns
+    final partialCodePatterns = Map.fromEntries(
+      codePatterns.entries.map((entry) => MapEntry(
+        entry.key,
+        RegExp(entry.value.pattern.replaceAll(r'\?\)\`\`\`', r'\?\)\$'), dotAll: true)
+      ))
+    );
     
     // Extract complete thoughts and remove them from display text
     for (String type in thoughtPatterns.keys) {
@@ -2158,10 +2214,19 @@ $priceChart
   
   String _getFileExtension(String language) {
     const extensions = {
+      // Web Technologies
       'html': '.html',
       'css': '.css',
       'javascript': '.js',
       'typescript': '.ts',
+      'react': '.jsx',
+      'vue': '.vue',
+      'angular': '.ts',
+      'svelte': '.svelte',
+      'scss': '.scss',
+      'less': '.less',
+      
+      // Programming Languages
       'python': '.py',
       'dart': '.dart',
       'java': '.java',
@@ -2174,12 +2239,77 @@ $priceChart
       'ruby': '.rb',
       'go': '.go',
       'rust': '.rs',
+      'scala': '.scala',
+      'perl': '.pl',
+      'lua': '.lua',
+      'r': '.r',
+      'matlab': '.m',
+      
+      // Data & Config
       'sql': '.sql',
       'json': '.json',
       'xml': '.xml',
       'yaml': '.yaml',
+      'toml': '.toml',
+      'ini': '.ini',
+      'csv': '.csv',
+      
+      // Shell & Scripts
       'bash': '.sh',
       'powershell': '.ps1',
+      'batch': '.bat',
+      'fish': '.fish',
+      'zsh': '.zsh',
+      
+      // Markup & Documentation
+      'markdown': '.md',
+      'text': '.txt',
+      'latex': '.tex',
+      'rst': '.rst',
+      'asciidoc': '.adoc',
+      
+      // Functional Languages
+      'haskell': '.hs',
+      'elixir': '.ex',
+      'erlang': '.erl',
+      'clojure': '.clj',
+      'ocaml': '.ml',
+      'fsharp': '.fs',
+      'lisp': '.lisp',
+      'scheme': '.scm',
+      
+      // Modern Languages
+      'julia': '.jl',
+      'nim': '.nim',
+      'zig': '.zig',
+      'crystal': '.cr',
+      'vlang': '.v',
+      
+      // Mobile Development
+      'flutter': '.dart',
+      'reactnative': '.jsx',
+      'xamarin': '.cs',
+      
+      // Game Development
+      'gdscript': '.gd',
+      'hlsl': '.hlsl',
+      'glsl': '.glsl',
+      'unity': '.cs',
+      
+      // Blockchain
+      'solidity': '.sol',
+      'vyper': '.vy',
+      'move': '.move',
+      
+      // Assembly & Low Level
+      'assembly': '.asm',
+      'x86': '.asm',
+      'arm': '.s',
+      
+      // Hardware Description
+      'verilog': '.v',
+      'vhdl': '.vhd',
+      'systemverilog': '.sv',
     };
     return extensions[language] ?? '.txt';
   }
@@ -3208,37 +3338,39 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
                       ),
                     ),
                   ),
-                  // Copy button
+                  // Copy button with FontAwesome icon
                   GestureDetector(
                     onTap: () => _copyCode(code.code),
                     child: Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE8E8E8),
-                        borderRadius: BorderRadius.circular(6),
+                        color: const Color(0xFF2D2D2D),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF404040), width: 1),
                       ),
-                      child: const Icon(
-                        Icons.copy,
-                        size: 14,
-                        color: Color(0xFF666666),
+                      child: const FaIcon(
+                        FontAwesomeIcons.copy,
+                        size: 12,
+                        color: Color(0xFFE6E6E6),
                       ),
                     ),
                   ),
                   if (isHtml) ...[
                     const SizedBox(width: 8),
-                    // Preview button for HTML
+                    // Preview button for HTML with FontAwesome icon
                     GestureDetector(
                       onTap: () => _previewHtml(code.code),
                       child: Container(
-                        padding: const EdgeInsets.all(6),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE8E8E8),
-                          borderRadius: BorderRadius.circular(6),
+                          color: const Color(0xFF2D2D2D),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF404040), width: 1),
                         ),
-                        child: const Icon(
-                          Icons.visibility,
-                          size: 14,
-                          color: Color(0xFF666666),
+                        child: const FaIcon(
+                          FontAwesomeIcons.eye,
+                          size: 12,
+                          color: Color(0xFFE6E6E6),
                         ),
                       ),
                     ),
@@ -3260,14 +3392,24 @@ class _MessageBubbleState extends State<_MessageBubble> with TickerProviderState
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
               ),
-              child: HighlightView(
-                code.code,
-                language: code.language,
-                theme: githubTheme,
-                padding: EdgeInsets.zero,
-                textStyle: const TextStyle(
-                  fontSize: 13,
-                  fontFamily: 'Courier',
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1a1a1a), // Dark terminal background
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: HighlightView(
+                  code.code,
+                  language: code.language,
+                  theme: githubTheme,
+                  padding: EdgeInsets.zero,
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontFamily: 'JetBrains Mono', // Better monospace font
+                    height: 1.4,
+                    color: Color(0xFFE6E6E6), // Light text on dark background
+                  ),
                 ),
               ),
             ),

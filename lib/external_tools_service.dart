@@ -73,21 +73,8 @@ class ExternalToolsService extends ChangeNotifier {
 
     // Image collage tool removed - not needed for core functionality
 
-    // Enhanced PlantUML diagram generation - create professional high-quality diagrams using PlantUML
-    _tools['plantuml_chart'] = ExternalTool(
-      name: 'plantuml_chart',
-      description: 'Generates professional high-quality diagrams using PlantUML with robust syntax support. Supports UML diagrams, flowcharts, sequence diagrams, class diagrams, use case diagrams, component diagrams, deployment diagrams, activity diagrams, state diagrams, and more. Auto-enhances diagram structure and provides multiple fallback services.',
-      parameters: {
-        'diagram': {'type': 'string', 'description': 'PlantUML diagram code (will be enhanced automatically)', 'required': true},
-        'diagram_type': {'type': 'string', 'description': 'Type of diagram (sequence, class, usecase, activity, component, deployment, state, object, timing, mindmap, wbs, gantt, salt)', 'default': 'sequence'},
-        'format': {'type': 'string', 'description': 'Image format (svg, png)', 'default': 'png'},
-        'quality': {'type': 'string', 'description': 'Image quality (low, medium, high, ultra)', 'default': 'ultra'},
-        'resolution': {'type': 'string', 'description': 'Image resolution (720p, 1080p, 1440p, 4k)', 'default': '1080p'},
-        'theme': {'type': 'string', 'description': 'PlantUML theme (default, cerulean, cyborg, journal, lumen, sketchy, spacelab, united)', 'default': 'default'},
-        'auto_enhance': {'type': 'boolean', 'description': 'Automatically enhance diagram structure and styling', 'default': true},
-      },
-      execute: _generatePlantUMLChart,
-    );
+    // REMOVED: PlantUML diagram generation tool
+    // _tools['plantuml_chart'] = ...
 
     // Crypto Market Data - Real-time cryptocurrency information
     _tools['crypto_market_data'] = ExternalTool(
