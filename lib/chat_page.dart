@@ -33,12 +33,14 @@ class ChatPage extends StatefulWidget {
   final void Function(Message botMessage) onBookmark;
   final String selectedModel;
   final VoidCallback? onChatHistoryChanged; // Callback when chat history changes
+  final bool isTemporaryChatMode; // Whether temporary chat mode is enabled
   
   const ChatPage({
     super.key, 
     required this.onBookmark, 
     required this.selectedModel,
     this.onChatHistoryChanged,
+    this.isTemporaryChatMode = false, // Default to false
   });
 
   @override
@@ -119,6 +121,18 @@ class ChatPageState extends State<ChatPage> {
   
       Future<void> _loadConversationMemory() async {
     try {
+      // Skip loading from Supabase if in temporary chat mode
+      if (widget.isTemporaryChatMode) {
+        debugPrint('Temporary chat mode: Starting fresh without loading from Supabase');
+        setState(() {
+          _currentConversationId = null;
+          _conversationMemory = [];
+          _messages.clear();
+          _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
+        });
+        return;
+      }
+      
       // Load the latest conversation from Supabase
       final latestConversation = await SupabaseChatService.loadLatestConversation();
       
@@ -148,6 +162,12 @@ class ChatPageState extends State<ChatPage> {
     Future<void> _saveChatHistory() async {
     try {
       if (_messages.isEmpty) return;
+      
+      // Skip saving if in temporary chat mode
+      if (widget.isTemporaryChatMode) {
+        debugPrint('Temporary chat mode: Not saving chat history to Supabase');
+        return;
+      }
       
       // Generate title for new conversations
       String title = 'New Chat';

@@ -886,6 +886,26 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                       setState(() {
                         _isTemporaryChatMode = !_isTemporaryChatMode;
                       });
+                      
+                      // Clear current chat and reload based on new mode
+                      _chatPageKey.currentState?.startNewChat();
+                      
+                      // Show feedback to user
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            _isTemporaryChatMode 
+                              ? '🎭 Temporary chat mode enabled - conversations won\'t be saved'
+                              : '💾 Normal chat mode enabled - conversations will be saved',
+                            style: const TextStyle(
+                              color: Color(0xFF000000),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          backgroundColor: const Color(0xFFE0DED9),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
                     },
                     borderRadius: BorderRadius.circular(21),
                     child: FaIcon(
@@ -937,6 +957,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
           onBookmark: _bookmarkMessage, 
           selectedModel: _selectedModel,
           onChatHistoryChanged: _refreshChatHistory, // Add callback
+          isTemporaryChatMode: _isTemporaryChatMode, // Pass temporary chat mode state
         ),
       ),
     );
