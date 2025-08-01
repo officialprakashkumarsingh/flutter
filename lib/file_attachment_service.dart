@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as pathLib;
 import 'apk_extraction_service.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 class FileAttachment {
   final String id;
@@ -151,9 +152,13 @@ class FileAttachmentService {
         }
       }
 
-      // PDF placeholder for now
+      // Extract text from PDF files (handles very large PDFs efficiently)
       if (isPdf) {
-        textContent = 'PDF file - ${fileName} (${(fileSize / 1024).toStringAsFixed(1)}KB)';
+        try {
+          textContent = await _extractPdfText(bytes);
+        } catch (e) {
+          textContent = 'Error reading PDF: $e';
+        }
       }
 
       return FileAttachment(
@@ -229,6 +234,26 @@ class FileAttachmentService {
     }
     
     return extractedFiles;
+  }
+
+  /// Extracts text from a PDF using Syncfusion's PdfTextExtractor. For very
+  /// large files (>1000 pages) we limit the total extracted characters to
+  /// ~40 000 to keep the prompt size manageable.
+  static Future<String> _extractPdfText(Uint8List pdfBytes) async {
+    final PdfDocument document = PdfDocument(inputBytes: pdfBytes);
+    final PdfTextExtractor extractor = PdfTextExtractor(document);
+
+    // Extract text for all pages.
+    String rawText = extractor.extractText();
+    document.dispose();
+
+    // Truncate extremely long content – we keep roughly 40k characters (≈8K tokens)
+    const int maxChars = 40000;
+    if (rawText.length > maxChars) {
+      rawText = rawText.substring(0, maxChars) + '\n\n[TRUNCATED]';
+    }
+
+    return rawText;
   }
 
   static String getFileTypeDescription(FileAttachment file) {
