@@ -62,6 +62,12 @@ class CharacterService extends ChangeNotifier {
         _characters.clear();
         _characters.addAll(charactersAfterCreation);
         print('✅ Created and loaded ${charactersAfterCreation.length} total characters (${charactersAfterCreation.where((c) => c.isBuiltIn).length} built-in)');
+
+        // Safety net: still empty? fall back to local built-ins so UI never blanks
+        if (_characters.isEmpty) {
+          print('⚠️ Still no characters after DB creation – falling back to local defaults');
+          await _createFallbackCharacters();
+        }
       } else {
         _characters.clear();
         _characters.addAll(charactersFromDb);

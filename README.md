@@ -159,6 +159,33 @@ GRANT SELECT ON public.profiles TO anon;
 GRANT ALL ON public.characters TO authenticated;
 GRANT ALL ON public.chat_conversations TO authenticated;
 
+### 🧹 Maintenance / de-duplication script
+
+If you ever encounter duplicate rows (same `name` for the same user) in the
+`characters` table, run the SQL block below. It will keep the **most recently
+created** character per (`user_id`,`name`) pair, delete older duplicates, and
+then add a protective unique index so the problem cannot happen again.
+
+```sql
+-- 1️⃣ Delete older duplicates, keep the newest row per (user_id,name)
+WITH ranked AS (
+  SELECT
+    id,
+    ROW_NUMBER() OVER (PARTITION BY user_id, LOWER(name) ORDER BY created_at DESC) AS rn
+  FROM public.characters
+)
+DELETE FROM public.characters
+WHERE id IN (SELECT id FROM ranked WHERE rn > 1);
+
+-- 2️⃣ Enforce uniqueness going forward
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_characters_user_name
+    ON public.characters (user_id, LOWER(name));
+```
+
+Run the snippet once (e.g. in Supabase SQL editor). After that, inserting a
+second character with the same name for the same user will raise a constraint
+error, ensuring the Characters page never shows accidental duplicates.
+
 -- Note: Built-in characters will be created automatically by the app when users first visit the Characters page
 -- This ensures better error handling and doesn't interfere with user registration
 ```
@@ -277,79 +304,4 @@ User Input → Admin Settings → Cloudflare Workers → AI APIs → Response �
 - `custom_tag` (Text, Optional)
 - `background_color` (Integer, Default: 4294967295)
 - `is_built_in` (Boolean, Default: False)
-- `is_favorite` (Boolean, Default: False)
-- `created_at` (Timestamp)
-- `updated_at` (Timestamp)
-
-### Chat Conversations Table
-- `id` (UUID, Primary Key)
-- `user_id` (UUID, References auth.users)
-- `title` (Text, Default: 'New Chat')
-- `messages` (JSONB Array)
-- `conversation_memory` (JSONB Object)
-- `is_pinned` (Boolean, Default: False)
-- `pinned_at` (Timestamp, Optional)
-- `created_at` (Timestamp)
-- `updated_at` (Timestamp)
-
-## 🔐 Security
-
-- **Row Level Security (RLS)**: Enabled on all tables
-- **User Isolation**: Users can only access their own data
-- **Secure Authentication**: Supabase handles all auth security
-- **Admin Session Management**: 24-hour session expiry for admin access
-
-## 📝 Usage
-
-### For Users
-1. **Sign Up**: Create account with email and password
-2. **Verify Email**: Check email for verification link
-3. **Start Chatting**: Begin conversations with AI
-4. **Attach Files**: Upload documents, images, and more
-5. **Chat History**: All conversations automatically saved to cloud
-
-### For Admins
-1. **Access Admin Panel**: Use admin password to access controls
-2. **Configure APIs**: Set up different AI models and providers
-3. **Test Connections**: Verify API settings before applying
-4. **Monitor Usage**: Track which models are being used
-
-## 🛠️ Troubleshooting
-
-### Common Issues
-
-1. **"must be owner of table users" Error**
-   - This is expected! We don't modify the auth.users table directly
-   - Follow the Step 1 & 2 commands above instead
-
-2. **Profiles not creating automatically**
-   - Verify triggers are created with the commands above
-   - Check if RLS policies are properly set
-
-3. **Permission denied errors**
-   - Make sure you're running commands as the database owner
-   - Check that all GRANT statements executed successfully
-
-4. **Chat history not saving**
-   - Verify chat_conversations table exists
-   - Check RLS policies are properly configured
-   - Ensure user is authenticated before saving
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📞 Support
-
-For issues or questions:
-1. Check the GitHub issues
-2. Create a new issue with detailed description
-3. Include screenshots if applicable
-
----
-
-**Built with ❤️ using Flutter & Supabase**
+- `
