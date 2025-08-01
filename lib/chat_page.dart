@@ -175,6 +175,8 @@ class ChatPageState extends State<ChatPage> {
         title = SupabaseChatService.generateConversationTitle(_messages);
       }
       
+      final isNewConversation = _currentConversationId == null;
+      
       // Save to Supabase
       final conversationId = await SupabaseChatService.saveConversation(
         messages: _messages,
@@ -191,8 +193,11 @@ class ChatPageState extends State<ChatPage> {
       
       debugPrint('Chat history saved to Supabase: ${_messages.length} messages');
       
-      // Notify parent that chat history has changed
-      widget.onChatHistoryChanged?.call();
+      // Only notify parent of new conversations, not every message update
+      if (isNewConversation && conversationId != null) {
+        debugPrint('New conversation created, refreshing chat history list');
+        widget.onChatHistoryChanged?.call();
+      }
       
     } catch (e) {
       debugPrint('Error saving chat history: $e');

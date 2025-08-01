@@ -71,6 +71,9 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   // State for temporary chat mode
   bool _isTemporaryChatMode = false;
 
+  // State for chat history loading
+  bool _isLoadingChatHistory = false;
+
   late AnimationController _fabAnimationController;
   late Animation<double> _fabAnimation;
 
@@ -84,7 +87,6 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _fetchModels();
-    _loadChatHistoryFromSupabase(); // Load chat history from Supabase
     
     // Listen for auth state changes
     _authStateStream = SupabaseAuthService.authStateChanges;
@@ -99,6 +101,11 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         });
       }
     });
+    
+    // Load chat history only if user is already signed in
+    if (SupabaseAuthService.isSignedIn) {
+      _loadChatHistoryFromSupabase();
+    }
     
     // Set up external tools callback for model switching
     // REMOVED: External tools service model switch callback
@@ -137,14 +144,32 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
 
   // Load chat history from Supabase
   Future<void> _loadChatHistoryFromSupabase() async {
+    // Prevent multiple simultaneous loads
+    if (_isLoadingChatHistory) {
+      debugPrint('Chat history already loading, skipping...');
+      return;
+    }
+    
+    _isLoadingChatHistory = true;
+    
     try {
       final conversations = await SupabaseChatService.getUserConversations();
       
       if (conversations.isNotEmpty) {
         final List<ChatSession> loadedHistory = [];
+        final Set<String> seenIds = {}; // Track seen conversation IDs
         
         for (final conversation in conversations) {
-          final fullConversation = await SupabaseChatService.loadConversation(conversation['id']);
+          final conversationId = conversation['id'] as String;
+          
+          // Skip if we've already processed this conversation ID
+          if (seenIds.contains(conversationId)) {
+            debugPrint('Skipping duplicate conversation ID: $conversationId');
+            continue;
+          }
+          seenIds.add(conversationId);
+          
+          final fullConversation = await SupabaseChatService.loadConversation(conversationId);
           if (fullConversation != null) {
             final session = ChatSession(
               id: fullConversation['id'],
@@ -162,12 +187,13 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
           _chatHistory.addAll(loadedHistory);
         });
         
-        debugPrint('Loaded ${_chatHistory.length} chat sessions from Supabase');
+        debugPrint('Loaded ${_chatHistory.length} unique chat sessions from Supabase');
       } else {
         // No conversations found, clear the list
         setState(() {
           _chatHistory.clear();
         });
+        debugPrint('No conversations found, cleared chat history');
       }
     } catch (e) {
       debugPrint('Error loading chat history from Supabase: $e');
@@ -175,6 +201,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
       setState(() {
         _chatHistory.clear();
       });
+    } finally {
+      _isLoadingChatHistory = false;
     }
   }
 
@@ -345,18 +373,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
             ? lastUserMessage.text
             : '${lastUserMessage.text.substring(0, 20)}...';
         
-        final session = ChatSession(
-          title: title,
-          messages: List.from(currentMessages),
-          createdAt: DateTime.now(),
-        );
-        
-        // Save to local history first
-        setState(() {
-          _chatHistory.insert(0, session);
-        });
-        
-        // Also save to Supabase asynchronously
+        // Save to Supabase only (no local save to avoid duplicates)
         _saveChatToSupabase(currentMessages, title);
       }
     }
@@ -380,7 +397,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
       
       if (conversationId != null) {
         debugPrint('Chat saved to Supabase with ID: $conversationId');
-        // Refresh chat history to sync with Supabase
+        // Refresh chat history to show the new conversation
         await _refreshChatHistory();
       }
     } catch (e) {
