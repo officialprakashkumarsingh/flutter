@@ -535,11 +535,11 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         
         _showSnackBar(newPinStatus ? '📌 Chat pinned' : '📌 Chat unpinned');
       } else {
-        _showSnackBar('❌ Failed to pin chat', isError: true);
+        showRoundedSnackBar(context, '❌ Failed to pin chat', isError: true);
       }
     } catch (e) {
       debugPrint('❌ Error pinning chat: $e');
-      _showSnackBar('❌ Failed to pin chat', isError: true);
+      showRoundedSnackBar(context, '❌ Failed to pin chat', isError: true);
     }
   }
 

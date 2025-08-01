@@ -10,7 +10,8 @@ class Character {
   final bool isBuiltIn;
   final DateTime createdAt;
   final String? customTag; // New property for custom tags
-  final int? backgroundColor; // New property for background color (ARGB int value)
+  final int backgroundColor; // New property for background color (ARGB int value)
+  final bool isFavorite; // New property for favorite status
 
   Character({
     required this.id,
@@ -21,7 +22,8 @@ class Character {
     required this.isBuiltIn,
     required this.createdAt,
     this.customTag,
-    this.backgroundColor,
+    this.backgroundColor = 4294967295,
+    this.isFavorite = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -35,6 +37,7 @@ class Character {
       'createdAt': createdAt.toIso8601String(),
       'customTag': customTag,
       'backgroundColor': backgroundColor,
+      'isFavorite': isFavorite,
     };
   }
 
@@ -48,7 +51,8 @@ class Character {
       isBuiltIn: json['isBuiltIn'] ?? false,
       createdAt: DateTime.parse(json['createdAt']),
       customTag: json['customTag'],
-      backgroundColor: json['backgroundColor'],
+      backgroundColor: json['backgroundColor'] ?? 4294967295,
+      isFavorite: json['isFavorite'] ?? false,
     );
   }
 
@@ -62,6 +66,7 @@ class Character {
     DateTime? createdAt,
     String? customTag,
     int? backgroundColor,
+    bool? isFavorite,
   }) {
     return Character(
       id: id ?? this.id,
@@ -73,6 +78,7 @@ class Character {
       createdAt: createdAt ?? this.createdAt,
       customTag: customTag ?? this.customTag,
       backgroundColor: backgroundColor ?? this.backgroundColor,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 }
@@ -85,10 +91,10 @@ class CharacterChat {
 
   CharacterChat({
     required this.characterId,
-    required this.characterName,
-    required this.messages,
-    required this.lastUpdated,
-  });
+    this.characterName = '',
+    this.messages = const [],
+    DateTime? lastUpdated,
+  }) : lastUpdated = lastUpdated ?? DateTime.now();
 
   Map<String, dynamic> toJson() {
     return {

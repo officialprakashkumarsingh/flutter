@@ -200,4 +200,23 @@ class CharacterService extends ChangeNotifier {
     
     return List.generate(count, (index) => colors[index % colors.length]);
   }
+
+  String generateId() {
+    return 'char_${DateTime.now().millisecondsSinceEpoch}_${Random().nextInt(1000)}';
+  }
+
+  void saveCharacterChat(String characterId, String characterName, List<Message> messages) {
+    _characterChats[characterId] = CharacterChat(
+      characterId: characterId,
+      characterName: characterName,
+      messages: messages,
+      lastUpdated: DateTime.now(),
+    );
+    notifyListeners();
+  }
+
+  void deleteCharacterChat(String characterId) {
+    _characterChats.remove(characterId);
+    notifyListeners();
+  }
 }

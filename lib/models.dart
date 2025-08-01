@@ -1,6 +1,7 @@
 /* ----------------------------------------------------------
    MODELS
 ---------------------------------------------------------- */
+import 'dart:typed_data';
 import 'file_attachment_service.dart';
 
 enum Sender { user, bot }
@@ -448,6 +449,48 @@ class Message {
     };
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'text': text,
+      'sender': sender.toString(),
+      'timestamp': timestamp.toIso8601String(),
+      'isStreaming': isStreaming,
+      'attachments': attachments.map((attachment) => {
+        'name': attachment.name,
+        'size': attachment.size,
+        'filePath': attachment.filePath,
+        'isApk': attachment.isApk ?? false,
+      }).toList(),
+    };
+  }
+
+  factory Message.fromJson(Map<String, dynamic> json) {
+    return Message(
+      id: json['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      text: json['text'] ?? '',
+      sender: json['sender'] == 'Sender.user' ? Sender.user : Sender.bot,
+      timestamp: DateTime.parse(json['timestamp']),
+      isStreaming: json['isStreaming'] ?? false,
+      attachments: (json['attachments'] as List<dynamic>? ?? []).map((attachmentData) => 
+        FileAttachment(
+          id: attachmentData['name'] ?? '',
+          name: attachmentData['name'] ?? '',
+          filePath: attachmentData['filePath'] ?? '',
+          mimeType: 'application/octet-stream',
+          size: attachmentData['size'] ?? 0,
+          uploadedAt: DateTime.now(),
+          bytes: Uint8List(0),
+          isImage: false,
+          isZip: false,
+          isText: false,
+          isCode: false,
+          isPdf: false,
+          isApk: attachmentData['isApk'] ?? false,
+        )
+      ).toList(),
+    );
+  }
 
 }
 

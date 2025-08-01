@@ -194,7 +194,7 @@ class _CharacterEditorState extends State<CharacterEditor> {
         customTag: _customTagController.text.trim().isEmpty 
           ? null 
           : _customTagController.text.trim(),
-        backgroundColor: null,
+        backgroundColor: widget.character?.backgroundColor ?? 4294967295,
       );
 
       if (widget.character != null) {
