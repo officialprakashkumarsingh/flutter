@@ -198,9 +198,9 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
           
           debugPrint('🔍   Processing conversation ID: $conversationId, Title: ${conversation['title']}');
           
-          // Skip if we've already processed this conversation ID
+          // Skip if we've already processed this conversation ID in this batch
           if (seenIds.contains(conversationId)) {
-            debugPrint('⚠️   Skipping duplicate conversation ID: $conversationId');
+            debugPrint('⚠️   Skipping duplicate conversation ID in batch: $conversationId');
             continue;
           }
           seenIds.add(conversationId);
@@ -221,7 +221,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
           }
         }
         
-        debugPrint('📝 Loaded ${loadedHistory.length} unique sessions, clearing existing ${_chatHistory.length} sessions');
+        debugPrint('📝 Loaded ${loadedHistory.length} unique sessions, replacing existing ${_chatHistory.length} sessions');
         
         setState(() {
           _chatHistory.clear(); // Clear existing to prevent duplicates

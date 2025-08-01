@@ -21,6 +21,7 @@ class SupabaseChatService {
 
       // Convert messages to JSON
       final messagesJson = messages.map((message) => {
+        'id': message.id, // Include message ID
         'text': message.text,
         'sender': message.sender.toString(),
         'timestamp': message.timestamp.toIso8601String(),
@@ -116,7 +117,7 @@ class SupabaseChatService {
         }).toList();
         
         return Message(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          id: messageData['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(), // Preserve original ID if available
           text: messageData['text'] ?? '',
           sender: (messageData['sender'] as String) == 'Sender.user' ? Sender.user : Sender.bot,
           timestamp: DateTime.parse(messageData['timestamp'] ?? DateTime.now().toIso8601String()),

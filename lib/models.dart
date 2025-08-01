@@ -465,6 +465,16 @@ class ChatSession {
     this.createdAt,
     this.updatedAt,
   });
+  
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChatSession &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 // NEW USER MODEL
