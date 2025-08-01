@@ -17,6 +17,8 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _textController;
   late AnimationController _fadeController;
   late AnimationController _playController;
+  late AnimationController _pickupController;
+  late AnimationController _placeController;
   
   late Animation<double> _robotFloatAnimation;
   late Animation<double> _robotRotateAnimation;
@@ -25,6 +27,11 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _textOpacityAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _robotPlayAnimation;
+  late Animation<Offset> _robotPickupAnimation;
+  late Animation<Offset> _textPickupAnimation;
+  late Animation<double> _textPickupScaleAnimation;
+  late Animation<Offset> _robotPlaceAnimation;
+  late Animation<Offset> _textPlaceAnimation;
 
   @override
   void initState() {
@@ -42,9 +49,21 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
     
-    // Robot play animation (interacting with text)
+    // Robot play animation (circling around text)
     _playController = AnimationController(
-      duration: const Duration(milliseconds: 2500),
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+    
+    // Robot pickup animation
+    _pickupController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    
+    // Robot place animation (moving to center)
+    _placeController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
     
@@ -90,6 +109,48 @@ class _SplashScreenState extends State<SplashScreen>
       curve: Curves.easeInOut,
     ));
     
+    // Robot pickup animations
+    _robotPickupAnimation = Tween<Offset>(
+      begin: const Offset(0, 0),
+      end: const Offset(0, -30), // Move robot closer to text
+    ).animate(CurvedAnimation(
+      parent: _pickupController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _textPickupAnimation = Tween<Offset>(
+      begin: const Offset(0, 0),
+      end: const Offset(0, -20), // Lift text up
+    ).animate(CurvedAnimation(
+      parent: _pickupController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _textPickupScaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.8, // Slightly shrink text when picked up
+    ).animate(CurvedAnimation(
+      parent: _pickupController,
+      curve: Curves.easeInOut,
+    ));
+    
+    // Robot and text place animations (moving to center)
+    _robotPlaceAnimation = Tween<Offset>(
+      begin: const Offset(0, -30),
+      end: const Offset(-50, 20), // Robot moves to left side of center
+    ).animate(CurvedAnimation(
+      parent: _placeController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _textPlaceAnimation = Tween<Offset>(
+      begin: const Offset(0, -20),
+      end: const Offset(0, 0), // Text goes to perfect center
+    ).animate(CurvedAnimation(
+      parent: _placeController,
+      curve: Curves.easeInOut,
+    ));
+    
     // Text scale animation
     _textScaleAnimation = Tween<double>(
       begin: 0.0,
@@ -132,8 +193,16 @@ class _SplashScreenState extends State<SplashScreen>
     await Future.delayed(const Duration(milliseconds: 800));
     _playController.forward();
     
-    // Wait for play animation, then fade out
-    await Future.delayed(const Duration(seconds: 2));
+    // Wait for robot to finish playing, then pickup sequence
+    await Future.delayed(const Duration(milliseconds: 2000));
+    _pickupController.forward();
+    
+    // Wait for pickup, then place in center
+    await Future.delayed(const Duration(milliseconds: 1000));
+    _placeController.forward();
+    
+    // Wait for placement, then fade out
+    await Future.delayed(const Duration(milliseconds: 1500));
     _fadeController.forward();
     
     // Complete splash after fade
@@ -146,6 +215,8 @@ class _SplashScreenState extends State<SplashScreen>
     _robotController.dispose();
     _textController.dispose();
     _playController.dispose();
+    _pickupController.dispose();
+    _placeController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
@@ -155,7 +226,14 @@ class _SplashScreenState extends State<SplashScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF4F3F0), // App's background color
       body: AnimatedBuilder(
-        animation: Listenable.merge([_robotController, _textController, _playController, _fadeController]),
+        animation: Listenable.merge([
+          _robotController, 
+          _textController, 
+          _playController, 
+          _pickupController,
+          _placeController,
+          _fadeController
+        ]),
         builder: (context, child) {
           return Opacity(
             opacity: _fadeAnimation.value,
@@ -163,25 +241,11 @@ class _SplashScreenState extends State<SplashScreen>
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // AhamAI Text (centered)
-                  Transform.scale(
-                    scale: _textScaleAnimation.value,
-                    child: Opacity(
-                      opacity: _textOpacityAnimation.value,
-                      child: Text(
-                        'AhamAI',
-                        style: GoogleFonts.spaceMono(
-                          fontSize: 42,
-                          color: const Color(0xFF000000),
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2.0,
-                        ),
-                      ),
-                    ),
-                  ),
+                  // AhamAI Text (moves through the sequence)
+                  _buildAnimatedText(),
                   
-                  // Robot playing around the text
-                  _buildPlayingRobot(),
+                  // Robot (plays around, picks up, and places text)
+                  _buildAnimatedRobot(),
                 ],
               ),
             ),
@@ -191,15 +255,59 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
   
-  Widget _buildPlayingRobot() {
-    // Calculate robot position around the text (circular motion)
-    final radius = 80.0;
-    final angle = _robotPlayAnimation.value;
-    final x = radius * math.cos(angle);
-    final y = radius * math.sin(angle);
+  Widget _buildAnimatedText() {
+    // Combine all text transformations
+    Offset totalOffset = Offset(0, 0);
+    double totalScale = _textScaleAnimation.value;
+    
+    // Add pickup offset
+    totalOffset = totalOffset + _textPickupAnimation.value;
+    totalScale *= _textPickupScaleAnimation.value;
+    
+    // Add place offset
+    totalOffset = totalOffset + _textPlaceAnimation.value;
     
     return Transform.translate(
-      offset: Offset(x, y),
+      offset: totalOffset,
+      child: Transform.scale(
+        scale: totalScale,
+        child: Opacity(
+          opacity: _textOpacityAnimation.value,
+          child: Text(
+            'AhamAI',
+            style: GoogleFonts.spaceMono(
+              fontSize: 42,
+              color: const Color(0xFF000000),
+              fontWeight: FontWeight.bold,
+              letterSpacing: 2.0,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildAnimatedRobot() {
+    // Calculate robot position based on current animation phase
+    Offset robotOffset = Offset(0, 0);
+    
+    // Phase 1: Playing around text (circular motion)
+    if (_playController.value > 0 && _pickupController.value == 0) {
+      final radius = 80.0;
+      final angle = _robotPlayAnimation.value;
+      final x = radius * math.cos(angle);
+      final y = radius * math.sin(angle);
+      robotOffset = Offset(x, y);
+    }
+    
+    // Phase 2: Pickup motion
+    robotOffset = robotOffset + _robotPickupAnimation.value;
+    
+    // Phase 3: Place motion
+    robotOffset = robotOffset + _robotPlaceAnimation.value;
+    
+    return Transform.translate(
+      offset: robotOffset,
       child: SlideTransition(
         position: _robotSlideAnimation,
         child: Transform.translate(
