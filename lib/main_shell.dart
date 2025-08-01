@@ -12,6 +12,7 @@ import 'saved_page.dart';
 import 'models.dart';
 import 'supabase_auth_service.dart';
 import 'supabase_chat_service.dart';
+import 'supabase_character_service.dart';
 // REMOVED: External tools service import
 
 // Custom rounded SnackBar utility
@@ -221,9 +222,11 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
               messages: List<Message>.from(fullConversation['messages']),
               createdAt: fullConversation['createdAt'],
               updatedAt: fullConversation['updatedAt'],
+              isPinned: fullConversation['isPinned'] ?? false,
+              pinnedAt: fullConversation['pinnedAt'],
             );
             loadedHistory.add(session);
-            debugPrint('✅   Added session: ${session.title} with ${session.messages.length} messages');
+            debugPrint('✅   Added session: ${session.title} with ${session.messages.length} messages (pinned: ${session.isPinned})');
           } else {
             debugPrint('❌   Failed to load full conversation for ID: $conversationId');
           }
@@ -499,13 +502,45 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     }
   }
 
-  void _pinChat(ChatSession session) {
-    // Move to top of list
-    setState(() {
-      _chatHistory.remove(session);
-      _chatHistory.insert(0, session);
-    });
-    _showSnackBar('📌 Chat pinned to top');
+  void _pinChat(ChatSession session) async {
+    try {
+      // Toggle pin status
+      final newPinStatus = !session.isPinned;
+      
+      // Update in Supabase
+      final success = await SupabaseChatService.pinConversation(session.id, newPinStatus);
+      
+      if (success) {
+        // Update local state
+        final updatedSession = session.copyWith(
+          isPinned: newPinStatus,
+          pinnedAt: newPinStatus ? DateTime.now() : null,
+        );
+        
+        setState(() {
+          final index = _chatHistory.indexWhere((chat) => chat.id == session.id);
+          if (index != -1) {
+            _chatHistory[index] = updatedSession;
+            // Re-sort to put pinned chats at top
+            _chatHistory.sort((a, b) {
+              if (a.isPinned && !b.isPinned) return -1;
+              if (!a.isPinned && b.isPinned) return 1;
+              if (a.isPinned && b.isPinned) {
+                return b.pinnedAt!.compareTo(a.pinnedAt!);
+              }
+              return b.updatedAt.compareTo(a.updatedAt);
+            });
+          }
+        });
+        
+        _showSnackBar(newPinStatus ? '📌 Chat pinned' : '📌 Chat unpinned');
+      } else {
+        _showSnackBar('❌ Failed to pin chat', isError: true);
+      }
+    } catch (e) {
+      debugPrint('❌ Error pinning chat: $e');
+      _showSnackBar('❌ Failed to pin chat', isError: true);
+    }
   }
 
   void _showChatOptions(ChatSession session) {
@@ -530,8 +565,11 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.push_pin_outlined, color: Color(0xFF000000)),
-                title: const Text('Pin Chat'),
+                leading: Icon(
+                  session.isPinned ? Icons.push_pin : Icons.push_pin_outlined, 
+                  color: session.isPinned ? const Color(0xFF4CAF50) : const Color(0xFF000000)
+                ),
+                title: Text(session.isPinned ? 'Unpin Chat' : 'Pin Chat'),
                 onTap: () {
                   Navigator.pop(context);
                   _pinChat(session);
@@ -883,6 +921,16 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                                 padding: const EdgeInsets.all(16),
                                 child: Row(
                                   children: [
+                                    // Pin icon
+                                    if (session.isPinned)
+                                      Container(
+                                        margin: const EdgeInsets.only(right: 8),
+                                        child: Icon(
+                                          Icons.push_pin,
+                                          color: const Color(0xFF4CAF50),
+                                          size: 16,
+                                        ),
+                                      ),
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,

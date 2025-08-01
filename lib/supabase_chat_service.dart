@@ -12,6 +12,8 @@ class SupabaseChatService {
     required List<String> conversationMemory,
     String? conversationId,
     String title = 'New Chat',
+    bool isPinned = false,
+    DateTime? pinnedAt,
   }) async {
     try {
       final userId = _supabase.auth.currentUser?.id;
@@ -42,6 +44,8 @@ class SupabaseChatService {
               'messages': messagesJson,
               'conversation_memory': conversationMemory,
               'title': title,
+              'is_pinned': isPinned,
+              'pinned_at': pinnedAt?.toIso8601String(),
               'updated_at': DateTime.now().toIso8601String(),
             })
             .eq('id', conversationId)
@@ -57,6 +61,8 @@ class SupabaseChatService {
               'title': title,
               'messages': messagesJson,
               'conversation_memory': conversationMemory,
+              'is_pinned': isPinned,
+              'pinned_at': pinnedAt?.toIso8601String(),
             })
             .select('id')
             .single();
@@ -137,6 +143,8 @@ class SupabaseChatService {
         'conversationMemory': conversationMemory,
         'createdAt': DateTime.parse(response['created_at']),
         'updatedAt': DateTime.parse(response['updated_at']),
+        'isPinned': response['is_pinned'] ?? false,
+        'pinnedAt': response['pinned_at'] != null ? DateTime.parse(response['pinned_at']) : null,
       };
       
       print('🔍 SupabaseChatService.loadConversation() - Successfully loaded conversation with ${messages.length} messages');
@@ -185,9 +193,11 @@ class SupabaseChatService {
       
       final response = await _supabase
           .from('chat_conversations')
-          .select('id, title, created_at, updated_at')
+          .select('id, title, created_at, updated_at, is_pinned, pinned_at')
           .eq('user_id', userId)
-          .order('updated_at', ascending: false);
+          .order('is_pinned', ascending: false)  // Pinned first
+          .order('pinned_at', ascending: false)  // Then by pin date
+          .order('updated_at', ascending: false); // Then by update date
 
       print('🔍 SupabaseChatService.getUserConversations() - Raw response: ${response.length} conversations');
       for (var i = 0; i < response.length; i++) {
@@ -199,6 +209,8 @@ class SupabaseChatService {
         'title': conversation['title'],
         'createdAt': DateTime.parse(conversation['created_at']),
         'updatedAt': DateTime.parse(conversation['updated_at']),
+        'isPinned': conversation['is_pinned'] ?? false,
+        'pinnedAt': conversation['pinned_at'] != null ? DateTime.parse(conversation['pinned_at']) : null,
       }).toList();
       
       print('🔍 SupabaseChatService.getUserConversations() - Processed result: ${result.length} conversations');
@@ -207,6 +219,31 @@ class SupabaseChatService {
     } catch (e) {
       print('❌ Error getting user conversations: $e');
       return [];
+    }
+  }
+  
+  // Pin or unpin a conversation
+  static Future<bool> pinConversation(String conversationId, bool isPinned) async {
+    try {
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      await _supabase
+          .from('chat_conversations')
+          .update({
+            'is_pinned': isPinned,
+            'pinned_at': isPinned ? DateTime.now().toIso8601String() : null,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', conversationId)
+          .eq('user_id', userId);
+      
+      return true;
+    } catch (e) {
+      print('Error pinning conversation: $e');
+      return false;
     }
   }
   

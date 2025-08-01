@@ -4,6 +4,7 @@ import 'character_models.dart';
 import 'character_service.dart';
 import 'character_editor.dart';
 import 'character_chat_page.dart';
+import 'supabase_character_service.dart';
 
 class CharactersPage extends StatefulWidget {
   final String selectedModel;

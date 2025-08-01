@@ -452,19 +452,69 @@ class Message {
 }
 
 class ChatSession {
-  final String? id; // Supabase conversation ID
+  final String id;
   final String title;
   final List<Message> messages;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isPinned;
+  final DateTime? pinnedAt;
 
   ChatSession({
-    this.id,
-    required this.title, 
+    required this.id,
+    required this.title,
     required this.messages,
-    this.createdAt,
-    this.updatedAt,
+    required this.createdAt,
+    required this.updatedAt,
+    this.isPinned = false,
+    this.pinnedAt,
   });
+
+  ChatSession copyWith({
+    String? id,
+    String? title,
+    List<Message>? messages,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? isPinned,
+    DateTime? pinnedAt,
+  }) {
+    return ChatSession(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      messages: messages ?? this.messages,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      isPinned: isPinned ?? this.isPinned,
+      pinnedAt: pinnedAt ?? this.pinnedAt,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'messages': messages.map((message) => message.toJson()).toList(),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'isPinned': isPinned,
+      'pinnedAt': pinnedAt?.toIso8601String(),
+    };
+  }
+
+  factory ChatSession.fromJson(Map<String, dynamic> json) {
+    return ChatSession(
+      id: json['id'],
+      title: json['title'],
+      messages: (json['messages'] as List)
+          .map((messageJson) => Message.fromJson(messageJson))
+          .toList(),
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+      isPinned: json['isPinned'] ?? false,
+      pinnedAt: json['pinnedAt'] != null ? DateTime.parse(json['pinnedAt']) : null,
+    );
+  }
   
   @override
   bool operator ==(Object other) =>
