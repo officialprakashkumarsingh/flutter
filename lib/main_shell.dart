@@ -100,7 +100,11 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
           _chatHistory.clear();
         });
         _lastChatHistoryLoad = null; // Reset debounce timer
-        debugPrint('User signed out, cleared chat history');
+        
+        // Clear the current active chat to prevent it from being saved as "New Chat"
+        _chatPageKey.currentState?.startNewChat();
+        
+        debugPrint('User signed out, cleared chat history and active chat');
       } else {
         debugPrint('User signed in, checking if refresh needed...');
         // Only load if we haven't loaded recently (debounced)
@@ -112,6 +116,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
           Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted && SupabaseAuthService.isSignedIn) {
               _loadChatHistoryFromSupabase();
+              // Reload conversation memory to get the actual latest conversation
+              _chatPageKey.currentState?.reloadConversationMemory();
             }
           });
         } else {

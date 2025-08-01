@@ -21,6 +21,7 @@ import 'message_bubble.dart';
 import 'input_bar.dart';
 import 'chat_utils.dart';
 import 'supabase_chat_service.dart';
+import 'supabase_auth_service.dart';
 
 
 
@@ -133,6 +134,18 @@ class ChatPageState extends State<ChatPage> {
         return;
       }
       
+      // Check if user is signed in before attempting to load from Supabase
+      if (!SupabaseAuthService.isSignedIn) {
+        debugPrint('User not signed in, starting fresh chat without loading from Supabase');
+        setState(() {
+          _currentConversationId = null;
+          _conversationMemory = [];
+          _messages.clear();
+          _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
+        });
+        return;
+      }
+      
       // Load the latest conversation from Supabase
       final latestConversation = await SupabaseChatService.loadLatestConversation();
       
@@ -153,9 +166,17 @@ class ChatPageState extends State<ChatPage> {
           _messages.clear();
           _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
         });
+        debugPrint('No conversations found, started fresh chat');
       }
     } catch (e) {
       debugPrint('Error loading conversation memory: $e');
+      // On error, start fresh
+      setState(() {
+        _currentConversationId = null;
+        _conversationMemory = [];
+        _messages.clear();
+        _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
+      });
     }
   }
   
@@ -919,8 +940,10 @@ Be conversational and helpful!'''
     });
   }
   
-
-
+  // Public method to reload conversation memory (for auth state changes)
+  void reloadConversationMemory() {
+    _loadConversationMemory();
+  }
 
 
   void _scrollToBottom() {
