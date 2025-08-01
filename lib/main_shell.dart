@@ -66,6 +66,15 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   final List<Message> _bookmarkedMessages = [];
   final List<ChatSession> _chatHistory = [];
 
+  // Search query for chat history
+  String _chatSearchQuery = '';
+
+  List<ChatSession> get _filteredChatHistory {
+    if (_chatSearchQuery.isEmpty) return _chatHistory;
+    final query = _chatSearchQuery.toLowerCase();
+    return _chatHistory.where((chat) => chat.title.toLowerCase().contains(query)).toList();
+  }
+
   // State for model selection
   List<String> _models = [];
   String _selectedModel = 'claude-3-7-sonnet'; 
@@ -735,7 +744,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                             await SupabaseAuthService.signOut();
                           }
                         },
-                        icon: const Icon(Icons.logout, color: Color(0xFFA3A3A3), size: 16),
+                        icon: const FaIcon(FontAwesomeIcons.rightFromBracket, color: Color(0xFFA3A3A3), size: 16),
                       ),
                     ],
                   ),
@@ -871,9 +880,36 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
             
             const SizedBox(height: 12),
             
+            // Chat History Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0DED9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: TextField(
+                  onChanged: (value) => setState(() => _chatSearchQuery = value),
+                  style: const TextStyle(color: Color(0xFF000000), fontSize: 14),
+                  decoration: const InputDecoration(
+                    hintText: 'Search chats...',
+                    hintStyle: TextStyle(color: Color(0xFFA3A3A3), fontSize: 14),
+                    prefixIcon: Icon(Icons.search_rounded, color: Color(0xFFA3A3A3), size: 18),
+                    border: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
             // Chat History List
             Expanded(
-              child: _chatHistory.isEmpty
+              child: _filteredChatHistory.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -896,9 +932,9 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: _chatHistory.length,
+                      itemCount: _filteredChatHistory.length,
                       itemBuilder: (context, index) {
-                        final session = _chatHistory[index];
+                        final session = _filteredChatHistory[index];
                         return Container(
                           margin: const EdgeInsets.only(bottom: 8),
                           child: Material(

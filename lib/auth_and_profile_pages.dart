@@ -214,10 +214,7 @@ class _LoginPageState extends State<LoginPage> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF000000), width: 1.5),
-                        ),
+                        focusedBorder: InputBorder.none,
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Colors.red, width: 1.5),
@@ -282,10 +279,7 @@ class _LoginPageState extends State<LoginPage> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF000000), width: 1.5),
-                        ),
+                        focusedBorder: InputBorder.none,
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Colors.red, width: 1.5),
@@ -559,10 +553,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF000000), width: 1.5),
-                        ),
+                        focusedBorder: InputBorder.none,
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Colors.red, width: 1.5),
@@ -612,10 +603,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF000000), width: 1.5),
-                        ),
+                        focusedBorder: InputBorder.none,
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Colors.red, width: 1.5),
@@ -680,10 +668,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF000000), width: 1.5),
-                        ),
+                        focusedBorder: InputBorder.none,
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Colors.red, width: 1.5),
@@ -748,10 +733,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: Color(0xFF000000), width: 1.5),
-                        ),
+                        focusedBorder: InputBorder.none,
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Colors.red, width: 1.5),
