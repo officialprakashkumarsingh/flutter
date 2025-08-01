@@ -206,16 +206,15 @@ class ChatPageState extends State<ChatPage> {
         return;
       }
       
-      // Generate title for new conversations
+      // Generate title ONLY for new conversations
       String title = 'New Chat';
       if (_currentConversationId == null && _messages.length > 1) {
         title = SupabaseChatService.generateConversationTitle(_messages);
         debugPrint('💬 SAVE: Generated new title for new conversation: "$title"');
       } else if (_currentConversationId != null) {
-        // For existing conversations, generate title from messages if not set properly
-        // This prevents "New Chat" from overwriting existing conversation titles
-        title = SupabaseChatService.generateConversationTitle(_messages);
-        debugPrint('💬 SAVE: Generated title for existing conversation: "$title" (ID: $_currentConversationId)');
+        // For existing conversations, DON'T regenerate title to prevent overwriting
+        // Keep the existing title by not setting a new one
+        debugPrint('💬 SAVE: Preserving existing title for conversation ID: $_currentConversationId');
       } else {
         debugPrint('💬 SAVE: Using default title: "$title"');
       }
@@ -232,7 +231,7 @@ class ChatPageState extends State<ChatPage> {
         messages: _messages,
         conversationMemory: _conversationMemory,
         conversationId: _currentConversationId,
-        title: title,
+        title: _currentConversationId == null ? title : null, // Only set title for new conversations
       );
       
       if (conversationId != null && _currentConversationId == null) {
