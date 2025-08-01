@@ -467,7 +467,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   }
   
   void _loadChat(ChatSession session) {
-    _chatPageKey.currentState?.loadChatSession(session.messages);
+    _chatPageKey.currentState?.loadChatSession(session.messages, conversationId: session.id);
     setState(() {
       _selectedIndex = 0;
     });

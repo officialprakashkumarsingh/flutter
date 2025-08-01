@@ -146,30 +146,18 @@ class ChatPageState extends State<ChatPage> {
         return;
       }
       
-      // Load the latest conversation from Supabase
-      final latestConversation = await SupabaseChatService.loadLatestConversation();
+      // CHANGED: Always start fresh instead of auto-loading latest conversation
+      // This prevents the logout/login issue where user sees the same chat
+      debugPrint('Starting fresh chat - user can manually select from chat history if needed');
+      setState(() {
+        _currentConversationId = null;
+        _conversationMemory = [];
+        _messages.clear();
+        _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
+      });
       
-      if (latestConversation != null) {
-        setState(() {
-          _currentConversationId = latestConversation['id'];
-          _conversationMemory = List<String>.from(latestConversation['conversationMemory']);
-          _messages.clear();
-          _messages.addAll(List<Message>.from(latestConversation['messages']));
-        });
-        
-        debugPrint('Loaded conversation: ${latestConversation['title']} with ${_messages.length} messages');
-      } else {
-        // No existing conversations, start fresh
-        setState(() {
-          _currentConversationId = null;
-          _conversationMemory = [];
-          _messages.clear();
-          _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
-        });
-        debugPrint('No conversations found, started fresh chat');
-      }
     } catch (e) {
-      debugPrint('Error loading conversation memory: $e');
+      debugPrint('Error in conversation memory setup: $e');
       // On error, start fresh
       setState(() {
         _currentConversationId = null;
@@ -241,13 +229,15 @@ class ChatPageState extends State<ChatPage> {
 
   List<Message> getMessages() => _messages;
 
-  void loadChatSession(List<Message> messages) {
+  void loadChatSession(List<Message> messages, {String? conversationId}) {
     setState(() {
       _awaitingReply = false;
       _httpClient?.close();
       _messages.clear();
       _messages.addAll(messages);
+      _currentConversationId = conversationId; // Set the conversation ID so messages save to correct conversation
     });
+    debugPrint('Loaded chat session with ${messages.length} messages, conversation ID: $conversationId');
   }
 
   void _onCharacterChanged() {
