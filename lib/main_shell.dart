@@ -110,21 +110,21 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         debugPrint('✅ AUTH STATE: User signed out cleanup completed');
       } else {
         debugPrint('🔑 AUTH STATE: User signed in, checking if refresh needed...');
-        // Only load if we haven't loaded recently (debounced)
+        // Only load if we haven't loaded recently and chat history is empty
         final now = DateTime.now();
-        if (_lastChatHistoryLoad == null || 
-            now.difference(_lastChatHistoryLoad!).inMilliseconds > 2000) {
-          debugPrint('📥 AUTH STATE: Scheduling delayed chat history refresh after signin');
+        if ((_lastChatHistoryLoad == null || 
+            now.difference(_lastChatHistoryLoad!).inMilliseconds > 5000) &&
+            _chatHistory.isEmpty) {
+          debugPrint('📥 AUTH STATE: Scheduling delayed chat history refresh after signin (chat history is empty)');
           // Add a small delay to ensure auth state is fully settled before loading
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted && SupabaseAuthService.isSignedIn) {
+          Future.delayed(const Duration(milliseconds: 1000), () {
+            if (mounted && SupabaseAuthService.isSignedIn && _chatHistory.isEmpty) {
               debugPrint('⏰ AUTH STATE: Loading chat history after delay...');
               _loadChatHistoryFromSupabase();
-              // Remove reloadConversationMemory - initState already handles conversation setup
             }
           });
         } else {
-          debugPrint('⏰ AUTH STATE: Chat history loaded recently, skipping signin refresh');
+          debugPrint('⏰ AUTH STATE: Chat history loaded recently or already exists (${_chatHistory.length} chats), skipping signin refresh');
         }
       }
     });
@@ -177,12 +177,18 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
       return;
     }
     
-    // Debounce: prevent calls within 1 second of each other
+    // Stronger debounce: prevent calls within 3 seconds of each other
     final now = DateTime.now();
     if (_lastChatHistoryLoad != null && 
-        now.difference(_lastChatHistoryLoad!).inMilliseconds < 1000) {
-      debugPrint('⏰ Chat history loaded recently, skipping debounced call...');
+        now.difference(_lastChatHistoryLoad!).inMilliseconds < 3000) {
+      debugPrint('⏰ Chat history loaded recently (${now.difference(_lastChatHistoryLoad!).inMilliseconds}ms ago), skipping debounced call...');
       return;
+    }
+    
+    // Additional check: if we already have the same number of conversations, skip
+    if (_chatHistory.isNotEmpty) {
+      final currentCount = _chatHistory.length;
+      debugPrint('📊 Current chat history count: $currentCount, checking if reload needed...');
     }
     
     _isLoadingChatHistory = true;

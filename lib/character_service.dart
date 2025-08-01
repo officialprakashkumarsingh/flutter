@@ -10,12 +10,12 @@ class CharacterService extends ChangeNotifier {
   static final CharacterService _instance = CharacterService._internal();
   factory CharacterService() => _instance;
   CharacterService._internal() {
-    _loadCharacters();
+    loadCharacters();
     
     // Listen for auth state changes
     SupabaseAuthService.authStateChanges.listen((authState) {
       if (SupabaseAuthService.isSignedIn) {
-        _loadCharacters();
+        loadCharacters();
       } else {
         _characters.clear();
         _selectedCharacter = null;
@@ -33,7 +33,7 @@ class CharacterService extends ChangeNotifier {
   Character? get selectedCharacter => _selectedCharacter;
   Map<String, CharacterChat> get characterChats => Map.unmodifiable(_characterChats);
 
-  Future<void> _loadCharacters() async {
+  Future<void> loadCharacters() async {
     if (!SupabaseAuthService.isSignedIn) {
       return;
     }

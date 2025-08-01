@@ -36,6 +36,25 @@ class _CharactersPageState extends State<CharactersPage> with TickerProviderStat
     
     // Listen to character service changes
     _characterService.addListener(_onCharactersChanged);
+    
+    // Force load characters when page opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCharacters();
+    });
+  }
+
+  Future<void> _loadCharacters() async {
+    try {
+      // Force the character service to reload from database
+      await _characterService.loadCharacters();
+      final characters = _characterService.characters;
+      debugPrint('🔍 CharactersPage: Loaded ${characters.length} characters from service');
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      debugPrint('❌ CharactersPage: Error loading characters: $e');
+    }
   }
 
   @override

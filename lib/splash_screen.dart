@@ -177,20 +177,14 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // AhamAI Text (appears first, stays in center)
-                    Transform.scale(
-                      scale: _textScaleAnimation.value,
-                      child: Opacity(
-                        opacity: _textOpacityAnimation.value,
-                        child: Text(
-                          'AhamAI',
-                          style: GoogleFonts.spaceMono(
-                            fontSize: 42,
-                            color: const Color(0xFF000000),
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 2.0,
-                          ),
-                        ),
+                    // AhamAI Text (static, no animation)
+                    Text(
+                      'AhamAI',
+                      style: GoogleFonts.spaceMono(
+                        fontSize: 42,
+                        color: const Color(0xFF000000),
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2.0,
                       ),
                     ),
                     
