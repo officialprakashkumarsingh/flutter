@@ -113,7 +113,6 @@ class AdminAPIManager {
         },
         parameters: {
           'temperature': 0.7,
-          'max_tokens': 1000,
           'top_p': 1.0,
           'frequency_penalty': 0.0,
           'presence_penalty': 0.0,
@@ -146,7 +145,7 @@ class AdminAPIManager {
       apiKey: '',
       endpoint: APIProvider.openai.defaultEndpoint,
       headers: {'Content-Type': 'application/json'},
-      parameters: {'temperature': 0.7, 'max_tokens': 1000},
+      parameters: {'temperature': 0.7},
     );
   }
 
@@ -215,7 +214,6 @@ class AdminAPIManager {
       case AIModel.gpt35:
         return {
           'temperature': 0.7,
-          'max_tokens': 1000,
           'top_p': 1.0,
           'frequency_penalty': 0.0,
           'presence_penalty': 0.0,
@@ -223,21 +221,18 @@ class AdminAPIManager {
       case AIModel.claude3:
       case AIModel.claude3Sonnet:
         return {
-          'max_tokens': 1000,
           'temperature': 0.7,
         };
       case AIModel.geminiPro:
       case AIModel.gemini15:
         return {
           'temperature': 0.7,
-          'maxOutputTokens': 1000,
           'topP': 1.0,
           'topK': 40,
         };
       case AIModel.custom:
         return {
           'temperature': 0.7,
-          'max_tokens': 1000,
         };
     }
   }
