@@ -102,6 +102,95 @@ class _CharactersPageState extends State<CharactersPage> with TickerProviderStat
     }
   }
 
+  Future<void> _forceCreateBuiltInCharacters() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) {
+        debugPrint('❌ CharactersPage: User not authenticated, cannot create characters');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please sign in to create characters')),
+        );
+        return;
+      }
+      
+      debugPrint('🔧 CharactersPage: Force creating built-in characters...');
+      
+      // Manually create the built-in characters
+      final builtInData = [
+        {
+          'name': 'Narendra Modi',
+          'description': 'Prime Minister of India, visionary leader',
+          'systemPrompt': 'You are Narendra Modi, the Prime Minister of India. You speak with authority, vision, and deep love for your country.',
+          'avatarUrl': 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=150&h=150&fit=crop&crop=face',
+          'customTag': 'Politician',
+          'backgroundColor': 4294901760,
+        },
+        {
+          'name': 'Elon Musk',
+          'description': 'CEO of Tesla & SpaceX, Tech Visionary',
+          'systemPrompt': 'You are Elon Musk, the innovative entrepreneur behind Tesla, SpaceX, and other groundbreaking companies.',
+          'avatarUrl': 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face',
+          'customTag': 'Tech CEO',
+          'backgroundColor': 4293848563,
+        },
+        {
+          'name': 'Virat Kohli',
+          'description': 'Cricket Superstar, Former Indian Captain',
+          'systemPrompt': 'You are Virat Kohli, one of the greatest cricket batsmen of all time and former captain of the Indian cricket team.',
+          'avatarUrl': 'https://images.unsplash.com/photo-1531891437562-4301cf35b7e4?w=150&h=150&fit=crop&crop=face',
+          'customTag': 'Cricketer',
+          'backgroundColor': 4293982696,
+        },
+      ];
+      
+      for (final characterData in builtInData) {
+        try {
+          debugPrint('🔄 Creating: ${characterData['name']}');
+          await SupabaseCharacterService.createCharacter(
+            name: characterData['name'] as String,
+            description: characterData['description'] as String,
+            systemPrompt: characterData['systemPrompt'] as String,
+            avatarUrl: characterData['avatarUrl'] as String,
+            customTag: characterData['customTag'] as String,
+            backgroundColor: characterData['backgroundColor'] as int,
+            isFavorite: false,
+            isBuiltIn: true,
+          );
+          debugPrint('✅ Created: ${characterData['name']}');
+        } catch (e) {
+          debugPrint('❌ Failed to create ${characterData['name']}: $e');
+        }
+      }
+      
+      // Reload characters after creation
+      await _loadCharacters();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Built-in characters created successfully!')),
+        );
+      }
+      
+    } catch (e) {
+      debugPrint('❌ CharactersPage: Error creating built-in characters: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error creating characters: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   List<Character> get _filteredCharacters {
     var characters = _characterService.characters;
     
@@ -279,24 +368,40 @@ class _CharactersPageState extends State<CharactersPage> with TickerProviderStat
                               color: const Color(0xFFA3A3A3),
                             ),
                           ),
-                          if (_searchQuery.isEmpty) ...[
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadCharacters,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF000000),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                                      if (_searchQuery.isEmpty) ...[
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _loadCharacters,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF000000),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Retry Loading Characters',
+                                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
                                 ),
                               ),
-                              child: Text(
-                                'Retry Loading Characters',
-                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: _forceCreateBuiltInCharacters,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF4CAF50),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Create Built-in Characters',
+                                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
                         ],
                       ),
                     )

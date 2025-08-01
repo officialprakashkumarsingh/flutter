@@ -42,18 +42,21 @@ class CharacterService extends ChangeNotifier {
       final charactersFromDb = await SupabaseCharacterService.getUserCharacters();
       print('🔍 CharacterService.loadCharacters() - Loaded ${charactersFromDb.length} characters from Supabase');
       
-      // If no characters exist, create built-in characters as fallback
-      if (charactersFromDb.isEmpty) {
-        print('📝 No characters found, creating built-in characters...');
+      // Always ensure built-in characters exist (they might have been deleted or failed to create)
+      final hasBuiltInCharacters = charactersFromDb.any((char) => char.isBuiltIn == true);
+      
+      if (charactersFromDb.isEmpty || !hasBuiltInCharacters) {
+        print('📝 Missing built-in characters (total: ${charactersFromDb.length}, built-in: ${charactersFromDb.where((c) => c.isBuiltIn).length}), creating them...');
         await _createBuiltInCharacters();
         // Try loading again after creating built-in characters
         final charactersAfterCreation = await SupabaseCharacterService.getUserCharacters();
         _characters.clear();
         _characters.addAll(charactersAfterCreation);
-        print('✅ Created and loaded ${charactersAfterCreation.length} built-in characters');
+        print('✅ Created and loaded ${charactersAfterCreation.length} total characters (${charactersAfterCreation.where((c) => c.isBuiltIn).length} built-in)');
       } else {
         _characters.clear();
         _characters.addAll(charactersFromDb);
+        print('✅ Loaded ${charactersFromDb.length} existing characters (${charactersFromDb.where((c) => c.isBuiltIn).length} built-in)');
       }
       
       notifyListeners();
@@ -94,11 +97,23 @@ class CharacterService extends ChangeNotifier {
 
     print('📝 Creating ${builtInCharacters.length} built-in characters...');
     
+    // First check which characters already exist
+    final existingCharacters = await SupabaseCharacterService.getUserCharacters();
+    final existingNames = existingCharacters.map((c) => c.name.toLowerCase()).toSet();
+    
     for (final characterData in builtInCharacters) {
+      final characterName = characterData['name'] as String;
+      
+      // Skip if this character already exists
+      if (existingNames.contains(characterName.toLowerCase())) {
+        print('⏭️ Character already exists: $characterName, skipping...');
+        continue;
+      }
+      
       try {
-        print('🔄 Creating character: ${characterData['name']}');
+        print('🔄 Creating character: $characterName');
         final result = await SupabaseCharacterService.createCharacter(
-          name: characterData['name'] as String,
+          name: characterName,
           description: characterData['description'] as String,
           systemPrompt: characterData['systemPrompt'] as String,
           avatarUrl: characterData['avatarUrl'] as String,
@@ -107,9 +122,9 @@ class CharacterService extends ChangeNotifier {
           isFavorite: false,
           isBuiltIn: true,
         );
-        print('✅ Created built-in character: ${characterData['name']} with ID: $result');
+        print('✅ Created built-in character: $characterName with ID: $result');
       } catch (e) {
-        print('❌ Failed to create built-in character ${characterData['name']}: $e');
+        print('❌ Failed to create built-in character $characterName: $e');
         print('❌ Stack trace: ${StackTrace.current}');
       }
     }
