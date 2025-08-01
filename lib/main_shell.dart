@@ -428,19 +428,11 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   void _saveAndStartNewChat() {
     final currentMessages = _chatPageKey.currentState?.getMessages();
     
-    // Only save chat history if NOT in temporary chat mode
-    if (!_isTemporaryChatMode && currentMessages != null && currentMessages.length > 1) {
-      final lastUserMessage = currentMessages.lastWhere((m) => m.sender == Sender.user, orElse: () => Message.user(''));
-
-      if (lastUserMessage.text.isNotEmpty) {
-        final title = lastUserMessage.text.length <= 20
-            ? lastUserMessage.text
-            : '${lastUserMessage.text.substring(0, 20)}...';
-        
-        // Save to Supabase only (no local save to avoid duplicates)
-        _saveChatToSupabase(currentMessages, title);
-      }
-    }
+    // Duplicate-prevention:
+    // ChatPage already calls SupabaseChatService.saveConversation (insert on first save, then update).
+    // The additional save here inserted a *second* row with a new UUID, which caused duplicate
+    // conversation entries to appear after the next login. We therefore remove the extra save.
+    // (If you later need auto-save logic here, be sure to pass the existing conversationId.)
 
     _chatPageKey.currentState?.startNewChat();
     if (_selectedIndex != 0) {
