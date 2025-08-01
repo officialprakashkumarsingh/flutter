@@ -21,6 +21,7 @@ import 'message_bubble.dart';
 import 'input_bar.dart';
 import 'chat_utils.dart';
 import 'supabase_chat_service.dart';
+import 'supabase_auth_service.dart';
 
 
 
@@ -32,7 +33,16 @@ import 'supabase_chat_service.dart';
 class ChatPage extends StatefulWidget {
   final void Function(Message botMessage) onBookmark;
   final String selectedModel;
-  const ChatPage({super.key, required this.onBookmark, required this.selectedModel});
+  final VoidCallback? onChatHistoryChanged; // Callback when chat history changes
+  final bool isTemporaryChatMode; // Whether temporary chat mode is enabled
+  
+  const ChatPage({
+    super.key, 
+    required this.onBookmark, 
+    required this.selectedModel,
+    this.onChatHistoryChanged,
+    this.isTemporaryChatMode = false, // Default to false
+  });
 
   @override
   State<ChatPage> createState() => ChatPageState();
@@ -100,10 +110,7 @@ class ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
     _characterService.addListener(_onCharacterChanged);
-    // REMOVED: External tools service listener
-    
     _updateGreetingForCharacter();
-    _loadConversationMemory();
     _loadImageModels();
     _controller.addListener(() {
       setState(() {}); // Refresh UI when text changes
@@ -111,41 +118,49 @@ class ChatPageState extends State<ChatPage> {
   }
   
       Future<void> _loadConversationMemory() async {
-    try {
-      // Load the latest conversation from Supabase
-      final latestConversation = await SupabaseChatService.loadLatestConversation();
-      
-      if (latestConversation != null) {
-        setState(() {
-          _currentConversationId = latestConversation['id'];
-          _conversationMemory = List<String>.from(latestConversation['conversationMemory']);
-          _messages.clear();
-          _messages.addAll(List<Message>.from(latestConversation['messages']));
-        });
-        
-        debugPrint('Loaded conversation: ${latestConversation['title']} with ${_messages.length} messages');
-      } else {
-        // No existing conversations, start fresh
-        setState(() {
-          _currentConversationId = null;
-          _conversationMemory = [];
-          _messages.clear();
-          _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading conversation memory: $e');
-    }
+    debugPrint('CONVERSATION: Starting fresh chat');
+    setState(() {
+      _currentConversationId = null;
+      _conversationMemory = [];
+      _messages.clear();
+      _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
+    });
   }
   
     Future<void> _saveChatHistory() async {
     try {
-      if (_messages.isEmpty) return;
+      // Only save if we have a real conversation (user + bot messages)
+      if (_messages.length < 2) {
+        debugPrint('SAVE: Not enough messages for a conversation');
+        return;
+      }
       
-      // Generate title for new conversations
+      // Only save if user is signed in and not in temporary mode
+      if (!SupabaseAuthService.isSignedIn || widget.isTemporaryChatMode) {
+        debugPrint('SAVE: User not signed in or in temporary mode');
+        return;
+      }
+      
+      // Check if we have at least one user message and one bot message
+      bool hasUserMessage = _messages.any((msg) => msg.sender == Sender.user);
+      bool hasBotMessage = _messages.any((msg) => msg.sender == Sender.bot);
+      
+      if (!hasUserMessage || !hasBotMessage) {
+        debugPrint('SAVE: Not a complete conversation (missing user or bot message)');
+        return;
+      }
+      
+      debugPrint('SAVE: Saving conversation with ${_messages.length} messages, ID: $_currentConversationId');
+      
+      // Generate title from first user message
       String title = 'New Chat';
-      if (_currentConversationId == null && _messages.length > 1) {
-        title = SupabaseChatService.generateConversationTitle(_messages);
+      final firstUserMsg = _messages.firstWhere(
+        (msg) => msg.sender == Sender.user,
+        orElse: () => _messages.first,
+      );
+      if (firstUserMsg.text.isNotEmpty) {
+        final words = firstUserMsg.text.split(' ').take(5).join(' ');
+        title = words.length > 30 ? '${words.substring(0, 30)}...' : words;
       }
       
       // Save to Supabase
@@ -156,15 +171,16 @@ class ChatPageState extends State<ChatPage> {
         title: title,
       );
       
+      // Update conversation ID if this was a new conversation
       if (conversationId != null && _currentConversationId == null) {
-        setState(() {
-          _currentConversationId = conversationId;
-        });
+        _currentConversationId = conversationId;
+        debugPrint('SAVE: New conversation saved with ID: $conversationId');
+        // Notify parent to refresh chat history
+        widget.onChatHistoryChanged?.call();
       }
       
-      debugPrint('Chat history saved to Supabase: ${_messages.length} messages');
     } catch (e) {
-      debugPrint('Error saving chat history: $e');
+      debugPrint('SAVE: Error - $e');
     }
   }
   
@@ -175,7 +191,6 @@ class ChatPageState extends State<ChatPage> {
   @override
   void dispose() {
     _characterService.removeListener(_onCharacterChanged);
-    // REMOVED: External tools service listener removal
     _controller.dispose();
     _scroll.dispose();
     _httpClient?.close();
@@ -184,12 +199,13 @@ class ChatPageState extends State<ChatPage> {
 
   List<Message> getMessages() => _messages;
 
-  void loadChatSession(List<Message> messages) {
+  void loadChatSession(List<Message> messages, {String? conversationId}) {
     setState(() {
       _awaitingReply = false;
       _httpClient?.close();
       _messages.clear();
       _messages.addAll(messages);
+      _currentConversationId = conversationId;
     });
   }
 
@@ -866,25 +882,23 @@ Be conversational and helpful!'''
   }
 
   void startNewChat() {
+    debugPrint('NEWCHAT: Starting new chat');
     setState(() {
       _awaitingReply = false;
       _editingMessageId = null;
       _currentConversationId = null;
-      _conversationMemory.clear(); // Clear memory for fresh start
+      _conversationMemory.clear();
       _httpClient?.close();
       _httpClient = null;
       _messages.clear();
-      final selectedCharacter = _characterService.selectedCharacter;
-      if (selectedCharacter != null) {
-        _messages.add(Message.bot('Fresh chat started with ${selectedCharacter.name}. How can I help?'));
-      } else {
-        _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
-      }
+      _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
     });
   }
   
-
-
+  // Public method to reload conversation memory (for auth state changes)
+  void reloadConversationMemory() {
+    _loadConversationMemory();
+  }
 
 
   void _scrollToBottom() {

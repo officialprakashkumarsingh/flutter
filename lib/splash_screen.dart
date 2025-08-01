@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
 
@@ -152,46 +153,55 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F3F0), // App's background color
-      body: AnimatedBuilder(
-        animation: Listenable.merge([
-          _robotController, 
-          _textController,
-          _playController,
-          _fadeController
-        ]),
-        builder: (context, child) {
-          return Opacity(
-            opacity: _fadeAnimation.value,
-            child: Center(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // AhamAI Text (appears first, stays in center)
-                  Transform.scale(
-                    scale: _textScaleAnimation.value,
-                    child: Opacity(
-                      opacity: _textOpacityAnimation.value,
-                      child: Text(
-                        'AhamAI',
-                        style: GoogleFonts.spaceMono(
-                          fontSize: 42,
-                          color: const Color(0xFF000000),
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2.0,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Color(0xFFF4F3F0),
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF4F3F0), // App's background color
+        body: AnimatedBuilder(
+          animation: Listenable.merge([
+            _robotController, 
+            _textController,
+            _playController,
+            _fadeController
+          ]),
+          builder: (context, child) {
+            return Opacity(
+              opacity: _fadeAnimation.value,
+              child: Center(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // AhamAI Text (appears first, stays in center)
+                    Transform.scale(
+                      scale: _textScaleAnimation.value,
+                      child: Opacity(
+                        opacity: _textOpacityAnimation.value,
+                        child: Text(
+                          'AhamAI',
+                          style: GoogleFonts.spaceMono(
+                            fontSize: 42,
+                            color: const Color(0xFF000000),
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 2.0,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  
-                  // Robot playing around the text (above it)
-                  _buildPlayingRobot(),
-                ],
+                    
+                    // Robot playing around the text (above it)
+                    _buildPlayingRobot(),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

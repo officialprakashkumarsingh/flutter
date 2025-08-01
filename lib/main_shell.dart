@@ -11,7 +11,39 @@ import 'characters_page.dart';
 import 'saved_page.dart';
 import 'models.dart';
 import 'supabase_auth_service.dart';
+import 'supabase_chat_service.dart';
 // REMOVED: External tools service import
+
+// Custom rounded SnackBar utility
+void showRoundedSnackBar(BuildContext context, String message, {bool isError = false}) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        message,
+        style: GoogleFonts.inter(
+          color: const Color(0xFF000000),
+          fontWeight: FontWeight.w500,
+          fontSize: 13,
+        ),
+      ),
+      backgroundColor: isError ? const Color(0xFFFFE5E5) : const Color(0xFFE8F5E8),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isError ? const Color(0xFFFF6B6B) : const Color(0xFF4CAF50),
+          width: 1,
+        ),
+      ),
+      margin: const EdgeInsets.only(
+        bottom: 80, // Position above bottom navigation
+        left: 16,
+        right: 16,
+      ),
+      duration: const Duration(seconds: 2),
+    ),
+  );
+}
 
 
 /* ----------------------------------------------------------
@@ -39,16 +71,50 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   // State for temporary chat mode
   bool _isTemporaryChatMode = false;
 
+  // State for chat history loading
+  bool _isLoadingChatHistory = false;
+  DateTime? _lastChatHistoryLoad;
+
   late AnimationController _fabAnimationController;
   late Animation<double> _fabAnimation;
 
   late AnimationController _pageTransitionController;
   late Animation<Offset> _slideAnimation;
 
+  // Auth state listener
+  late final Stream _authStateStream;
+
   @override
   void initState() {
     super.initState();
     _fetchModels();
+    
+    // Listen for auth state changes
+    _authStateStream = SupabaseAuthService.authStateChanges;
+    _authStateStream.listen((authState) {
+      if (!SupabaseAuthService.isSignedIn) {
+        // User signed out - clear everything
+        setState(() {
+          _chatHistory.clear();
+        });
+        _lastChatHistoryLoad = null;
+        _chatPageKey.currentState?.startNewChat();
+        debugPrint('AUTH: User signed out, cleared state');
+      } else {
+        // User signed in - load chat history after a delay
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (mounted && SupabaseAuthService.isSignedIn) {
+            _loadChatHistoryFromSupabase();
+          }
+        });
+        debugPrint('AUTH: User signed in, scheduled history load');
+      }
+    });
+    
+    // Load chat history only if user is already signed in
+    if (SupabaseAuthService.isSignedIn) {
+      _loadChatHistoryFromSupabase();
+    }
     
     // Set up external tools callback for model switching
     // REMOVED: External tools service model switch callback
@@ -85,27 +151,117 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  // Load chat history from Supabase
+  Future<void> _loadChatHistoryFromSupabase() async {
+    // Prevent multiple simultaneous loads
+    if (_isLoadingChatHistory) {
+      debugPrint('🔄 Chat history already loading, skipping...');
+      return;
+    }
+    
+    // Debounce: prevent calls within 1 second of each other
+    final now = DateTime.now();
+    if (_lastChatHistoryLoad != null && 
+        now.difference(_lastChatHistoryLoad!).inMilliseconds < 1000) {
+      debugPrint('⏰ Chat history loaded recently, skipping debounced call...');
+      return;
+    }
+    
+    _isLoadingChatHistory = true;
+    _lastChatHistoryLoad = now;
+    
+    try {
+      debugPrint('🚀 Starting chat history load from Supabase...');
+      debugPrint('📊 Current _chatHistory size BEFORE load: ${_chatHistory.length}');
+      
+      final conversations = await SupabaseChatService.getUserConversations();
+      
+      debugPrint('📥 SupabaseChatService returned ${conversations.length} conversations');
+      
+      if (conversations.isNotEmpty) {
+        final List<ChatSession> loadedHistory = [];
+        final Set<String> seenIds = {}; // Track seen conversation IDs
+        
+        debugPrint('🔍 Processing ${conversations.length} conversations...');
+        
+        for (final conversation in conversations) {
+          final conversationId = conversation['id'] as String;
+          
+          debugPrint('🔍   Processing conversation ID: $conversationId, Title: ${conversation['title']}');
+          
+          // Skip if we've already processed this conversation ID in this batch
+          if (seenIds.contains(conversationId)) {
+            debugPrint('⚠️   Skipping duplicate conversation ID in batch: $conversationId');
+            continue;
+          }
+          seenIds.add(conversationId);
+          
+          final fullConversation = await SupabaseChatService.loadConversation(conversationId);
+          if (fullConversation != null) {
+            final session = ChatSession(
+              id: fullConversation['id'],
+              title: fullConversation['title'],
+              messages: List<Message>.from(fullConversation['messages']),
+              createdAt: fullConversation['createdAt'],
+              updatedAt: fullConversation['updatedAt'],
+            );
+            loadedHistory.add(session);
+            debugPrint('✅   Added session: ${session.title} with ${session.messages.length} messages');
+          } else {
+            debugPrint('❌   Failed to load full conversation for ID: $conversationId');
+          }
+        }
+        
+        debugPrint('📝 Loaded ${loadedHistory.length} unique sessions, replacing existing ${_chatHistory.length} sessions');
+        
+        setState(() {
+          _chatHistory.clear(); // Clear existing to prevent duplicates
+          _chatHistory.addAll(loadedHistory);
+        });
+        
+        debugPrint('✅ Successfully loaded ${_chatHistory.length} unique chat sessions from Supabase');
+        debugPrint('📊 Final _chatHistory contents:');
+        for (var i = 0; i < _chatHistory.length; i++) {
+          debugPrint('📊   [$i] ID: ${_chatHistory[i].id}, Title: ${_chatHistory[i].title}');
+        }
+        
+      } else {
+        // No conversations found, clear the list
+        debugPrint('📭 No conversations found in Supabase, clearing ${_chatHistory.length} existing sessions');
+        setState(() {
+          _chatHistory.clear();
+        });
+        debugPrint('🧹 Cleared chat history - now empty');
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading chat history from Supabase: $e');
+      // Clear on error to prevent stale data
+      setState(() {
+        _chatHistory.clear();
+      });
+    } finally {
+      _isLoadingChatHistory = false;
+      debugPrint('🏁 Chat history loading completed');
+    }
+  }
+
+  // Refresh chat history from Supabase
+  Future<void> _refreshChatHistory() async {
+    await _loadChatHistoryFromSupabase();
+  }
+
+  // Manual refresh that bypasses debouncing (for user-initiated refresh)
+  Future<void> _manualRefreshChatHistory() async {
+    debugPrint('Manual refresh requested by user, bypassing debounce...');
+    _lastChatHistoryLoad = null; // Reset debounce to allow immediate load
+    await _loadChatHistoryFromSupabase();
+  }
+
   /// Switch to a different AI model (called by external tools)
   void switchModel(String modelName) {
     if (_models.contains(modelName)) {
       setState(() => _selectedModel = modelName);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '🔄 Switched to $_selectedModel',
-            style: const TextStyle(
-              color: Color(0xFF000000),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          backgroundColor: Colors.white,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.all(16),
-          elevation: 4,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      showRoundedSnackBar(context, '🔄 Switched to $_selectedModel');
     }
   }
 
@@ -138,23 +294,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: Color(0xFF2D3748), // Dark text for visibility
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        backgroundColor: Colors.white, // White background for visibility
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-        elevation: 8, // Add shadow for better visibility
-        duration: const Duration(seconds: 3), // Show longer for better UX
-      ),
-    );
+    showRoundedSnackBar(context, message);
   }
 
   void _showModelSelectionSheet() {
@@ -240,23 +380,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                                   HapticFeedback.selectionClick();
                                   setState(() => _selectedModel = model);
                                   Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        '✅ $_selectedModel selected',
-                                        style: const TextStyle(
-                                          color: Color(0xFF000000),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      backgroundColor: Colors.white,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      margin: const EdgeInsets.all(16),
-                                      elevation: 4,
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
+                                  showRoundedSnackBar(context, '✅ $_selectedModel selected');
                                 },
                               ),
                             );
@@ -295,13 +419,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
             ? lastUserMessage.text
             : '${lastUserMessage.text.substring(0, 20)}...';
         
-        final session = ChatSession(
-          title: title,
-          messages: List.from(currentMessages),
-        );
-        setState(() {
-          _chatHistory.insert(0, session);
-        });
+        // Save to Supabase only (no local save to avoid duplicates)
+        _saveChatToSupabase(currentMessages, title);
       }
     }
 
@@ -312,9 +431,28 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
       });
     }
   }
+
+  // Save chat session to Supabase
+  Future<void> _saveChatToSupabase(List<Message> messages, String title) async {
+    try {
+      final conversationId = await SupabaseChatService.saveConversation(
+        messages: messages,
+        conversationMemory: [],
+        title: title,
+      );
+      
+      if (conversationId != null) {
+        debugPrint('Chat saved to Supabase with ID: $conversationId');
+        // Note: ChatPage will handle the refresh via onChatHistoryChanged callback
+        // No need to refresh here to prevent duplicate calls
+      }
+    } catch (e) {
+      debugPrint('Error saving chat to Supabase: $e');
+    }
+  }
   
   void _loadChat(ChatSession session) {
-    _chatPageKey.currentState?.loadChatSession(session.messages);
+    _chatPageKey.currentState?.loadChatSession(session.messages, conversationId: session.id);
     setState(() {
       _selectedIndex = 0;
     });
@@ -325,6 +463,23 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     setState(() {
       _chatHistory.remove(session);
     });
+    
+    // Also delete from Supabase if it has an ID
+    if (session.id != null) {
+      _deleteChatFromSupabase(session.id!);
+    }
+  }
+
+  // Delete chat from Supabase
+  Future<void> _deleteChatFromSupabase(String conversationId) async {
+    try {
+      final success = await SupabaseChatService.deleteConversation(conversationId);
+      if (success) {
+        debugPrint('Chat deleted from Supabase: $conversationId');
+      }
+    } catch (e) {
+      debugPrint('Error deleting chat from Supabase: $e');
+    }
   }
 
   void _pinChat(ChatSession session) {
@@ -455,16 +610,76 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                           final shouldLogout = await showDialog<bool>(
                             context: context,
                             builder: (context) => AlertDialog(
-                              title: const Text('Sign Out'),
-                              content: const Text('Are you sure you want to sign out?'),
+                              backgroundColor: const Color(0xFFF4F3F0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              title: Text(
+                                'Sign Out',
+                                style: GoogleFonts.inter(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF000000),
+                                ),
+                              ),
+                              content: Text(
+                                'Are you sure you want to sign out?',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: const Color(0xFF666666),
+                                ),
+                              ),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(context, false),
-                                  child: const Text('Cancel'),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Cancel',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFF666666),
+                                    ),
+                                  ),
                                 ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Sign Out'),
+                                Container(
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF6B6B),
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFFF6B6B).withOpacity(0.3),
+                                        offset: const Offset(0, 2),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                  child: TextButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      backgroundColor: Colors.transparent,
+                                      elevation: 0,
+                                    ),
+                                    child: Text(
+                                      'Sign Out',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFFFFFFFF),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -580,6 +795,23 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                     ),
                   ),
                   const Spacer(),
+                  // Refresh button
+                  GestureDetector(
+                    onTap: _manualRefreshChatHistory,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0DED9),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(
+                        Icons.refresh_rounded,
+                        size: 16,
+                        color: Color(0xFF666666),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Text(
                     '${_chatHistory.length}',
                     style: GoogleFonts.inter(
@@ -769,6 +1001,17 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                       setState(() {
                         _isTemporaryChatMode = !_isTemporaryChatMode;
                       });
+                      
+                      // Clear current chat and reload based on new mode
+                      _chatPageKey.currentState?.startNewChat();
+                      
+                      // Show feedback to user
+                      showRoundedSnackBar(
+                        context,
+                        _isTemporaryChatMode 
+                          ? '🎭 Temporary chat mode enabled - conversations won\'t be saved'
+                          : '💾 Normal chat mode enabled - conversations will be saved'
+                      );
                     },
                     borderRadius: BorderRadius.circular(21),
                     child: FaIcon(
@@ -818,7 +1061,9 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         child: ChatPage(
           key: _chatPageKey, 
           onBookmark: _bookmarkMessage, 
-          selectedModel: _selectedModel
+          selectedModel: _selectedModel,
+          onChatHistoryChanged: _refreshChatHistory, // Add callback
+          isTemporaryChatMode: _isTemporaryChatMode, // Pass temporary chat mode state
         ),
       ),
     );

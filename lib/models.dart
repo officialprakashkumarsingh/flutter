@@ -452,10 +452,29 @@ class Message {
 }
 
 class ChatSession {
+  final String? id; // Supabase conversation ID
   final String title;
   final List<Message> messages;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
-  ChatSession({required this.title, required this.messages});
+  ChatSession({
+    this.id,
+    required this.title, 
+    required this.messages,
+    this.createdAt,
+    this.updatedAt,
+  });
+  
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChatSession &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 // NEW USER MODEL

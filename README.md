@@ -37,7 +37,7 @@ CREATE TABLE public.chat_conversations (
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     title TEXT DEFAULT 'New Chat',
     messages JSONB NOT NULL DEFAULT '[]',
-    conversation_memory JSONB DEFAULT '{}',
+    conversation_memory JSONB NOT NULL DEFAULT '[]',
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
@@ -124,7 +124,7 @@ SELECT
     schemaname,
     tablename,
     attname,
-    typename
+    ty.typname AS typename
 FROM pg_tables t
 JOIN pg_attribute a ON a.attrelid = (
     SELECT oid 
