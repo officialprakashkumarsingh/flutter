@@ -73,6 +73,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
 
   // State for chat history loading
   bool _isLoadingChatHistory = false;
+  DateTime? _lastChatHistoryLoad;
 
   late AnimationController _fabAnimationController;
   late Animation<double> _fabAnimation;
@@ -98,15 +99,24 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         setState(() {
           _chatHistory.clear();
         });
+        _lastChatHistoryLoad = null; // Reset debounce timer
         debugPrint('User signed out, cleared chat history');
       } else {
-        debugPrint('User signed in, scheduling delayed chat history refresh');
-        // Add a small delay to ensure auth state is fully settled before loading
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted && SupabaseAuthService.isSignedIn) {
-            _loadChatHistoryFromSupabase();
-          }
-        });
+        debugPrint('User signed in, checking if refresh needed...');
+        // Only load if we haven't loaded recently (debounced)
+        final now = DateTime.now();
+        if (_lastChatHistoryLoad == null || 
+            now.difference(_lastChatHistoryLoad!).inMilliseconds > 2000) {
+          debugPrint('Scheduling delayed chat history refresh after signin');
+          // Add a small delay to ensure auth state is fully settled before loading
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted && SupabaseAuthService.isSignedIn) {
+              _loadChatHistoryFromSupabase();
+            }
+          });
+        } else {
+          debugPrint('Chat history loaded recently, skipping signin refresh');
+        }
       }
     });
     
@@ -158,9 +168,19 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
       return;
     }
     
+    // Debounce: prevent calls within 1 second of each other
+    final now = DateTime.now();
+    if (_lastChatHistoryLoad != null && 
+        now.difference(_lastChatHistoryLoad!).inMilliseconds < 1000) {
+      debugPrint('Chat history loaded recently, skipping debounced call...');
+      return;
+    }
+    
     _isLoadingChatHistory = true;
+    _lastChatHistoryLoad = now;
     
     try {
+      debugPrint('Starting chat history load from Supabase...');
       final conversations = await SupabaseChatService.getUserConversations();
       
       if (conversations.isNotEmpty) {
@@ -195,13 +215,13 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
           _chatHistory.addAll(loadedHistory);
         });
         
-        debugPrint('Loaded ${_chatHistory.length} unique chat sessions from Supabase');
+        debugPrint('Successfully loaded ${_chatHistory.length} unique chat sessions from Supabase');
       } else {
         // No conversations found, clear the list
         setState(() {
           _chatHistory.clear();
         });
-        debugPrint('No conversations found, cleared chat history');
+        debugPrint('No conversations found in Supabase, cleared chat history');
       }
     } catch (e) {
       debugPrint('Error loading chat history from Supabase: $e');
@@ -216,6 +236,13 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
 
   // Refresh chat history from Supabase
   Future<void> _refreshChatHistory() async {
+    await _loadChatHistoryFromSupabase();
+  }
+
+  // Manual refresh that bypasses debouncing (for user-initiated refresh)
+  Future<void> _manualRefreshChatHistory() async {
+    debugPrint('Manual refresh requested by user, bypassing debounce...');
+    _lastChatHistoryLoad = null; // Reset debounce to allow immediate load
     await _loadChatHistoryFromSupabase();
   }
 
@@ -405,8 +432,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
       
       if (conversationId != null) {
         debugPrint('Chat saved to Supabase with ID: $conversationId');
-        // Refresh chat history to show the new conversation
-        await _refreshChatHistory();
+        // Note: ChatPage will handle the refresh via onChatHistoryChanged callback
+        // No need to refresh here to prevent duplicate calls
       }
     } catch (e) {
       debugPrint('Error saving chat to Supabase: $e');
@@ -759,7 +786,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                   const Spacer(),
                   // Refresh button
                   GestureDetector(
-                    onTap: _refreshChatHistory,
+                    onTap: _manualRefreshChatHistory,
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
