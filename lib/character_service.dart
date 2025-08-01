@@ -34,7 +34,16 @@ class CharacterService extends ChangeNotifier {
   Map<String, CharacterChat> get characterChats => Map.unmodifiable(_characterChats);
 
   Future<void> loadCharacters() async {
+    // If user is not signed-in, show a local fallback list so the Characters
+    // page never appears blank.  As soon as the user authenticates this
+    // method will be called again (authStateChanges listener) and the real
+    // database rows will replace the fallback.
     if (!SupabaseAuthService.isSignedIn) {
+      if (_characters.isEmpty) {
+        await _createFallbackCharacters();
+      } else {
+        notifyListeners();
+      }
       return;
     }
     
