@@ -1579,13 +1579,53 @@ Be conversational and helpful!'''
       'systemverilog': RegExp(r'```(?:systemverilog|sv)\b\s*(.*?)```', dotAll: true),
     };
     
-    // Partial code patterns for streaming (unclosed blocks) - mirror complete patterns
-    final partialCodePatterns = Map.fromEntries(
-      codePatterns.entries.map((entry) => MapEntry(
-        entry.key,
-        RegExp(entry.value.pattern.replaceAll(r'\?\)\`\`\`', r'\?\)\$'), dotAll: true)
-      ))
-    );
+    // Partial code patterns for streaming (unclosed blocks) 
+    // Manually create partial patterns for the most common languages to avoid conflicts
+    final partialCodePatterns = {
+      // C++ variants BEFORE 'c' to prevent conflicts
+      'cpp': RegExp(r'```(?:cpp|c\+\+|cxx)\b\s*(.*?)$', dotAll: true),
+      'csharp': RegExp(r'```(?:csharp|cs|c#)\b\s*(.*?)$', dotAll: true),
+      'c': RegExp(r'```c\b\s*(.*?)$', dotAll: true),
+      
+      // JavaScript variants BEFORE 'java'
+      'javascript': RegExp(r'```(?:javascript|js)\b\s*(.*?)$', dotAll: true),
+      'typescript': RegExp(r'```(?:typescript|ts)\b\s*(.*?)$', dotAll: true),
+      'java': RegExp(r'```java\b\s*(.*?)$', dotAll: true),
+      
+      // CSS variants  
+      'scss': RegExp(r'```(?:scss|sass)\b\s*(.*?)$', dotAll: true),
+      'less': RegExp(r'```less\b\s*(.*?)$', dotAll: true),
+      'css': RegExp(r'```css\b\s*(.*?)$', dotAll: true),
+      
+      // Web Technologies
+      'html': RegExp(r'```html\b\s*(.*?)$', dotAll: true),
+      'react': RegExp(r'```(?:react|jsx|tsx)\b\s*(.*?)$', dotAll: true),
+      'vue': RegExp(r'```vue\b\s*(.*?)$', dotAll: true),
+      
+      // Common Programming Languages
+      'python': RegExp(r'```(?:python|py)\b\s*(.*?)$', dotAll: true),
+      'dart': RegExp(r'```dart\b\s*(.*?)$', dotAll: true),
+      'php': RegExp(r'```php\b\s*(.*?)$', dotAll: true),
+      'ruby': RegExp(r'```(?:ruby|rb)\b\s*(.*?)$', dotAll: true),
+      'swift': RegExp(r'```swift\b\s*(.*?)$', dotAll: true),
+      'kotlin': RegExp(r'```(?:kotlin|kt)\b\s*(.*?)$', dotAll: true),
+      'go': RegExp(r'```(?:go|golang)\b\s*(.*?)$', dotAll: true),
+      'rust': RegExp(r'```(?:rust|rs)\b\s*(.*?)$', dotAll: true),
+      
+      // Data & Config
+      'json': RegExp(r'```json\b\s*(.*?)$', dotAll: true),
+      'yaml': RegExp(r'```(?:yaml|yml)\b\s*(.*?)$', dotAll: true),
+      'xml': RegExp(r'```xml\b\s*(.*?)$', dotAll: true),
+      'sql': RegExp(r'```sql\b\s*(.*?)$', dotAll: true),
+      
+      // Shell & Scripts
+      'bash': RegExp(r'```(?:bash|shell|sh)\b\s*(.*?)$', dotAll: true),
+      'powershell': RegExp(r'```(?:powershell|ps1)\b\s*(.*?)$', dotAll: true),
+      
+      // Documentation
+      'markdown': RegExp(r'```(?:markdown|md)\b\s*(.*?)$', dotAll: true),
+      'text': RegExp(r'```(?:text|txt|plain)\b\s*(.*?)$', dotAll: true),
+    };
     
     // Extract complete thoughts and remove them from display text
     for (String type in thoughtPatterns.keys) {
@@ -1624,6 +1664,7 @@ Be conversational and helpful!'''
         final code = match.group(1)?.trim() ?? '';
         if (code.isNotEmpty) {
           print('🔍 Found complete code block: $language (${code.length} chars)');
+          print('    Pattern matched: ${match.group(0)?.substring(0, 20)}...');
           print('    Code preview: ${code.length > 50 ? code.substring(0, 50) : code}...');
           codes.add(CodeContent(
             code: code,
