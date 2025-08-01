@@ -14,6 +14,37 @@ import 'supabase_auth_service.dart';
 import 'supabase_chat_service.dart';
 // REMOVED: External tools service import
 
+// Custom rounded SnackBar utility
+void showRoundedSnackBar(BuildContext context, String message, {bool isError = false}) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        message,
+        style: GoogleFonts.inter(
+          color: const Color(0xFF000000),
+          fontWeight: FontWeight.w500,
+          fontSize: 13,
+        ),
+      ),
+      backgroundColor: isError ? const Color(0xFFFFE5E5) : const Color(0xFFE8F5E8),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isError ? const Color(0xFFFF6B6B) : const Color(0xFF4CAF50),
+          width: 1,
+        ),
+      ),
+      margin: const EdgeInsets.only(
+        bottom: 80, // Position above bottom navigation
+        left: 16,
+        right: 16,
+      ),
+      duration: const Duration(seconds: 2),
+    ),
+  );
+}
+
 
 /* ----------------------------------------------------------
    MAIN SHELL (Tab Navigation)
@@ -127,14 +158,23 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         }
         
         setState(() {
-          _chatHistory.clear();
+          _chatHistory.clear(); // Clear existing to prevent duplicates
           _chatHistory.addAll(loadedHistory);
         });
         
         debugPrint('Loaded ${_chatHistory.length} chat sessions from Supabase');
+      } else {
+        // No conversations found, clear the list
+        setState(() {
+          _chatHistory.clear();
+        });
       }
     } catch (e) {
       debugPrint('Error loading chat history from Supabase: $e');
+      // Clear on error to prevent stale data
+      setState(() {
+        _chatHistory.clear();
+      });
     }
   }
 
@@ -147,23 +187,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   void switchModel(String modelName) {
     if (_models.contains(modelName)) {
       setState(() => _selectedModel = modelName);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '🔄 Switched to $_selectedModel',
-            style: const TextStyle(
-              color: Color(0xFF000000),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          backgroundColor: Colors.white,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.all(16),
-          elevation: 4,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      showRoundedSnackBar(context, '🔄 Switched to $_selectedModel');
     }
   }
 
@@ -196,23 +220,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: Color(0xFF2D3748), // Dark text for visibility
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        backgroundColor: Colors.white, // White background for visibility
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-        elevation: 8, // Add shadow for better visibility
-        duration: const Duration(seconds: 3), // Show longer for better UX
-      ),
-    );
+    showRoundedSnackBar(context, message);
   }
 
   void _showModelSelectionSheet() {
@@ -298,23 +306,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                                   HapticFeedback.selectionClick();
                                   setState(() => _selectedModel = model);
                                   Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        '✅ $_selectedModel selected',
-                                        style: const TextStyle(
-                                          color: Color(0xFF000000),
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      backgroundColor: Colors.white,
-                                      behavior: SnackBarBehavior.floating,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      margin: const EdgeInsets.all(16),
-                                      elevation: 4,
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
+                                  showRoundedSnackBar(context, '✅ $_selectedModel selected');
                                 },
                               ),
                             );
@@ -891,20 +883,11 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                       _chatPageKey.currentState?.startNewChat();
                       
                       // Show feedback to user
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            _isTemporaryChatMode 
-                              ? '🎭 Temporary chat mode enabled - conversations won\'t be saved'
-                              : '💾 Normal chat mode enabled - conversations will be saved',
-                            style: const TextStyle(
-                              color: Color(0xFF000000),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          backgroundColor: const Color(0xFFE0DED9),
-                          duration: const Duration(seconds: 2),
-                        ),
+                      showRoundedSnackBar(
+                        context,
+                        _isTemporaryChatMode 
+                          ? '🎭 Temporary chat mode enabled - conversations won\'t be saved'
+                          : '💾 Normal chat mode enabled - conversations will be saved'
                       );
                     },
                     borderRadius: BorderRadius.circular(21),

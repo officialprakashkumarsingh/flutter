@@ -3,6 +3,37 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_auth_service.dart';
 
+// Custom rounded SnackBar utility
+void showRoundedSnackBar(BuildContext context, String message, {bool isError = false}) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        message,
+        style: GoogleFonts.inter(
+          color: const Color(0xFF000000),
+          fontWeight: FontWeight.w500,
+          fontSize: 13,
+        ),
+      ),
+      backgroundColor: isError ? const Color(0xFFFFE5E5) : const Color(0xFFE8F5E8),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isError ? const Color(0xFFFF6B6B) : const Color(0xFF4CAF50),
+          width: 1,
+        ),
+      ),
+      margin: const EdgeInsets.only(
+        bottom: 120, // Position above input area
+        left: 16,
+        right: 16,
+      ),
+      duration: const Duration(seconds: 3),
+    ),
+  );
+}
+
 class AuthAndProfilePages extends StatefulWidget {
   const AuthAndProfilePages({super.key});
 
@@ -60,22 +91,12 @@ class _LoginPageState extends State<LoginPage> {
       if (response.user != null) {
         // User signed in successfully, AuthGate will handle navigation
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Welcome back!'),
-              backgroundColor: Colors.green,
-            ),
-          );
+          showRoundedSnackBar(context, '✅ Welcome back!');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ ${SupabaseAuthService.getErrorMessage(e)}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showRoundedSnackBar(context, '❌ ${SupabaseAuthService.getErrorMessage(e)}', isError: true);
       }
     } finally {
       if (mounted) {
@@ -86,33 +107,18 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _resetPassword() async {
     if (_emailController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your email address first'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      showRoundedSnackBar(context, 'Please enter your email address first', isError: true);
       return;
     }
 
     try {
       await SupabaseAuthService.resetPassword(_emailController.text.trim());
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Password reset email sent!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        showRoundedSnackBar(context, '✅ Password reset email sent!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ ${SupabaseAuthService.getErrorMessage(e)}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showRoundedSnackBar(context, '❌ ${SupabaseAuthService.getErrorMessage(e)}', isError: true);
       }
     }
   }
@@ -313,7 +319,7 @@ class _LoginPageState extends State<LoginPage> {
                   // Sign In Button
                   Container(
                     width: double.infinity,
-                    height: 44,
+                    height: 40, // Reduced from 44 to 40
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
@@ -337,8 +343,8 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       child: _isLoading
                           ? const SizedBox(
-                              width: 18,
-                              height: 18,
+                              width: 16, // Reduced from 18 to 16
+                              height: 16, // Reduced from 18 to 16
                               child: CircularProgressIndicator(
                                 color: Colors.white,
                                 strokeWidth: 2,
@@ -347,7 +353,7 @@ class _LoginPageState extends State<LoginPage> {
                           : Text(
                               'Sign In',
                               style: GoogleFonts.inter(
-                                fontSize: 14,
+                                fontSize: 13, // Reduced from 14 to 13
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -446,13 +452,7 @@ class _SignUpPageState extends State<SignUpPage> {
         );
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Account created! Please check your email to verify.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 4),
-            ),
-          );
+          showRoundedSnackBar(context, '✅ Account created! Please check your email to verify.');
           
           // Switch to login page
           widget.onToggle();
@@ -460,12 +460,7 @@ class _SignUpPageState extends State<SignUpPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('❌ ${SupabaseAuthService.getErrorMessage(e)}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        showRoundedSnackBar(context, '❌ ${SupabaseAuthService.getErrorMessage(e)}', isError: true);
       }
     } finally {
       if (mounted) {
@@ -770,7 +765,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   // Sign Up Button
                   Container(
                     width: double.infinity,
-                    height: 44,
+                    height: 40, // Reduced from 44 to 40
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
@@ -794,8 +789,8 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                       child: _isLoading
                           ? const SizedBox(
-                              width: 18,
-                              height: 18,
+                              width: 16, // Reduced from 18 to 16
+                              height: 16, // Reduced from 18 to 16
                               child: CircularProgressIndicator(
                                 color: Colors.white,
                                 strokeWidth: 2,
@@ -804,7 +799,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           : Text(
                               'Create Account',
                               style: GoogleFonts.inter(
-                                fontSize: 14,
+                                fontSize: 13, // Reduced from 14 to 13
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
