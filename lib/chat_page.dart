@@ -108,23 +108,27 @@ class ChatPageState extends State<ChatPage> {
 
   @override
   void initState() {
+    debugPrint('🎬 CHATPAGE: initState() called - setting up ChatPage...');
     super.initState();
     _characterService.addListener(_onCharacterChanged);
     // REMOVED: External tools service listener
     
     _updateGreetingForCharacter();
+    debugPrint('🎬 CHATPAGE: Calling _loadConversationMemory...');
     _loadConversationMemory();
     _loadImageModels();
     _controller.addListener(() {
       setState(() {}); // Refresh UI when text changes
     });
+    debugPrint('✅ CHATPAGE: initState() completed');
   }
   
       Future<void> _loadConversationMemory() async {
     try {
+      debugPrint('💭 CONVERSATION: _loadConversationMemory() called');
       // Skip loading from Supabase if in temporary chat mode
       if (widget.isTemporaryChatMode) {
-        debugPrint('Temporary chat mode: Starting fresh without loading from Supabase');
+        debugPrint('💭 CONVERSATION: Temporary chat mode - starting fresh');
         setState(() {
           _currentConversationId = null;
           _conversationMemory = [];
@@ -136,7 +140,7 @@ class ChatPageState extends State<ChatPage> {
       
       // Check if user is signed in before attempting to load from Supabase
       if (!SupabaseAuthService.isSignedIn) {
-        debugPrint('User not signed in, starting fresh chat without loading from Supabase');
+        debugPrint('💭 CONVERSATION: User not signed in - starting fresh');
         setState(() {
           _currentConversationId = null;
           _conversationMemory = [];
@@ -148,16 +152,17 @@ class ChatPageState extends State<ChatPage> {
       
       // CHANGED: Always start fresh instead of auto-loading latest conversation
       // This prevents the logout/login issue where user sees the same chat
-      debugPrint('Starting fresh chat - user can manually select from chat history if needed');
+      debugPrint('💭 CONVERSATION: Starting fresh chat - no auto-loading');
       setState(() {
         _currentConversationId = null;
         _conversationMemory = [];
         _messages.clear();
         _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
       });
+      debugPrint('✅ CONVERSATION: Fresh chat created with ${_messages.length} messages');
       
     } catch (e) {
-      debugPrint('Error in conversation memory setup: $e');
+      debugPrint('❌ CONVERSATION: Error in conversation memory setup: $e');
       // On error, start fresh
       setState(() {
         _currentConversationId = null;
@@ -178,6 +183,15 @@ class ChatPageState extends State<ChatPage> {
         return;
       }
       
+      // Skip saving if only contains initial bot greeting (prevent empty conversations)
+      if (_messages.length == 1 && 
+          _messages.first.sender == Sender.bot && 
+          (_messages.first.text.contains('Hi, I\'m AhamAI') || 
+           _messages.first.text.contains('Fresh chat started'))) {
+        debugPrint('Skipping save: Only contains initial bot greeting');
+        return;
+      }
+      
       // Generate title for new conversations
       String title = 'New Chat';
       if (_currentConversationId == null && _messages.length > 1) {
@@ -185,6 +199,8 @@ class ChatPageState extends State<ChatPage> {
       }
       
       final isNewConversation = _currentConversationId == null;
+      
+      debugPrint('Saving chat: ${_messages.length} messages, isNew: $isNewConversation, ID: $_currentConversationId');
       
       // Save to Supabase
       final conversationId = await SupabaseChatService.saveConversation(
@@ -200,7 +216,7 @@ class ChatPageState extends State<ChatPage> {
         });
       }
       
-      debugPrint('Chat history saved to Supabase: ${_messages.length} messages');
+      debugPrint('Chat history saved to Supabase: ${_messages.length} messages, final ID: $_currentConversationId');
       
       // Only notify parent of new conversations, not every message update
       if (isNewConversation && conversationId != null) {
@@ -219,12 +235,14 @@ class ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    debugPrint('🎬 CHATPAGE: dispose() called - cleaning up ChatPage...');
     _characterService.removeListener(_onCharacterChanged);
     // REMOVED: External tools service listener removal
     _controller.dispose();
     _scroll.dispose();
     _httpClient?.close();
     super.dispose();
+    debugPrint('✅ CHATPAGE: dispose() completed');
   }
 
   List<Message> getMessages() => _messages;
@@ -913,6 +931,7 @@ Be conversational and helpful!'''
   }
 
   void startNewChat() {
+    debugPrint('🆕 NEWCHAT: startNewChat() called');
     setState(() {
       _awaitingReply = false;
       _editingMessageId = null;
@@ -928,6 +947,7 @@ Be conversational and helpful!'''
         _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
       }
     });
+    debugPrint('✅ NEWCHAT: Fresh chat created with ${_messages.length} messages');
   }
   
   // Public method to reload conversation memory (for auth state changes)
