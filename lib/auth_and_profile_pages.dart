@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_auth_service.dart';
@@ -52,11 +53,20 @@ class _AuthAndProfilePagesState extends State<AuthAndProfilePages> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F3F0),
-      body: showLoginPage 
-          ? LoginPage(onToggle: togglePage)
-          : SignUpPage(onToggle: togglePage),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Color(0xFFF4F3F0),
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF4F3F0),
+        body: showLoginPage 
+            ? LoginPage(onToggle: togglePage)
+            : SignUpPage(onToggle: togglePage),
+      ),
     );
   }
 }

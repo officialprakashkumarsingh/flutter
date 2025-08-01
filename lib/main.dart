@@ -16,8 +16,11 @@ void main() async {
   
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    systemNavigationBarColor: Color(0xFFF4F3F0),
     statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
+    systemNavigationBarColor: Color(0xFFF4F3F0),
+    systemNavigationBarIconBrightness: Brightness.dark,
   ));
   
   runApp(const AhamAIApp());
