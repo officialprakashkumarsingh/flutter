@@ -452,10 +452,19 @@ class Message {
 }
 
 class ChatSession {
+  final String? id; // Supabase conversation ID
   final String title;
   final List<Message> messages;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
-  ChatSession({required this.title, required this.messages});
+  ChatSession({
+    this.id,
+    required this.title, 
+    required this.messages,
+    this.createdAt,
+    this.updatedAt,
+  });
 }
 
 // NEW USER MODEL

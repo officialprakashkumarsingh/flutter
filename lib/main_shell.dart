@@ -11,6 +11,7 @@ import 'characters_page.dart';
 import 'saved_page.dart';
 import 'models.dart';
 import 'supabase_auth_service.dart';
+import 'supabase_chat_service.dart';
 // REMOVED: External tools service import
 
 
@@ -45,10 +46,28 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   late AnimationController _pageTransitionController;
   late Animation<Offset> _slideAnimation;
 
+  // Auth state listener
+  late final Stream _authStateStream;
+
   @override
   void initState() {
     super.initState();
     _fetchModels();
+    _loadChatHistoryFromSupabase(); // Load chat history from Supabase
+    
+    // Listen for auth state changes
+    _authStateStream = SupabaseAuthService.authStateChanges;
+    _authStateStream.listen((authState) {
+      // Reload chat history when user signs in
+      if (SupabaseAuthService.isSignedIn) {
+        _loadChatHistoryFromSupabase();
+      } else {
+        // Clear chat history when user signs out
+        setState(() {
+          _chatHistory.clear();
+        });
+      }
+    });
     
     // Set up external tools callback for model switching
     // REMOVED: External tools service model switch callback
@@ -83,6 +102,45 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     _fabAnimationController.dispose();
     _pageTransitionController.dispose();
     super.dispose();
+  }
+
+  // Load chat history from Supabase
+  Future<void> _loadChatHistoryFromSupabase() async {
+    try {
+      final conversations = await SupabaseChatService.getUserConversations();
+      
+      if (conversations.isNotEmpty) {
+        final List<ChatSession> loadedHistory = [];
+        
+        for (final conversation in conversations) {
+          final fullConversation = await SupabaseChatService.loadConversation(conversation['id']);
+          if (fullConversation != null) {
+            final session = ChatSession(
+              id: fullConversation['id'],
+              title: fullConversation['title'],
+              messages: List<Message>.from(fullConversation['messages']),
+              createdAt: fullConversation['createdAt'],
+              updatedAt: fullConversation['updatedAt'],
+            );
+            loadedHistory.add(session);
+          }
+        }
+        
+        setState(() {
+          _chatHistory.clear();
+          _chatHistory.addAll(loadedHistory);
+        });
+        
+        debugPrint('Loaded ${_chatHistory.length} chat sessions from Supabase');
+      }
+    } catch (e) {
+      debugPrint('Error loading chat history from Supabase: $e');
+    }
+  }
+
+  // Refresh chat history from Supabase
+  Future<void> _refreshChatHistory() async {
+    await _loadChatHistoryFromSupabase();
   }
 
   /// Switch to a different AI model (called by external tools)
@@ -298,10 +356,16 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         final session = ChatSession(
           title: title,
           messages: List.from(currentMessages),
+          createdAt: DateTime.now(),
         );
+        
+        // Save to local history first
         setState(() {
           _chatHistory.insert(0, session);
         });
+        
+        // Also save to Supabase asynchronously
+        _saveChatToSupabase(currentMessages, title);
       }
     }
 
@@ -310,6 +374,25 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
       setState(() {
         _selectedIndex = 0;
       });
+    }
+  }
+
+  // Save chat session to Supabase
+  Future<void> _saveChatToSupabase(List<Message> messages, String title) async {
+    try {
+      final conversationId = await SupabaseChatService.saveConversation(
+        messages: messages,
+        conversationMemory: [],
+        title: title,
+      );
+      
+      if (conversationId != null) {
+        debugPrint('Chat saved to Supabase with ID: $conversationId');
+        // Refresh chat history to sync with Supabase
+        await _refreshChatHistory();
+      }
+    } catch (e) {
+      debugPrint('Error saving chat to Supabase: $e');
     }
   }
   
@@ -325,6 +408,23 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     setState(() {
       _chatHistory.remove(session);
     });
+    
+    // Also delete from Supabase if it has an ID
+    if (session.id != null) {
+      _deleteChatFromSupabase(session.id!);
+    }
+  }
+
+  // Delete chat from Supabase
+  Future<void> _deleteChatFromSupabase(String conversationId) async {
+    try {
+      final success = await SupabaseChatService.deleteConversation(conversationId);
+      if (success) {
+        debugPrint('Chat deleted from Supabase: $conversationId');
+      }
+    } catch (e) {
+      debugPrint('Error deleting chat from Supabase: $e');
+    }
   }
 
   void _pinChat(ChatSession session) {
@@ -580,6 +680,23 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                     ),
                   ),
                   const Spacer(),
+                  // Refresh button
+                  GestureDetector(
+                    onTap: _refreshChatHistory,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0DED9),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(
+                        Icons.refresh_rounded,
+                        size: 16,
+                        color: Color(0xFF666666),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Text(
                     '${_chatHistory.length}',
                     style: GoogleFonts.inter(
@@ -818,7 +935,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         child: ChatPage(
           key: _chatPageKey, 
           onBookmark: _bookmarkMessage, 
-          selectedModel: _selectedModel
+          selectedModel: _selectedModel,
+          onChatHistoryChanged: _refreshChatHistory, // Add callback
         ),
       ),
     );

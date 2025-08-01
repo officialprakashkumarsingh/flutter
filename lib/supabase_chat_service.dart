@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'models.dart';
 import 'file_attachment_service.dart';
+import 'dart:typed_data';
 
 class SupabaseChatService {
   static final SupabaseClient _supabase = Supabase.instance.client;
@@ -87,13 +88,33 @@ class SupabaseChatService {
       // Convert JSON back to Messages
       final messagesJson = response['messages'] as List<dynamic>;
       final messages = messagesJson.map((messageData) {
+        // Reconstruct attachments
+        final attachmentsData = messageData['attachments'] as List<dynamic>? ?? [];
+        final attachments = attachmentsData.map<FileAttachment>((attachmentData) {
+          return FileAttachment(
+            id: attachmentData['name'] ?? '',
+            name: attachmentData['name'] ?? '',
+            filePath: attachmentData['filePath'] ?? '',
+            mimeType: 'application/octet-stream',
+            size: attachmentData['size'] ?? 0,
+            uploadedAt: DateTime.now(),
+            bytes: Uint8List(0), // Empty bytes since we don't store the actual file content
+            isImage: false,
+            isZip: false,
+            isText: false,
+            isCode: false,
+            isPdf: false,
+            isApk: attachmentData['isApk'] ?? false,
+          );
+        }).toList();
+        
         return Message(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           text: messageData['text'] ?? '',
           sender: (messageData['sender'] as String) == 'Sender.user' ? Sender.user : Sender.bot,
           timestamp: DateTime.parse(messageData['timestamp'] ?? DateTime.now().toIso8601String()),
           isStreaming: messageData['isStreaming'] ?? false,
-          attachments: [], // TODO: Handle attachments later
+          attachments: attachments,
         );
       }).toList();
 

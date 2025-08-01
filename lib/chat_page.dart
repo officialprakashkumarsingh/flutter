@@ -32,7 +32,14 @@ import 'supabase_chat_service.dart';
 class ChatPage extends StatefulWidget {
   final void Function(Message botMessage) onBookmark;
   final String selectedModel;
-  const ChatPage({super.key, required this.onBookmark, required this.selectedModel});
+  final VoidCallback? onChatHistoryChanged; // Callback when chat history changes
+  
+  const ChatPage({
+    super.key, 
+    required this.onBookmark, 
+    required this.selectedModel,
+    this.onChatHistoryChanged,
+  });
 
   @override
   State<ChatPage> createState() => ChatPageState();
@@ -163,6 +170,10 @@ class ChatPageState extends State<ChatPage> {
       }
       
       debugPrint('Chat history saved to Supabase: ${_messages.length} messages');
+      
+      // Notify parent that chat history has changed
+      widget.onChatHistoryChanged?.call();
+      
     } catch (e) {
       debugPrint('Error saving chat history: $e');
     }
