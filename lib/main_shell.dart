@@ -109,23 +109,10 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         
         debugPrint('✅ AUTH STATE: User signed out cleanup completed');
       } else {
-        debugPrint('🔑 AUTH STATE: User signed in, checking if refresh needed...');
-        // Only load if we haven't loaded recently and chat history is empty
-        final now = DateTime.now();
-        if ((_lastChatHistoryLoad == null || 
-            now.difference(_lastChatHistoryLoad!).inMilliseconds > 5000) &&
-            _chatHistory.isEmpty) {
-          debugPrint('📥 AUTH STATE: Scheduling delayed chat history refresh after signin (chat history is empty)');
-          // Add a small delay to ensure auth state is fully settled before loading
-          Future.delayed(const Duration(milliseconds: 1000), () {
-            if (mounted && SupabaseAuthService.isSignedIn && _chatHistory.isEmpty) {
-              debugPrint('⏰ AUTH STATE: Loading chat history after delay...');
-              _loadChatHistoryFromSupabase();
-            }
-          });
-        } else {
-          debugPrint('⏰ AUTH STATE: Chat history loaded recently or already exists (${_chatHistory.length} chats), skipping signin refresh');
-        }
+        debugPrint('🔑 AUTH STATE: User signed in, but NOT auto-loading chat history to prevent duplicates');
+        debugPrint('🔑 AUTH STATE: Current chat history count: ${_chatHistory.length}');
+        // REMOVED: Auto-loading on auth state change to prevent duplicates
+        // Chat history will be loaded by the initial load in initState() only
       }
     });
     

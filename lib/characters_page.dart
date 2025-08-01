@@ -6,6 +6,7 @@ import 'character_service.dart';
 import 'character_editor.dart';
 import 'character_chat_page.dart';
 import 'supabase_character_service.dart';
+import 'debug_helper.dart';
 
 class CharactersPage extends StatefulWidget {
   final String selectedModel;
@@ -180,6 +181,37 @@ class _CharactersPageState extends State<CharactersPage> with TickerProviderStat
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error creating characters: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _testDatabaseConnectivity() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      debugPrint('🔧 CharactersPage: Running database connectivity test...');
+      await DebugHelper.testDatabaseConnectivity();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Database test completed - check logs for details')),
+        );
+      }
+      
+    } catch (e) {
+      debugPrint('❌ CharactersPage: Database test error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Database test failed: $e')),
         );
       }
     } finally {
@@ -398,6 +430,22 @@ class _CharactersPageState extends State<CharactersPage> with TickerProviderStat
                                 ),
                                 child: Text(
                                   'Create Built-in Characters',
+                                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: _testDatabaseConnectivity,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFFF9800),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Test Database Connection',
                                   style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
                                 ),
                               ),

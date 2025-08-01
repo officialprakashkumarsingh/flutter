@@ -9,6 +9,7 @@ class SupabaseCharacterService {
     try {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) {
+        print('❌ SupabaseCharacterService.getUserCharacters() - User not authenticated');
         throw Exception('User not authenticated');
       }
 
@@ -22,27 +23,44 @@ class SupabaseCharacterService {
           .order('created_at', ascending: false);  // Then by creation date
 
       print('🔍 SupabaseCharacterService.getUserCharacters() - Raw response: ${response.length} characters');
+      print('🔍 SupabaseCharacterService.getUserCharacters() - Raw data: $response');
       
-      final characters = response.map<Character>((characterData) {
-        return Character(
-          id: characterData['id'],
-          name: characterData['name'],
-          description: characterData['description'],
-          systemPrompt: characterData['system_prompt'],
-          avatarUrl: characterData['avatar_url'],
-          customTag: characterData['custom_tag'],
-          backgroundColor: characterData['background_color'] ?? 4294967295,
-          isBuiltIn: characterData['is_built_in'] ?? false,
-          isFavorite: characterData['is_favorite'] ?? false,
-          createdAt: DateTime.parse(characterData['created_at']),
-        );
-      }).toList();
+      if (response.isEmpty) {
+        print('⚠️ SupabaseCharacterService.getUserCharacters() - No characters found in database for user $userId');
+        return [];
+      }
       
-      print('🔍 SupabaseCharacterService.getUserCharacters() - Processed result: ${characters.length} characters');
+      final characters = <Character>[];
+      for (var i = 0; i < response.length; i++) {
+        try {
+          final characterData = response[i];
+          print('🔍 Processing character ${i + 1}: ${characterData['name']} (built-in: ${characterData['is_built_in']})');
+          
+          final character = Character(
+            id: characterData['id'],
+            name: characterData['name'],
+            description: characterData['description'],
+            systemPrompt: characterData['system_prompt'],
+            avatarUrl: characterData['avatar_url'],
+            customTag: characterData['custom_tag'],
+            backgroundColor: characterData['background_color'] ?? 4294967295,
+            isBuiltIn: characterData['is_built_in'] ?? false,
+            isFavorite: characterData['is_favorite'] ?? false,
+            createdAt: DateTime.parse(characterData['created_at']),
+          );
+          characters.add(character);
+          print('✅ Successfully processed character: ${character.name}');
+        } catch (e) {
+          print('❌ Error processing character ${i + 1}: $e');
+        }
+      }
+      
+      print('🔍 SupabaseCharacterService.getUserCharacters() - Final result: ${characters.length} characters processed');
       
       return characters;
     } catch (e) {
       print('❌ Error getting user characters: $e');
+      print('❌ Stack trace: ${StackTrace.current}');
       return [];
     }
   }
@@ -61,28 +79,39 @@ class SupabaseCharacterService {
     try {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) {
+        print('❌ SupabaseCharacterService.createCharacter() - User not authenticated');
         throw Exception('User not authenticated');
       }
 
+      print('🔍 SupabaseCharacterService.createCharacter() - Creating "$name" for user: $userId');
+      print('🔍 Character data: {name: $name, isBuiltIn: $isBuiltIn, description: $description}');
+
+      final insertData = {
+        'user_id': userId,
+        'name': name,
+        'description': description,
+        'system_prompt': systemPrompt,
+        'avatar_url': avatarUrl,
+        'custom_tag': customTag,
+        'background_color': backgroundColor,
+        'is_built_in': isBuiltIn,
+        'is_favorite': isFavorite,
+      };
+      
+      print('🔍 Insert data: $insertData');
+
       final response = await _supabase
           .from('characters')
-          .insert({
-            'user_id': userId,
-            'name': name,
-            'description': description,
-            'system_prompt': systemPrompt,
-            'avatar_url': avatarUrl,
-            'custom_tag': customTag,
-            'background_color': backgroundColor,
-            'is_built_in': isBuiltIn,
-            'is_favorite': isFavorite,
-          })
+          .insert(insertData)
           .select('id')
           .single();
       
-      return response['id'] as String;
+      final characterId = response['id'] as String;
+      print('✅ SupabaseCharacterService.createCharacter() - Successfully created "$name" with ID: $characterId');
+      return characterId;
     } catch (e) {
-      print('Error creating character: $e');
+      print('❌ SupabaseCharacterService.createCharacter() - Error creating character "$name": $e');
+      print('❌ Stack trace: ${StackTrace.current}');
       return null;
     }
   }
