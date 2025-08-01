@@ -159,36 +159,26 @@ GRANT SELECT ON public.profiles TO anon;
 GRANT ALL ON public.characters TO authenticated;
 GRANT ALL ON public.chat_conversations TO authenticated;
 
-### 🧹 Maintenance / de-duplication script
-
-If you ever encounter duplicate rows (same `name` for the same user) in the
-`characters` table, run the SQL block below. It will keep the **most recently
-created** character per (`user_id`,`name`) pair, delete older duplicates, and
-then add a protective unique index so the problem cannot happen again.
-
 ```sql
--- 1️⃣ Delete older duplicates, keep the newest row per (user_id,name)
+-- Cleanup duplicate character rows (keeps the newest row per (user_id, name))
 WITH ranked AS (
-  SELECT
-    id,
-    ROW_NUMBER() OVER (PARTITION BY user_id, LOWER(name) ORDER BY created_at DESC) AS rn
+  SELECT id,
+         ROW_NUMBER() OVER (
+             PARTITION BY user_id, LOWER(name)
+             ORDER BY created_at DESC
+         ) AS rn
   FROM public.characters
 )
 DELETE FROM public.characters
 WHERE id IN (SELECT id FROM ranked WHERE rn > 1);
 
--- 2️⃣ Enforce uniqueness going forward
+-- Prevent future duplicates
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_characters_user_name
     ON public.characters (user_id, LOWER(name));
 ```
 
-Run the snippet once (e.g. in Supabase SQL editor). After that, inserting a
-second character with the same name for the same user will raise a constraint
-error, ensuring the Characters page never shows accidental duplicates.
-
 -- Note: Built-in characters will be created automatically by the app when users first visit the Characters page
 -- This ensures better error handling and doesn't interfere with user registration
-```
 
 **Step 3: Test the setup (optional verification):**
 
