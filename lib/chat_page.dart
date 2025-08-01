@@ -83,6 +83,7 @@ class ChatPageState extends State<ChatPage> {
   // Current conversation tracking
   String? _currentConversationId;
   static const int _maxMemorySize = 10;
+  bool _isSavingChat = false; // Prevent concurrent saves
 
   http.Client? _httpClient;
   final CharacterService _characterService = CharacterService();
@@ -175,8 +176,20 @@ class ChatPageState extends State<ChatPage> {
   }
   
     Future<void> _saveChatHistory() async {
+    // Prevent concurrent saves
+    if (_isSavingChat) {
+      debugPrint('💾 SAVE: Already saving, skipping concurrent save request');
+      return;
+    }
+    
     try {
-      if (_messages.isEmpty) return;
+      _isSavingChat = true;
+      debugPrint('💾 SAVE: Starting save operation...');
+      
+      if (_messages.isEmpty) {
+        debugPrint('💾 SAVE: No messages to save');
+        return;
+      }
       
       // Skip saving if in temporary chat mode
       if (widget.isTemporaryChatMode) {
@@ -197,11 +210,22 @@ class ChatPageState extends State<ChatPage> {
       String title = 'New Chat';
       if (_currentConversationId == null && _messages.length > 1) {
         title = SupabaseChatService.generateConversationTitle(_messages);
+        debugPrint('💬 SAVE: Generated new title for new conversation: "$title"');
+      } else if (_currentConversationId != null) {
+        // For existing conversations, generate title from messages if not set properly
+        // This prevents "New Chat" from overwriting existing conversation titles
+        title = SupabaseChatService.generateConversationTitle(_messages);
+        debugPrint('💬 SAVE: Generated title for existing conversation: "$title" (ID: $_currentConversationId)');
+      } else {
+        debugPrint('💬 SAVE: Using default title: "$title"');
       }
       
       final isNewConversation = _currentConversationId == null;
       
-      debugPrint('Saving chat: ${_messages.length} messages, isNew: $isNewConversation, ID: $_currentConversationId');
+      debugPrint('💾 SAVE: Saving chat with ${_messages.length} messages');
+      debugPrint('💾 SAVE: isNewConversation: $isNewConversation');
+      debugPrint('💾 SAVE: conversationId: $_currentConversationId');
+      debugPrint('💾 SAVE: title: "$title"');
       
       // Save to Supabase
       final conversationId = await SupabaseChatService.saveConversation(
@@ -215,9 +239,14 @@ class ChatPageState extends State<ChatPage> {
         setState(() {
           _currentConversationId = conversationId;
         });
+        debugPrint('💾 SAVE: Assigned new conversation ID: $conversationId');
+      } else if (conversationId != null && _currentConversationId != null) {
+        debugPrint('💾 SAVE: Updated existing conversation ID: $conversationId (was: $_currentConversationId)');
+      } else {
+        debugPrint('💾 SAVE: No conversation ID returned from save operation');
       }
       
-      debugPrint('Chat history saved to Supabase: ${_messages.length} messages, final ID: $_currentConversationId');
+      debugPrint('💾 SAVE: Final conversation ID state: $_currentConversationId');
       
       // Only notify parent of new conversations, not every message update
       if (isNewConversation && conversationId != null) {
@@ -227,6 +256,9 @@ class ChatPageState extends State<ChatPage> {
       
     } catch (e) {
       debugPrint('Error saving chat history: $e');
+    } finally {
+      _isSavingChat = false;
+      debugPrint('💾 SAVE: Save operation completed');
     }
   }
   
@@ -249,6 +281,9 @@ class ChatPageState extends State<ChatPage> {
   List<Message> getMessages() => _messages;
 
   void loadChatSession(List<Message> messages, {String? conversationId}) {
+    debugPrint('📂 LOAD: loadChatSession called with ${messages.length} messages');
+    debugPrint('📂 LOAD: Current conversation ID: $_currentConversationId');
+    debugPrint('📂 LOAD: New conversation ID: $conversationId');
     setState(() {
       _awaitingReply = false;
       _httpClient?.close();
@@ -256,7 +291,7 @@ class ChatPageState extends State<ChatPage> {
       _messages.addAll(messages);
       _currentConversationId = conversationId; // Set the conversation ID so messages save to correct conversation
     });
-    debugPrint('Loaded chat session with ${messages.length} messages, conversation ID: $conversationId');
+    debugPrint('✅ LOAD: Loaded chat session with ${messages.length} messages, conversation ID: $_currentConversationId');
   }
 
   void _onCharacterChanged() {
@@ -933,6 +968,7 @@ Be conversational and helpful!'''
 
   void startNewChat() {
     debugPrint('🆕 NEWCHAT: startNewChat() called');
+    debugPrint('🆕 NEWCHAT: Current conversation ID before reset: $_currentConversationId');
     setState(() {
       _awaitingReply = false;
       _editingMessageId = null;
@@ -945,6 +981,7 @@ Be conversational and helpful!'''
       // Bot greeting will be added when user sends first message
     });
     debugPrint('✅ NEWCHAT: Empty chat created with ${_messages.length} messages');
+    debugPrint('✅ NEWCHAT: Conversation ID reset to: $_currentConversationId');
   }
   
   // Public method to reload conversation memory (for auth state changes)
