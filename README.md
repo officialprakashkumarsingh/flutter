@@ -6,12 +6,20 @@ A modern Flutter application with Supabase authentication and admin panel for AI
 
 ### Supabase Database Setup
 
-Run this **single SQL command** in your Supabase SQL Editor to set up the complete database:
+**Step 1: Clean up any existing setup (run this first if you've tried before):**
 
 ```sql
--- Enable Row Level Security
-ALTER TABLE auth.users ENABLE ROW LEVEL SECURITY;
+-- Clean up existing setup
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
+DROP FUNCTION IF EXISTS public.handle_new_user();
+DROP FUNCTION IF EXISTS public.handle_user_update();
+DROP TABLE IF EXISTS public.profiles;
+```
 
+**Step 2: Run this complete setup command:**
+
+```sql
 -- Create profiles table for user data
 CREATE TABLE public.profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
@@ -41,11 +49,13 @@ CREATE POLICY "Users can insert own profile" ON public.profiles
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.profiles (id, email, full_name)
+    INSERT INTO public.profiles (id, email, full_name, created_at, updated_at)
     VALUES (
         NEW.id,
         NEW.email,
-        NEW.raw_user_meta_data->>'full_name'
+        COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
+        NOW(),
+        NOW()
     );
     RETURN NEW;
 END;
@@ -63,7 +73,7 @@ BEGIN
     UPDATE public.profiles
     SET 
         email = NEW.email,
-        full_name = NEW.raw_user_meta_data->>'full_name',
+        full_name = COALESCE(NEW.raw_user_meta_data->>'full_name', OLD.raw_user_meta_data->>'full_name', NEW.email),
         updated_at = NOW()
     WHERE id = NEW.id;
     RETURN NEW;
@@ -79,6 +89,32 @@ CREATE TRIGGER on_auth_user_updated
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON public.profiles TO authenticated;
 GRANT SELECT ON public.profiles TO anon;
+```
+
+**Step 3: Test the setup (optional verification):**
+
+```sql
+-- Verify the setup
+SELECT 
+    schemaname,
+    tablename,
+    attname,
+    typename
+FROM pg_tables t
+JOIN pg_attribute a ON a.attrelid = (
+    SELECT oid 
+    FROM pg_class 
+    WHERE relname = t.tablename 
+    AND relnamespace = (
+        SELECT oid 
+        FROM pg_namespace 
+        WHERE nspname = t.schemaname
+    )
+)
+JOIN pg_type ty ON ty.oid = a.atttypid
+WHERE t.tablename = 'profiles' 
+AND t.schemaname = 'public'
+AND a.attnum > 0;
 ```
 
 ## 📱 Features
@@ -171,6 +207,22 @@ User Input → Admin Settings → Cloudflare Workers → AI APIs → Response
 2. **Configure APIs**: Set up different AI models and providers
 3. **Test Connections**: Verify API settings before applying
 4. **Monitor Usage**: Track which models are being used
+
+## 🛠️ Troubleshooting
+
+### Common Issues
+
+1. **"must be owner of table users" Error**
+   - This is expected! We don't modify the auth.users table directly
+   - Follow the Step 1 & 2 commands above instead
+
+2. **Profiles not creating automatically**
+   - Verify triggers are created with the commands above
+   - Check if RLS policies are properly set
+
+3. **Permission denied errors**
+   - Make sure you're running commands as the database owner
+   - Check that all GRANT statements executed successfully
 
 ## 🤝 Contributing
 
