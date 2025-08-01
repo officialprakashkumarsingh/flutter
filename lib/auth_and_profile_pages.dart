@@ -130,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
             Text(
               'AhamAI',
               style: GoogleFonts.spaceMono(
-                fontSize: 36,
+                fontSize: 28,
                 color: Colors.black,
                 fontWeight: FontWeight.bold,
               ),
@@ -141,7 +141,7 @@ class _LoginPageState extends State<LoginPage> {
             Text(
               'Sign in to continue',
               style: GoogleFonts.inter(
-                fontSize: 20,
+                fontSize: 18,
                 color: Colors.black,
                 fontWeight: FontWeight.w600,
               ),
@@ -152,7 +152,7 @@ class _LoginPageState extends State<LoginPage> {
             Text(
               'Welcome back to AhamAI',
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: 12,
                 color: Colors.grey,
                 fontWeight: FontWeight.w400,
               ),
@@ -278,7 +278,7 @@ class _LoginPageState extends State<LoginPage> {
                   // Sign In Button
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 44,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _signIn,
                       style: ElevatedButton.styleFrom(
@@ -300,7 +300,7 @@ class _LoginPageState extends State<LoginPage> {
                           : Text(
                               'Sign In',
                               style: GoogleFonts.inter(
-                                fontSize: 18,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -320,7 +320,7 @@ class _LoginPageState extends State<LoginPage> {
                   'New to AhamAI?',
                   style: GoogleFonts.inter(
                     color: Colors.grey[600],
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
@@ -434,7 +434,7 @@ class _SignUpPageState extends State<SignUpPage> {
             Text(
               'AhamAI',
               style: GoogleFonts.spaceMono(
-                fontSize: 32,
+                fontSize: 28,
                 fontWeight: FontWeight.w600,
                 color: Colors.black,
               ),
@@ -445,7 +445,7 @@ class _SignUpPageState extends State<SignUpPage> {
             Text(
               'Create Account',
               style: GoogleFonts.inter(
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.black,
               ),
@@ -456,7 +456,7 @@ class _SignUpPageState extends State<SignUpPage> {
             Text(
               'Join AhamAI today',
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: 12,
                 color: Colors.grey,
                 fontWeight: FontWeight.w400,
               ),
@@ -606,7 +606,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   // Sign Up Button
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 44,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _signUp,
                       style: ElevatedButton.styleFrom(

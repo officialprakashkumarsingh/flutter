@@ -41,6 +41,10 @@ class AhamAIApp extends StatelessWidget {
           backgroundColor: Color(0xFFF4F3F0),
           foregroundColor: Colors.black,
           elevation: 0,
+          // Remove Material 3 scroll overlay & shadow tint
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+          shadowColor: Colors.transparent,
         ),
         cardTheme: CardTheme(
           color: Colors.white,
@@ -57,7 +61,7 @@ class AhamAIApp extends StatelessWidget {
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           filled: true,
-          fillColor: Colors.grey[50],
+          fillColor: Colors.white,
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Colors.white,
