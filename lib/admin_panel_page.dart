@@ -147,7 +147,7 @@ class _AdminPanelPageState extends State<AdminPanelPage>
         actions: _isAuthenticated
             ? [
                 IconButton(
-                  icon: const Icon(Icons.logout),
+                  icon: const FaIcon(FontAwesomeIcons.rightFromBracket),
                   onPressed: _logout,
                   tooltip: 'Logout',
                 ),
