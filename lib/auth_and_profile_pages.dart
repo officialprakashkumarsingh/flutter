@@ -126,24 +126,24 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             const Spacer(),
             
-            // AhamAI Logo - smaller
+            // AhamAI Logo
             Text(
               'AhamAI',
               style: GoogleFonts.spaceMono(
-                fontSize: 28,
-                color: Colors.black,
+                fontSize: 32,
+                color: const Color(0xFF000000),
                 fontWeight: FontWeight.bold,
               ),
             ),
             
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             
             Text(
               'Sign in to continue',
               style: GoogleFonts.inter(
-                fontSize: 18,
-                color: Colors.black,
-                fontWeight: FontWeight.w600,
+                fontSize: 16,
+                color: const Color(0xFF000000),
+                fontWeight: FontWeight.w500,
               ),
             ),
             
@@ -152,13 +152,13 @@ class _LoginPageState extends State<LoginPage> {
             Text(
               'Welcome back to AhamAI',
               style: GoogleFonts.inter(
-                fontSize: 12,
-                color: Colors.grey,
+                fontSize: 14,
+                color: const Color(0xFFA3A3A3),
                 fontWeight: FontWeight.w400,
               ),
             ),
             
-            const SizedBox(height: 48),
+            const SizedBox(height: 40),
             
             // Login Form
             Form(
@@ -167,10 +167,10 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   // Email Field
                   Container(
-                    height: 44,
+                    height: 48,
                     decoration: BoxDecoration(
                       color: const Color(0xFFE0DED9),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: const Color(0xFFC4C4C4)),
                     ),
                     child: TextFormField(
@@ -195,15 +195,15 @@ class _LoginPageState extends State<LoginPage> {
                           size: 18,
                         ),
                         filled: false,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                         border: InputBorder.none,
                         enabledBorder: InputBorder.none,
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Color(0xFF000000), width: 1.5),
                         ),
                         errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                           borderSide: const BorderSide(color: Colors.red, width: 1.5),
                         ),
                       ),
@@ -222,76 +222,123 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 16),
                   
                   // Password Field
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    enabled: !_isLoading,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.lock_outlined),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                      labelStyle: GoogleFonts.inter(
-                        color: Colors.grey[600],
+                  Container(
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0DED9),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFC4C4C4)),
+                    ),
+                    child: TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      enabled: !_isLoading,
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
+                        color: const Color(0xFF000000),
                       ),
+                      decoration: InputDecoration(
+                        hintText: 'Password',
+                        hintStyle: GoogleFonts.inter(
+                          color: const Color(0xFFA3A3A3),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.lock_outlined,
+                          color: Color(0xFFA3A3A3),
+                          size: 18,
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                            color: const Color(0xFFA3A3A3),
+                            size: 18,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                        filled: false,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFF000000), width: 1.5),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your password';
+                        }
+                        return null;
+                      },
+                      onFieldSubmitted: (_) => _signIn(),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      return null;
-                    },
-                    onFieldSubmitted: (_) => _signIn(),
                   ),
                   
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   
                   // Forgot Password
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: _isLoading ? null : _resetPassword,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       child: Text(
                         'Forgot Password?',
                         style: GoogleFonts.inter(
-                          color: Colors.grey[600],
-                          fontSize: 13,
+                          color: const Color(0xFF666666),
+                          fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
                   ),
                   
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   
                   // Sign In Button
-                  SizedBox(
+                  Container(
                     width: double.infinity,
                     height: 44,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _signIn,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
+                        backgroundColor: const Color(0xFF000000),
+                        foregroundColor: const Color(0xFFFFFFFF),
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: _isLoading
                           ? const SizedBox(
-                              width: 20,
-                              height: 20,
+                              width: 18,
+                              height: 18,
                               child: CircularProgressIndicator(
                                 color: Colors.white,
                                 strokeWidth: 2,
@@ -300,7 +347,7 @@ class _LoginPageState extends State<LoginPage> {
                           : Text(
                               'Sign In',
                               style: GoogleFonts.inter(
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -310,7 +357,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
             
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
             
             // Switch to Sign Up
             Row(
@@ -319,18 +366,24 @@ class _LoginPageState extends State<LoginPage> {
                 Text(
                   'New to AhamAI?',
                   style: GoogleFonts.inter(
-                    color: Colors.grey[600],
-                    fontSize: 12,
+                    color: const Color(0xFFA3A3A3),
+                    fontSize: 13,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
+                const SizedBox(width: 4),
                 TextButton(
                   onPressed: _isLoading ? null : widget.onToggle,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                   child: Text(
                     'Sign Up',
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: const Color(0xFF000000),
                       fontSize: 13,
                     ),
                   ),
@@ -338,7 +391,7 @@ class _LoginPageState extends State<LoginPage> {
               ],
             ),
             
-            const Spacer(),
+            const Spacer(flex: 2),
           ],
         ),
       ),
