@@ -124,7 +124,7 @@ SELECT
     schemaname,
     tablename,
     attname,
-    typename
+    ty.typname AS typename
 FROM pg_tables t
 JOIN pg_attribute a ON a.attrelid = (
     SELECT oid 
