@@ -71,8 +71,12 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
 
   List<ChatSession> get _filteredChatHistory {
     if (_chatSearchQuery.isEmpty) return _chatHistory;
-    final query = _chatSearchQuery.toLowerCase();
-    return _chatHistory.where((chat) => chat.title.toLowerCase().contains(query)).toList();
+    final q = _chatSearchQuery.toLowerCase();
+    return _chatHistory.where((chat) {
+      if (chat.title.toLowerCase().contains(q)) return true;
+      // Search inside messages text
+      return chat.messages.any((m) => m.text.toLowerCase().contains(q));
+    }).toList();
   }
 
   // State for model selection
@@ -887,7 +891,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                 height: 40,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE0DED9),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(24), // fully rounded like main chat input
                 ),
                 child: TextField(
                   onChanged: (value) => setState(() => _chatSearchQuery = value),
