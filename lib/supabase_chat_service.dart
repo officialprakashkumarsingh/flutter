@@ -76,6 +76,8 @@ class SupabaseChatService {
         throw Exception('User not authenticated');
       }
 
+      print('🔍 SupabaseChatService.loadConversation() - Loading conversation: $conversationId for user: $userId');
+
       final response = await _supabase
           .from('chat_conversations')
           .select()
@@ -83,7 +85,12 @@ class SupabaseChatService {
           .eq('user_id', userId)
           .maybeSingle();
 
-      if (response == null) return null;
+      if (response == null) {
+        print('🔍 SupabaseChatService.loadConversation() - No conversation found for ID: $conversationId');
+        return null;
+      }
+
+      print('🔍 SupabaseChatService.loadConversation() - Found conversation: ${response['title']} with ${(response['messages'] as List).length} messages');
 
       // Convert JSON back to Messages
       final messagesJson = response['messages'] as List<dynamic>;
@@ -122,7 +129,7 @@ class SupabaseChatService {
         response['conversation_memory'] as List<dynamic>? ?? []
       );
 
-      return {
+      final result = {
         'id': response['id'],
         'title': response['title'],
         'messages': messages,
@@ -130,8 +137,12 @@ class SupabaseChatService {
         'createdAt': DateTime.parse(response['created_at']),
         'updatedAt': DateTime.parse(response['updated_at']),
       };
+      
+      print('🔍 SupabaseChatService.loadConversation() - Successfully loaded conversation with ${messages.length} messages');
+      
+      return result;
     } catch (e) {
-      print('Error loading conversation: $e');
+      print('❌ Error loading conversation: $e');
       return null;
     }
   }
@@ -169,20 +180,31 @@ class SupabaseChatService {
         throw Exception('User not authenticated');
       }
 
+      print('🔍 SupabaseChatService.getUserConversations() - Fetching for user: $userId');
+      
       final response = await _supabase
           .from('chat_conversations')
           .select('id, title, created_at, updated_at')
           .eq('user_id', userId)
           .order('updated_at', ascending: false);
 
-      return response.map<Map<String, dynamic>>((conversation) => {
+      print('🔍 SupabaseChatService.getUserConversations() - Raw response: ${response.length} conversations');
+      for (var i = 0; i < response.length; i++) {
+        print('🔍   [$i] ID: ${response[i]['id']}, Title: ${response[i]['title']}');
+      }
+
+      final result = response.map<Map<String, dynamic>>((conversation) => {
         'id': conversation['id'],
         'title': conversation['title'],
         'createdAt': DateTime.parse(conversation['created_at']),
         'updatedAt': DateTime.parse(conversation['updated_at']),
       }).toList();
+      
+      print('🔍 SupabaseChatService.getUserConversations() - Processed result: ${result.length} conversations');
+      
+      return result;
     } catch (e) {
-      print('Error getting user conversations: $e');
+      print('❌ Error getting user conversations: $e');
       return [];
     }
   }

@@ -164,7 +164,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   Future<void> _loadChatHistoryFromSupabase() async {
     // Prevent multiple simultaneous loads
     if (_isLoadingChatHistory) {
-      debugPrint('Chat history already loading, skipping...');
+      debugPrint('🔄 Chat history already loading, skipping...');
       return;
     }
     
@@ -172,7 +172,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     final now = DateTime.now();
     if (_lastChatHistoryLoad != null && 
         now.difference(_lastChatHistoryLoad!).inMilliseconds < 1000) {
-      debugPrint('Chat history loaded recently, skipping debounced call...');
+      debugPrint('⏰ Chat history loaded recently, skipping debounced call...');
       return;
     }
     
@@ -180,19 +180,27 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     _lastChatHistoryLoad = now;
     
     try {
-      debugPrint('Starting chat history load from Supabase...');
+      debugPrint('🚀 Starting chat history load from Supabase...');
+      debugPrint('📊 Current _chatHistory size BEFORE load: ${_chatHistory.length}');
+      
       final conversations = await SupabaseChatService.getUserConversations();
+      
+      debugPrint('📥 SupabaseChatService returned ${conversations.length} conversations');
       
       if (conversations.isNotEmpty) {
         final List<ChatSession> loadedHistory = [];
         final Set<String> seenIds = {}; // Track seen conversation IDs
         
+        debugPrint('🔍 Processing ${conversations.length} conversations...');
+        
         for (final conversation in conversations) {
           final conversationId = conversation['id'] as String;
           
+          debugPrint('🔍   Processing conversation ID: $conversationId, Title: ${conversation['title']}');
+          
           // Skip if we've already processed this conversation ID
           if (seenIds.contains(conversationId)) {
-            debugPrint('Skipping duplicate conversation ID: $conversationId');
+            debugPrint('⚠️   Skipping duplicate conversation ID: $conversationId');
             continue;
           }
           seenIds.add(conversationId);
@@ -207,30 +215,42 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
               updatedAt: fullConversation['updatedAt'],
             );
             loadedHistory.add(session);
+            debugPrint('✅   Added session: ${session.title} with ${session.messages.length} messages');
+          } else {
+            debugPrint('❌   Failed to load full conversation for ID: $conversationId');
           }
         }
+        
+        debugPrint('📝 Loaded ${loadedHistory.length} unique sessions, clearing existing ${_chatHistory.length} sessions');
         
         setState(() {
           _chatHistory.clear(); // Clear existing to prevent duplicates
           _chatHistory.addAll(loadedHistory);
         });
         
-        debugPrint('Successfully loaded ${_chatHistory.length} unique chat sessions from Supabase');
+        debugPrint('✅ Successfully loaded ${_chatHistory.length} unique chat sessions from Supabase');
+        debugPrint('📊 Final _chatHistory contents:');
+        for (var i = 0; i < _chatHistory.length; i++) {
+          debugPrint('📊   [$i] ID: ${_chatHistory[i].id}, Title: ${_chatHistory[i].title}');
+        }
+        
       } else {
         // No conversations found, clear the list
+        debugPrint('📭 No conversations found in Supabase, clearing ${_chatHistory.length} existing sessions');
         setState(() {
           _chatHistory.clear();
         });
-        debugPrint('No conversations found in Supabase, cleared chat history');
+        debugPrint('🧹 Cleared chat history - now empty');
       }
     } catch (e) {
-      debugPrint('Error loading chat history from Supabase: $e');
+      debugPrint('❌ Error loading chat history from Supabase: $e');
       // Clear on error to prevent stale data
       setState(() {
         _chatHistory.clear();
       });
     } finally {
       _isLoadingChatHistory = false;
+      debugPrint('🏁 Chat history loading completed');
     }
   }
 
