@@ -11,7 +11,7 @@ class SupabaseChatService {
     required List<Message> messages,
     required List<String> conversationMemory,
     String? conversationId,
-    String title = 'New Chat',
+    String? title = 'New Chat',
     bool isPinned = false,
     DateTime? pinnedAt,
   }) async {
@@ -38,16 +38,22 @@ class SupabaseChatService {
 
       if (conversationId != null) {
         // Update existing conversation
+        final updateData = {
+          'messages': messagesJson,
+          'conversation_memory': conversationMemory,
+          'is_pinned': isPinned,
+          'pinned_at': pinnedAt?.toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        };
+        
+        // Only update title if provided (null means preserve existing title)
+        if (title != null) {
+          updateData['title'] = title;
+        }
+        
         await _supabase
             .from('chat_conversations')
-            .update({
-              'messages': messagesJson,
-              'conversation_memory': conversationMemory,
-              'title': title,
-              'is_pinned': isPinned,
-              'pinned_at': pinnedAt?.toIso8601String(),
-              'updated_at': DateTime.now().toIso8601String(),
-            })
+            .update(updateData)
             .eq('id', conversationId)
             .eq('user_id', userId);
         
@@ -58,7 +64,7 @@ class SupabaseChatService {
             .from('chat_conversations')
             .insert({
               'user_id': userId,
-              'title': title,
+              'title': title ?? 'New Chat',
               'messages': messagesJson,
               'conversation_memory': conversationMemory,
               'is_pinned': isPinned,
