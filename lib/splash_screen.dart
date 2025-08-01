@@ -14,18 +14,16 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _robotController;
-  late AnimationController _exciteController;
-  late AnimationController _logoController;
+  late AnimationController _textController;
+  late AnimationController _playController;
   late AnimationController _fadeController;
   
   late Animation<double> _robotFloatAnimation;
   late Animation<double> _robotRotateAnimation;
   late Animation<Offset> _robotSlideAnimation;
-  late Animation<double> _robotExciteAnimation;
-  late Animation<double> _robotJumpAnimation;
-  late Animation<Offset> _logoAppearAnimation;
-  late Animation<double> _logoOpacityAnimation;
-  late Animation<double> _logoScaleAnimation;
+  late Animation<double> _textScaleAnimation;
+  late Animation<double> _textOpacityAnimation;
+  late Animation<double> _robotPlayAnimation;
   late Animation<double> _fadeAnimation;
 
   @override
@@ -38,15 +36,15 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
     
-    // Robot excitement animation (laughing, bouncing)
-    _exciteController = AnimationController(
-      duration: const Duration(milliseconds: 3000),
+    // Text animation controller
+    _textController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
     
-    // Logo magical appearance (independent of robot)
-    _logoController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
+    // Robot play animation (circling around text)
+    _playController = AnimationController(
+      duration: const Duration(milliseconds: 2500),
       vsync: this,
     );
     
@@ -58,8 +56,8 @@ class _SplashScreenState extends State<SplashScreen>
     
     // Robot floating animation
     _robotFloatAnimation = Tween<double>(
-      begin: -20.0,
-      end: 20.0,
+      begin: -15.0,
+      end: 15.0,
     ).animate(CurvedAnimation(
       parent: _robotController,
       curve: Curves.easeInOut,
@@ -67,8 +65,8 @@ class _SplashScreenState extends State<SplashScreen>
     
     // Robot rotation animation
     _robotRotateAnimation = Tween<double>(
-      begin: -0.1,
-      end: 0.1,
+      begin: -0.05,
+      end: 0.05,
     ).animate(CurvedAnimation(
       parent: _robotController,
       curve: Curves.easeInOut,
@@ -83,48 +81,31 @@ class _SplashScreenState extends State<SplashScreen>
       curve: Curves.elasticOut,
     ));
     
-    // Robot excitement animations (bouncing, scaling)
-    _robotExciteAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.15,
-    ).animate(CurvedAnimation(
-      parent: _exciteController,
-      curve: Curves.elasticInOut,
-    ));
-    
-    _robotJumpAnimation = Tween<double>(
+    // Robot play animation (moves around the text)
+    _robotPlayAnimation = Tween<double>(
       begin: 0.0,
-      end: -30.0,
+      end: 2 * math.pi,
     ).animate(CurvedAnimation(
-      parent: _exciteController,
-      curve: const Interval(0.0, 0.5, curve: Curves.elasticOut),
+      parent: _playController,
+      curve: Curves.easeInOut,
     ));
     
-    // Logo magical appearance (independent animation)
-    _logoAppearAnimation = Tween<Offset>(
-      begin: const Offset(0, 100), // Appears from bottom center
-      end: const Offset(0, 0), // Goes to center
-    ).animate(CurvedAnimation(
-      parent: _logoController,
-      curve: Curves.elasticOut,
-    ));
-    
-    // Logo opacity (fades in magically)
-    _logoOpacityAnimation = Tween<double>(
+    // Text scale animation
+    _textScaleAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(
-      parent: _logoController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
+      parent: _textController,
+      curve: Curves.elasticOut,
     ));
     
-    // Logo scale animation
-    _logoScaleAnimation = Tween<double>(
-      begin: 0.3,
+    // Text opacity animation
+    _textOpacityAnimation = Tween<double>(
+      begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(
-      parent: _logoController,
-      curve: Curves.elasticOut,
+      parent: _textController,
+      curve: const Interval(0.2, 1.0, curve: Curves.easeIn),
     ));
     
     // Fade out animation
@@ -143,22 +124,16 @@ class _SplashScreenState extends State<SplashScreen>
     // Start robot floating animation (repeating)
     _robotController.repeat(reverse: true);
     
-    // Robot slides in and starts playing
+    // Start text animation FIRST
+    await Future.delayed(const Duration(milliseconds: 300));
+    _textController.forward();
+    
+    // Start robot playing around text after text appears
     await Future.delayed(const Duration(milliseconds: 800));
+    _playController.forward();
     
-    // Robot gets excited, laughs, bounces around (no touching logo)
-    _exciteController.repeat(reverse: true);
-    await Future.delayed(const Duration(milliseconds: 3000));
-    
-    // Stop robot excitement
-    _exciteController.stop();
-    
-    // Logo appears magically by itself (robot just watches)
-    await Future.delayed(const Duration(milliseconds: 500));
-    _logoController.forward();
-    
-    // Wait for logo to settle, then fade out
-    await Future.delayed(const Duration(milliseconds: 2500));
+    // Wait for play animation, then fade out
+    await Future.delayed(const Duration(seconds: 2));
     _fadeController.forward();
     
     // Complete splash after fade
@@ -169,8 +144,8 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _robotController.dispose();
-    _exciteController.dispose();
-    _logoController.dispose();
+    _textController.dispose();
+    _playController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
@@ -182,8 +157,8 @@ class _SplashScreenState extends State<SplashScreen>
       body: AnimatedBuilder(
         animation: Listenable.merge([
           _robotController, 
-          _exciteController,
-          _logoController,
+          _textController,
+          _playController,
           _fadeController
         ]),
         builder: (context, child) {
@@ -193,11 +168,25 @@ class _SplashScreenState extends State<SplashScreen>
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // AhamAI Logo (appears magically)
-                  _buildMagicalLogo(),
+                  // AhamAI Text (appears first, stays in center)
+                  Transform.scale(
+                    scale: _textScaleAnimation.value,
+                    child: Opacity(
+                      opacity: _textOpacityAnimation.value,
+                      child: Text(
+                        'AhamAI',
+                        style: GoogleFonts.spaceMono(
+                          fontSize: 42,
+                          color: const Color(0xFF000000),
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2.0,
+                        ),
+                      ),
+                    ),
+                  ),
                   
-                  // Robot (plays around, stays on left side)
-                  _buildPlayfulRobot(),
+                  // Robot playing around the text (above it)
+                  _buildPlayingRobot(),
                 ],
               ),
             ),
@@ -207,39 +196,23 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
   
-  Widget _buildMagicalLogo() {
+  Widget _buildPlayingRobot() {
+    // Calculate robot position around the text (circular motion, above the text)
+    final radius = 100.0; // Larger radius to avoid touching text
+    final angle = _robotPlayAnimation.value;
+    final x = radius * math.cos(angle);
+    final y = (radius * math.sin(angle)) - 20; // Offset upward to play above text
+    
     return Transform.translate(
-      offset: _logoAppearAnimation.value,
-      child: Transform.scale(
-        scale: _logoScaleAnimation.value,
-        child: Opacity(
-          opacity: _logoOpacityAnimation.value,
-          child: Text(
-            'AhamAI',
-            style: GoogleFonts.spaceMono(
-              fontSize: 42,
-              color: const Color(0xFF000000),
-              fontWeight: FontWeight.bold,
-              letterSpacing: 2.0,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildPlayfulRobot() {
-    // Robot stays on the left side, doesn't touch logo
-    return Transform.translate(
-      offset: const Offset(-80, 0), // Keep robot on left side
+      offset: Offset(x, y),
       child: SlideTransition(
         position: _robotSlideAnimation,
         child: Transform.translate(
-          offset: Offset(0, _robotFloatAnimation.value + _robotJumpAnimation.value),
+          offset: Offset(0, _robotFloatAnimation.value),
           child: Transform.rotate(
             angle: _robotRotateAnimation.value,
             child: Transform.scale(
-              scale: _robotExciteAnimation.value * 1.0, // Bigger robot
+              scale: 0.7, // Smaller robot to avoid touching text
               child: _buildRobot(),
             ),
           ),
@@ -250,8 +223,8 @@ class _SplashScreenState extends State<SplashScreen>
   
   Widget _buildRobot() {
     return Container(
-      width: 120,
-      height: 120,
+      width: 100,
+      height: 100,
       child: CustomPaint(
         painter: RobotPainter(),
       ),
@@ -273,126 +246,155 @@ class RobotPainter extends CustomPainter {
     
     final center = Offset(size.width / 2, size.height / 2);
     
-    // Robot Body (rounded rectangle) - slightly larger
+    // Robot Body (rounded rectangle)
     paint.color = Colors.white;
     final bodyRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: center.translate(0, 8), width: 45, height: 55),
-      const Radius.circular(12),
+      Rect.fromCenter(center: center.translate(0, 8), width: 40, height: 50),
+      const Radius.circular(10),
     );
     canvas.drawRRect(bodyRect, paint);
     canvas.drawRRect(bodyRect, strokePaint);
     
-    // Robot Head (circle) - larger
+    // Robot Head (circle)
     paint.color = Colors.white;
-    canvas.drawCircle(center.translate(0, -18), 22, paint);
-    canvas.drawCircle(center.translate(0, -18), 22, strokePaint);
+    canvas.drawCircle(center.translate(0, -18), 20, paint);
+    canvas.drawCircle(center.translate(0, -18), 20, strokePaint);
     
-    // Eyes (excited/happy eyes) - larger
+    // Eyes (normal happy eyes)
     paint.color = const Color(0xFF000000);
-    canvas.drawCircle(center.translate(-7, -20), 4, paint);
-    canvas.drawCircle(center.translate(7, -20), 4, paint);
+    canvas.drawCircle(center.translate(-6, -20), 3, paint);
+    canvas.drawCircle(center.translate(6, -20), 3, paint);
     
-    // Eye sparkles (playful effect) - more prominent
+    // Eye sparkles (playful effect)
     paint.color = Colors.white;
-    canvas.drawCircle(center.translate(-6, -22), 1.5, paint);
-    canvas.drawCircle(center.translate(8, -22), 1.5, paint);
+    canvas.drawCircle(center.translate(-5, -21), 1, paint);
+    canvas.drawCircle(center.translate(7, -21), 1, paint);
     
-    // Big excited smile
-    strokePaint.strokeWidth = 3;
+    // Happy mouth (normal smile)
+    strokePaint.strokeWidth = 2;
     strokePaint.strokeCap = StrokeCap.round;
     canvas.drawArc(
-      Rect.fromCenter(center: center.translate(0, -10), width: 16, height: 12),
+      Rect.fromCenter(center: center.translate(0, -12), width: 12, height: 8),
       0,
       math.pi,
       false,
       strokePaint,
     );
     
-    // Antenna with bouncing effect - taller
+    // Antenna with flag pole
     strokePaint.strokeWidth = 2;
     canvas.drawLine(
-      center.translate(0, -40),
-      center.translate(0, -50),
+      center.translate(0, -38),
+      center.translate(0, -55), // Taller for flag
       strokePaint,
     );
     
-    // Antenna tip with India Flag! 🇮🇳
-    paint.color = Colors.white;
-    canvas.drawCircle(center.translate(0, -50), 6, paint);
-    canvas.drawCircle(center.translate(0, -50), 6, strokePaint);
+    // Indian Flag (real flag design) 🇮🇳
+    final flagWidth = 16.0;
+    final flagHeight = 12.0;
+    final flagLeft = center.translate(-flagWidth/2, -55);
     
-    // India Flag in the antenna bulb
-    // Saffron (top)
+    // Flag pole attachment
+    paint.color = const Color(0xFF000000);
+    canvas.drawCircle(center.translate(-flagWidth/2, -55), 1, paint);
+    
+    // Saffron stripe (top)
     paint.color = const Color(0xFFFF9933);
-    canvas.drawArc(
-      Rect.fromCenter(center: center.translate(0, -50), width: 10, height: 10),
-      -math.pi, math.pi / 3, true, paint);
+    canvas.drawRect(
+      Rect.fromLTWH(flagLeft.dx, flagLeft.dy, flagWidth, flagHeight/3),
+      paint,
+    );
     
-    // White (middle)
+    // White stripe (middle)
     paint.color = Colors.white;
     canvas.drawRect(
-      Rect.fromCenter(center: center.translate(0, -50), width: 10, height: 3.3),
-      paint);
+      Rect.fromLTWH(flagLeft.dx, flagLeft.dy + flagHeight/3, flagWidth, flagHeight/3),
+      paint,
+    );
     
-    // Green (bottom)
+    // Green stripe (bottom)
     paint.color = const Color(0xFF138808);
-    canvas.drawArc(
-      Rect.fromCenter(center: center.translate(0, -50), width: 10, height: 10),
-      0, math.pi / 3, true, paint);
+    canvas.drawRect(
+      Rect.fromLTWH(flagLeft.dx, flagLeft.dy + 2*flagHeight/3, flagWidth, flagHeight/3),
+      paint,
+    );
     
-    // Chakra (wheel) in center - simplified
+    // Chakra (wheel) in center of flag
     paint.color = const Color(0xFF000080);
-    canvas.drawCircle(center.translate(0, -50), 1.5, paint);
+    final chakraCenter = center.translate(0, -55 + flagHeight/2);
+    canvas.drawCircle(chakraCenter, 2, paint);
     
-    // Arms (excited pose, pointing towards center where logo will appear)
-    strokePaint.strokeWidth = 4;
+    // Chakra spokes (simplified)
+    strokePaint.strokeWidth = 0.5;
+    strokePaint.color = const Color(0xFF000080);
+    for (int i = 0; i < 8; i++) {
+      final angle = (i * math.pi) / 4;
+      final dx = 1.5 * math.cos(angle);
+      final dy = 1.5 * math.sin(angle);
+      canvas.drawLine(
+        chakraCenter,
+        chakraCenter.translate(dx, dy),
+        strokePaint,
+      );
+    }
+    
+    // Flag border
+    strokePaint.strokeWidth = 1;
+    strokePaint.color = const Color(0xFF000000);
+    canvas.drawRect(
+      Rect.fromLTWH(flagLeft.dx, flagLeft.dy, flagWidth, flagHeight),
+      strokePaint,
+    );
+    
+    // Arms (normal playful pose)
+    strokePaint.strokeWidth = 3;
     strokePaint.strokeCap = StrokeCap.round;
     
-    // Left arm (raised in excitement)
+    // Left arm (waving)
     canvas.drawLine(
-      center.translate(-22, -2),
-      center.translate(-35, -18),
+      center.translate(-20, -2),
+      center.translate(-30, -12),
       strokePaint,
     );
     
-    // Right arm (pointing towards center, not touching)
+    // Right arm (pointing/playing)
     canvas.drawLine(
-      center.translate(22, -2),
-      center.translate(40, -8),
+      center.translate(20, -2),
+      center.translate(32, -8),
       strokePaint,
     );
     
-    // Legs - more stable
+    // Legs
     canvas.drawLine(
-      center.translate(-12, 35),
-      center.translate(-12, 50),
+      center.translate(-10, 33),
+      center.translate(-10, 45),
       strokePaint,
     );
     
     canvas.drawLine(
-      center.translate(12, 35),
-      center.translate(12, 50),
+      center.translate(10, 33),
+      center.translate(10, 45),
       strokePaint,
     );
     
-    // Feet - bigger
+    // Feet
     paint.color = const Color(0xFF000000);
-    canvas.drawCircle(center.translate(-12, 52), 4, paint);
-    canvas.drawCircle(center.translate(12, 52), 4, paint);
+    canvas.drawCircle(center.translate(-10, 47), 3, paint);
+    canvas.drawCircle(center.translate(10, 47), 3, paint);
     
-    // Body details (chest panel) - larger
+    // Body details (chest panel)
     strokePaint.strokeWidth = 1;
     final panelRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: center.translate(0, 3), width: 18, height: 24),
-      const Radius.circular(4),
+      Rect.fromCenter(center: center.translate(0, 3), width: 16, height: 20),
+      const Radius.circular(3),
     );
     canvas.drawRRect(panelRect, strokePaint);
     
-    // Chest buttons (excited colors) - bigger
+    // Chest buttons
     paint.color = const Color(0xFF000000);
-    canvas.drawCircle(center.translate(-5, -3), 2, paint);
-    canvas.drawCircle(center.translate(5, -3), 2, paint);
-    canvas.drawCircle(center.translate(0, 8), 2, paint);
+    canvas.drawCircle(center.translate(-4, -2), 1.5, paint);
+    canvas.drawCircle(center.translate(4, -2), 1.5, paint);
+    canvas.drawCircle(center.translate(0, 6), 1.5, paint);
   }
 
   @override
