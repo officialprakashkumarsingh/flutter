@@ -38,7 +38,7 @@ class AhamAIApp extends StatelessWidget {
           brightness: Brightness.light,
         ),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
+          backgroundColor: Color(0xFFF4F3F0),
           foregroundColor: Colors.black,
           elevation: 0,
         ),

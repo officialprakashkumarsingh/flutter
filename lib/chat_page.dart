@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/vs2015.dart'; // Dark theme for AMOLED
@@ -107,13 +108,16 @@ class ChatPageState extends State<ChatPage> {
     });
   }
   
-  Future<void> _loadConversationMemory() async {
+    Future<void> _loadConversationMemory() async {
     try {
-      // TODO: Implement with SharedPreferences
-      final savedMemory = <String, dynamic>{};
-              setState(() {
-          // _conversationMemory = savedMemory;
-      });
+      final prefs = await SharedPreferences.getInstance();
+      final savedMemoryStr = prefs.getString('conversation_memory');
+      if (savedMemoryStr != null) {
+        final savedMemory = Map<String, dynamic>.from(jsonDecode(savedMemoryStr));
+        setState(() {
+          _conversationMemory = Map<String, String>.from(savedMemory);
+        });
+      }
       
       // Also load chat history
       await _loadChatHistory();
@@ -131,8 +135,8 @@ class ChatPageState extends State<ChatPage> {
         'isStreaming': message.isStreaming,
       }).toList();
       
-      // TODO: Implement with SharedPreferences
-      print('Saving chat history: ${chatData.length} messages');
+              final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('chat_history', jsonEncode(chatData));
       debugPrint('Chat history saved: ${chatData.length} messages');
     } catch (e) {
       debugPrint('Error saving chat history: $e');
@@ -141,8 +145,8 @@ class ChatPageState extends State<ChatPage> {
   
   Future<void> _loadChatHistory() async {
     try {
-      // TODO: Implement with SharedPreferences
-      final chatHistoryStr = null;
+      final prefs = await SharedPreferences.getInstance();
+      final chatHistoryStr = prefs.getString('chat_history');
       if (chatHistoryStr != null && chatHistoryStr.isNotEmpty) {
         final List<dynamic> chatData = jsonDecode(chatHistoryStr);
         final loadedMessages = chatData.map((data) => Message(
