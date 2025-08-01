@@ -60,6 +60,11 @@ class _CharactersPageState extends State<CharactersPage> with TickerProviderStat
       
       if (user == null) {
         debugPrint('❌ CharactersPage: User not authenticated, cannot load characters');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
         return;
       }
       

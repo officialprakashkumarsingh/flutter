@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -13,6 +14,7 @@ import 'models.dart';
 import 'supabase_auth_service.dart';
 import 'supabase_chat_service.dart';
 import 'supabase_character_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Added for AuthState
 // REMOVED: External tools service import
 
 // Custom rounded SnackBar utility
@@ -83,7 +85,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   late Animation<Offset> _slideAnimation;
 
   // Auth state listener
-  late final Stream _authStateStream;
+  StreamSubscription<AuthState>? _authSubscription;
 
   @override
   void initState() {
@@ -91,8 +93,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     _fetchModels();
     
     // Listen for auth state changes
-    _authStateStream = SupabaseAuthService.authStateChanges;
-    _authStateStream.listen((authState) {
+    _authSubscription = SupabaseAuthService.authStateChanges.listen((authState) {
       // Only clear chat history when user signs out
       // Don't reload on sign in to prevent duplicates (initState handles initial load)
       if (!SupabaseAuthService.isSignedIn) {
@@ -154,6 +155,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _fabAnimationController.dispose();
     _pageTransitionController.dispose();
     super.dispose();
