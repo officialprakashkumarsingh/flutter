@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'character_models.dart';
 import 'character_service.dart';
 import 'character_editor.dart';
@@ -21,6 +22,7 @@ class _CharactersPageState extends State<CharactersPage> with TickerProviderStat
   late Animation<double> _fadeAnimation;
   String _searchQuery = '';
   bool _showFavorites = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -38,22 +40,52 @@ class _CharactersPageState extends State<CharactersPage> with TickerProviderStat
     _characterService.addListener(_onCharactersChanged);
     
     // Force load characters when page opens
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Wait a bit for authentication to complete
+      await Future.delayed(const Duration(milliseconds: 500));
       _loadCharacters();
     });
   }
 
   Future<void> _loadCharacters() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
     try {
+      // Check authentication first
+      final user = Supabase.instance.client.auth.currentUser;
+      debugPrint('🔍 CharactersPage: User authenticated: ${user != null ? user.id : 'Not authenticated'}');
+      
+      if (user == null) {
+        debugPrint('❌ CharactersPage: User not authenticated, cannot load characters');
+        return;
+      }
+      
       // Force the character service to reload from database
+      debugPrint('🔍 CharactersPage: Starting character loading...');
       await _characterService.loadCharacters();
       final characters = _characterService.characters;
       debugPrint('🔍 CharactersPage: Loaded ${characters.length} characters from service');
+      
+      // Log character details for debugging
+      for (int i = 0; i < characters.length; i++) {
+        debugPrint('   Character ${i + 1}: ${characters[i].name} (${characters[i].id})');
+      }
+      
       if (mounted) {
-        setState(() {});
+        setState(() {
+          _isLoading = false;
+        });
       }
     } catch (e) {
       debugPrint('❌ CharactersPage: Error loading characters: $e');
+      debugPrint('❌ CharactersPage: Stack trace: ${StackTrace.current}');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -225,7 +257,9 @@ class _CharactersPageState extends State<CharactersPage> with TickerProviderStat
             
             // Characters grid
             Expanded(
-              child: characters.isEmpty
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : characters.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -245,6 +279,24 @@ class _CharactersPageState extends State<CharactersPage> with TickerProviderStat
                               color: const Color(0xFFA3A3A3),
                             ),
                           ),
+                          if (_searchQuery.isEmpty) ...[
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _loadCharacters,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF000000),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
+                                'Retry Loading Characters',
+                                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     )

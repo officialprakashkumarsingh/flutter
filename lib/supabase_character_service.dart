@@ -56,6 +56,7 @@ class SupabaseCharacterService {
     String? customTag,
     int backgroundColor = 4294967295,
     bool isFavorite = false,
+    bool isBuiltIn = false,
   }) async {
     try {
       final userId = _supabase.auth.currentUser?.id;
@@ -73,7 +74,7 @@ class SupabaseCharacterService {
             'avatar_url': avatarUrl,
             'custom_tag': customTag,
             'background_color': backgroundColor,
-            'is_built_in': false,
+            'is_built_in': isBuiltIn,
             'is_favorite': isFavorite,
           })
           .select('id')

@@ -92,9 +92,12 @@ class CharacterService extends ChangeNotifier {
       },
     ];
 
+    print('📝 Creating ${builtInCharacters.length} built-in characters...');
+    
     for (final characterData in builtInCharacters) {
       try {
-        await SupabaseCharacterService.createCharacter(
+        print('🔄 Creating character: ${characterData['name']}');
+        final result = await SupabaseCharacterService.createCharacter(
           name: characterData['name'] as String,
           description: characterData['description'] as String,
           systemPrompt: characterData['systemPrompt'] as String,
@@ -102,12 +105,16 @@ class CharacterService extends ChangeNotifier {
           customTag: characterData['customTag'] as String,
           backgroundColor: characterData['backgroundColor'] as int,
           isFavorite: false,
+          isBuiltIn: true,
         );
-        print('✅ Created built-in character: ${characterData['name']}');
+        print('✅ Created built-in character: ${characterData['name']} with ID: $result');
       } catch (e) {
         print('❌ Failed to create built-in character ${characterData['name']}: $e');
+        print('❌ Stack trace: ${StackTrace.current}');
       }
     }
+    
+    print('📝 Finished creating built-in characters');
   }
 
   Future<void> _createFallbackCharacters() async {
