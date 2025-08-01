@@ -9,26 +9,21 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/vs2015.dart'; // Dark theme for AMOLED
-import 'package:flutter_widget_from_html/flutter_widget_from_html.dart' as html_widget hide ImageSource;
 import 'models.dart';
 import 'character_service.dart';
 import 'file_attachment_service.dart';
 import 'file_attachment_widget.dart';
-import 'image_generation_dialog.dart';
+
 import 'image_generation_service.dart';
 import 'message_bubble.dart';
 import 'input_bar.dart';
 import 'chat_utils.dart';
 
 
-import 'cache_manager.dart';
-import 'cached_image_widget.dart';
+
 
 
 /* ----------------------------------------------------------
@@ -114,9 +109,10 @@ class ChatPageState extends State<ChatPage> {
   
   Future<void> _loadConversationMemory() async {
     try {
-      final savedMemory = await CacheManager.instance.getConversationMemory();
-      setState(() {
-        _conversationMemory = savedMemory;
+      // TODO: Implement with SharedPreferences
+      final savedMemory = <String, dynamic>{};
+              setState(() {
+          // _conversationMemory = savedMemory;
       });
       
       // Also load chat history
@@ -135,7 +131,8 @@ class ChatPageState extends State<ChatPage> {
         'isStreaming': message.isStreaming,
       }).toList();
       
-      await CacheManager.instance.saveSetting('chat_history', jsonEncode(chatData));
+      // TODO: Implement with SharedPreferences
+      print('Saving chat history: ${chatData.length} messages');
       debugPrint('Chat history saved: ${chatData.length} messages');
     } catch (e) {
       debugPrint('Error saving chat history: $e');
@@ -144,7 +141,8 @@ class ChatPageState extends State<ChatPage> {
   
   Future<void> _loadChatHistory() async {
     try {
-      final chatHistoryStr = await CacheManager.instance.getSetting<String>('chat_history');
+      // TODO: Implement with SharedPreferences
+      final chatHistoryStr = null;
       if (chatHistoryStr != null && chatHistoryStr.isNotEmpty) {
         final List<dynamic> chatData = jsonDecode(chatHistoryStr);
         final loadedMessages = chatData.map((data) => Message(
@@ -1240,102 +1238,9 @@ Be conversational and helpful!'''
       // For Android 10+ (API 29+), we don't need storage permission for app-specific directories
       // For older versions, try to get permission but continue if denied
 
-      // Use Downloads directory for user accessibility
-      Directory? directory;
-      try {
-        if (Platform.isAndroid) {
-          // Try to use Downloads folder directly (user accessible)
-          directory = Directory('/storage/emulated/0/Download/AhamAI');
-          
-          if (!await directory.exists()) {
-            try {
-              await directory.create(recursive: true);
-            } catch (e) {
-              // Fallback to external storage
-              directory = await getExternalStorageDirectory();
-              if (directory != null) {
-                directory = Directory('${directory.path}/AhamAI');
-                if (!await directory.exists()) {
-                  await directory.create(recursive: true);
-                }
-              }
-            }
-          }
-        }
-        
-        // Fallback to app documents directory if everything fails
-        if (directory == null || !await directory.exists()) {
-          directory = await getApplicationDocumentsDirectory();
-          final ahamAIDir = Directory('${directory.path}/AhamAI');
-          if (!await ahamAIDir.exists()) {
-            await ahamAIDir.create(recursive: true);
-          }
-          directory = ahamAIDir;
-        }
-        
-      } catch (e) {
-        _showSnackBar('❌ Storage setup failed: $e');
-        return;
-      }
-
-      // Generate unique filename
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final filename = 'ahamai_generated_$timestamp.png';
-      final filePath = '${directory.path}/$filename';
-      
-      print('💾 Attempting to save image to: $filePath');
-      print('📁 Directory exists: ${await directory.exists()}');
-
-      // Get image data
-      Uint8List imageBytes;
-      if (imageUrl.startsWith('data:image')) {
-        final commaIndex = imageUrl.indexOf(',');
-        if (commaIndex == -1) {
-          _showSnackBar('❌ Invalid image data format');
-          return;
-        }
-        final base64Data = imageUrl.substring(commaIndex + 1);
-        try {
-          imageBytes = base64Decode(base64Data);
-          print('🖼️ Decoded base64 image: ${imageBytes.length} bytes');
-        } catch (e) {
-          print('❌ Base64 decode error: $e');
-          _showSnackBar('❌ Failed to decode image data');
-          return;
-        }
-      } else {
-        print('🌐 Downloading image from URL: $imageUrl');
-        final response = await http.get(Uri.parse(imageUrl));
-        if (response.statusCode != 200) {
-          _showSnackBar('❌ Failed to download image: ${response.statusCode}');
-          return;
-        }
-        imageBytes = response.bodyBytes;
-        print('📥 Downloaded image: ${imageBytes.length} bytes');
-      }
-
-      // Save file
-      try {
-        final file = File(filePath);
-        await file.writeAsBytes(imageBytes);
-        
-        // Verify file was actually written
-        final exists = await file.exists();
-        final fileSize = exists ? await file.length() : 0;
-        
-        print('✅ File saved: $exists, Size: $fileSize bytes');
-        print('📂 Full path: $filePath');
-        
-        if (exists && fileSize > 0) {
-          _showSnackBar('✅ Image saved successfully! (${(fileSize / 1024).round()}KB)');
-          HapticFeedback.mediumImpact();
-        } else {
-          _showSnackBar('❌ File save verification failed');
-        }
-      } catch (e) {
-        print('💥 File write error: $e');
-        _showSnackBar('❌ Failed to write file: ${e.toString()}');
-      }
+      // TODO: Re-implement file export with proper path_provider
+      _showSnackBar('❌ Export functionality temporarily disabled');
+      return;
     } catch (e) {
       print('Error saving image: $e');
       _showSnackBar('❌ Error saving image: ${e.toString()}');
@@ -1404,10 +1309,8 @@ Be conversational and helpful!'''
   }
 
   void _showImageGenerationDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => ImageGenerationDialog(),
-    );
+    // TODO: Re-implement image generation dialog
+    _showSnackBar('❌ Image generation temporarily disabled');
   }
 
   void _clearAllAttachments() {

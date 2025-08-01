@@ -1,27 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-
-import 'auth_and_profile_pages.dart';
-import 'auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'splash_screen.dart';
+import 'auth_gate.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Initialize the AuthService singleton so it's available everywhere
-  AuthService(); 
   
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: 'https://pxmhiaxrivtlkrjrqmkb.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4bWhpYXhyaXZ0bGtyanJxbWtiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2NDk1MzQsImV4cCI6MjA2OTIyNTUzNH0.0x9HweD2DCZcGSso0Xx5v1AAgpWvC_ZZO9THBzRovTs',
+  );
+  
+  // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     systemNavigationBarColor: Color(0xFFF4F3F0),
     statusBarColor: Colors.transparent,
-    systemNavigationBarIconBrightness: Brightness.dark,
-    statusBarIconBrightness: Brightness.dark,
   ));
+  
   runApp(const AhamAIApp());
 }
 
 class AhamAIApp extends StatelessWidget {
   const AhamAIApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -29,84 +33,49 @@ class AhamAIApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        brightness: Brightness.light,
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFF000000), // Black for primary buttons
-          secondary: Color(0xFF000000),
-          surface: Color(0xFFF4F3F0), // Main background
-          onSurface: Color(0xFF000000), // Text on surface
-          background: Color(0xFFF4F3F0), // Main background
-          onBackground: Color(0xFF000000), // Text on background
-          surfaceVariant: Color(0xFFEAE9E5), // Chat bubbles background
-          onSurfaceVariant: Color(0xFF000000), // Text on surfaceVariant
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF000000),
+          brightness: Brightness.light,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF4F3F0),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF4F3F0),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
           elevation: 0,
-          scrolledUnderElevation: 0,
-          surfaceTintColor: Colors.transparent,
-          iconTheme: IconThemeData(color: Color(0xFF000000)),
-          titleTextStyle: TextStyle(
-            color: Color(0xFF000000),
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
         ),
-        cardTheme: const CardTheme(
-          color: Color(0xFFEAE9E5),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-          ),
+        cardTheme: CardTheme(
+          color: Colors.white,
+          elevation: 2,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF000000),
-            foregroundColor: const Color(0xFFFFFFFF),
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(20),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          fillColor: Colors.grey[50],
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Color(0xFFF4F3F0),
-          selectedItemColor: Color(0xFF000000),
-          unselectedItemColor: Color(0xFFA3A3A3),
-          elevation: 0,
-          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: Colors.black,
+          unselectedItemColor: Colors.grey,
         ),
-        fontFamily: 'SF Pro Display', // iOS font
-        // Enhanced page transitions for iOS-like smoothness
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
             TargetPlatform.android: CupertinoPageTransitionsBuilder(),
             TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           },
         ),
-        // Enhanced animation duration for smoother feel
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        splashFactory: NoSplash.splashFactory,
-        highlightColor: Colors.transparent,
       ),
-      // Show splash screen first, then AuthGate
       home: const AppWrapper(),
     );
   }
 }
 
-// Wrapper to handle splash screen and main app flow
 class AppWrapper extends StatefulWidget {
   const AppWrapper({super.key});
 
@@ -117,18 +86,18 @@ class AppWrapper extends StatefulWidget {
 class _AppWrapperState extends State<AppWrapper> {
   bool _showSplash = true;
 
-  void _completeSplash() {
-    setState(() {
-      _showSplash = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_showSplash) {
-      return SplashScreen(onComplete: _completeSplash);
-    } else {
-      return const AuthGate();
+      return SplashScreen(
+        onComplete: () {
+          setState(() {
+            _showSplash = false;
+          });
+        },
+      );
     }
+    
+    return const AuthGate();
   }
 }

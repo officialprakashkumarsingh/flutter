@@ -10,8 +10,7 @@ import 'chat_page.dart';
 import 'characters_page.dart';
 import 'saved_page.dart';
 import 'models.dart';
-import 'auth_service.dart';
-import 'auth_and_profile_pages.dart';
+import 'supabase_auth_service.dart';
 // REMOVED: External tools service import
 
 
@@ -391,9 +390,13 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
             const SizedBox(height: 20),
             
             // Profile Section
-            ValueListenableBuilder<User?>(
-              valueListenable: AuthService().currentUser,
-              builder: (context, user, child) {
+            StreamBuilder(
+              stream: SupabaseAuthService.authStateChanges,
+              builder: (context, snapshot) {
+                final user = SupabaseAuthService.currentUser;
+                final userEmail = user?.email ?? '';
+                final userName = SupabaseAuthService.userFullName ?? userEmail.split('@').first;
+                
                 return Container(
                   margin: const EdgeInsets.symmetric(horizontal: 20),
                   padding: const EdgeInsets.all(20),
@@ -408,7 +411,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                         ),
                         child: Center(
                           child: Text(
-                            user?.email.isNotEmpty == true ? user!.email[0].toUpperCase() : 'U',
+                            userEmail.isNotEmpty ? userEmail[0].toUpperCase() : 'U',
                             style: GoogleFonts.inter(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -423,7 +426,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              user?.name ?? 'User',
+                              userName,
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -434,7 +437,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              user?.email ?? '',
+                              userEmail,
                               style: GoogleFonts.inter(
                                 fontSize: 12,
                                 color: const Color(0xFFA3A3A3),
@@ -446,30 +449,32 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                         ),
                       ),
                       IconButton(
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            PageRouteBuilder(
-                              pageBuilder: (context, animation, secondaryAnimation) =>
-                                  const ProfilePage(),
-                              transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                return SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(1.0, 0.0),
-                                    end: Offset.zero,
-                                  ).animate(CurvedAnimation(
-                                    parent: animation,
-                                    curve: Curves.easeOutCubic,
-                                  )),
-                                  child: child,
-                                );
-                              },
-                              transitionDuration: const Duration(milliseconds: 300),
+                          // Show logout confirmation
+                          final shouldLogout = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Sign Out'),
+                              content: const Text('Are you sure you want to sign out?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('Sign Out'),
+                                ),
+                              ],
                             ),
                           );
+                          
+                          if (shouldLogout == true) {
+                            await SupabaseAuthService.signOut();
+                          }
                         },
-                        icon: const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFA3A3A3), size: 16),
+                        icon: const Icon(Icons.logout, color: Color(0xFFA3A3A3), size: 16),
                       ),
                     ],
                   ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/vs2015.dart';
 
@@ -10,7 +9,6 @@ import 'dart:convert';
 
 import 'models.dart';
 import 'file_attachment_widget.dart';
-import 'cached_image_widget.dart';
 
 import 'chat_page.dart'; // For accessing ChatPageState
 
@@ -255,29 +253,50 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
         final header = url.substring(5, commaIndex);
         final mime = header.split(';').first;
         if (mime == 'image/svg+xml') {
-          final base64Data = url.substring(commaIndex + 1);
-          final bytes = base64Decode(base64Data);
-          image = SvgPicture.memory(bytes, fit: BoxFit.contain);
+          // SVG not supported, show placeholder
+          image = Container(
+            color: Colors.grey[300],
+            child: const Center(
+              child: Icon(Icons.image, size: 50, color: Colors.grey),
+            ),
+          );
         } else {
-          // Use CachedImageWidget for base64 images too with proper fitting
-          image = CachedImageWidget(
-            imageUrl: url,
+          // Use Network Image for base64 images
+          image = Image.network(
+            url,
             fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              color: Colors.grey[300],
+              child: const Center(
+                child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+              ),
+            ),
           );
         }
       } else {
         if (url.toLowerCase().endsWith('.svg')) {
-          image = SvgPicture.network(
-            url,
-            fit: BoxFit.contain,
-            placeholderBuilder: (context) =>
-                const Center(child: CircularProgressIndicator()),
+          // SVG not supported, show placeholder
+          image = Container(
+            color: Colors.grey[300],
+            child: const Center(
+              child: Icon(Icons.image, size: 50, color: Colors.grey),
+            ),
           );
         } else {
-          // Use CachedImageWidget for network images with proper fitting
-          image = CachedImageWidget(
-            imageUrl: url,
+          // Use Network Image for regular images
+          image = Image.network(
+            url,
             fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return const Center(child: CircularProgressIndicator());
+            },
+            errorBuilder: (context, error, stackTrace) => Container(
+              color: Colors.grey[300],
+              child: const Center(
+                child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+              ),
+            ),
           );
         }
       }
