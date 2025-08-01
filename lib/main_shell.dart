@@ -129,9 +129,12 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
       }
     });
     
-    // Load chat history only if user is already signed in
-    if (SupabaseAuthService.isSignedIn) {
+    // Load chat history only if user is already signed in AND we don't have any yet
+    if (SupabaseAuthService.isSignedIn && _chatHistory.isEmpty) {
+      debugPrint('🚀 INIT: User already signed in, loading chat history...');
       _loadChatHistoryFromSupabase();
+    } else if (SupabaseAuthService.isSignedIn) {
+      debugPrint('🚀 INIT: User signed in but already have ${_chatHistory.length} chats, skipping initial load');
     }
     
     // Set up external tools callback for model switching

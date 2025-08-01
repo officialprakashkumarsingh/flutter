@@ -97,18 +97,11 @@ class CharacterService extends ChangeNotifier {
 
     print('📝 Creating ${builtInCharacters.length} built-in characters...');
     
-    // First check which characters already exist
-    final existingCharacters = await SupabaseCharacterService.getUserCharacters();
-    final existingNames = existingCharacters.map((c) => c.name.toLowerCase()).toSet();
+    // DON'T check existing characters here to avoid circular calls
+    // Just create them and handle duplicates via database constraints
     
     for (final characterData in builtInCharacters) {
       final characterName = characterData['name'] as String;
-      
-      // Skip if this character already exists
-      if (existingNames.contains(characterName.toLowerCase())) {
-        print('⏭️ Character already exists: $characterName, skipping...');
-        continue;
-      }
       
       try {
         print('🔄 Creating character: $characterName');
@@ -124,8 +117,12 @@ class CharacterService extends ChangeNotifier {
         );
         print('✅ Created built-in character: $characterName with ID: $result');
       } catch (e) {
-        print('❌ Failed to create built-in character $characterName: $e');
-        print('❌ Stack trace: ${StackTrace.current}');
+        // This is expected if character already exists
+        if (e.toString().contains('duplicate') || e.toString().contains('unique')) {
+          print('ℹ️ Character $characterName already exists, skipping...');
+        } else {
+          print('❌ Failed to create built-in character $characterName: $e');
+        }
       }
     }
     

@@ -45,7 +45,8 @@ CREATE TABLE public.characters (
     is_built_in BOOLEAN DEFAULT FALSE,
     is_favorite BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    UNIQUE(user_id, name) -- Prevent duplicate character names per user
 );
 
 -- Create chat conversations table with pin functionality
