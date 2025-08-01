@@ -1503,31 +1503,39 @@ Be conversational and helpful!'''
     };
     
     // Code block patterns for real-time parsing (complete blocks)
-    // More flexible patterns - allow optional spaces and newlines
+    // IMPORTANT: Order matters! More specific patterns must come BEFORE general ones
     final codePatterns = {
-      // Web Technologies
-      'html': RegExp(r'```html\s*(.*?)```', dotAll: true),
-      'css': RegExp(r'```css\s*(.*?)```', dotAll: true),
+      // C++ variants BEFORE 'c' to prevent conflicts
+      'cpp': RegExp(r'```(?:cpp|c\+\+|cxx)\s*(.*?)```', dotAll: true),
+      'csharp': RegExp(r'```(?:csharp|cs|c#)\s*(.*?)```', dotAll: true),
+      'c': RegExp(r'```c\s*(.*?)```', dotAll: true),
+      
+      // JavaScript variants BEFORE 'java'
       'javascript': RegExp(r'```(?:javascript|js)\s*(.*?)```', dotAll: true),
       'typescript': RegExp(r'```(?:typescript|ts)\s*(.*?)```', dotAll: true),
-      'react': RegExp(r'```(?:react|jsx)\s*(.*?)```', dotAll: true),
+      'java': RegExp(r'```java\s*(.*?)```', dotAll: true),
+      
+      // Specific web frameworks
+      'react': RegExp(r'```(?:react|jsx|tsx)\s*(.*?)```', dotAll: true),
       'vue': RegExp(r'```vue\s*(.*?)```', dotAll: true),
       'angular': RegExp(r'```angular\s*(.*?)```', dotAll: true),
       'svelte': RegExp(r'```svelte\s*(.*?)```', dotAll: true),
+      
+      // CSS variants
       'scss': RegExp(r'```(?:scss|sass)\s*(.*?)```', dotAll: true),
       'less': RegExp(r'```less\s*(.*?)```', dotAll: true),
+      'css': RegExp(r'```css\s*(.*?)```', dotAll: true),
       
-      // Programming Languages
-      'python': RegExp(r'```(?:python|py)\s*(.*?)```', dotAll: true),
+      // Web Technologies
+      'html': RegExp(r'```html\s*(.*?)```', dotAll: true),
+      
+      // Programming Languages (alphabetical after conflicts resolved)
       'dart': RegExp(r'```dart\s*(.*?)```', dotAll: true),
-      'java': RegExp(r'```java\s*(.*?)```', dotAll: true),
       'kotlin': RegExp(r'```(?:kotlin|kt)\s*(.*?)```', dotAll: true),
-      'swift': RegExp(r'```swift\s*(.*?)```', dotAll: true),
-      'cpp': RegExp(r'```(?:cpp|c\+\+|cxx)\s*(.*?)```', dotAll: true),
-      'c': RegExp(r'```c\s*(.*?)```', dotAll: true),
-      'csharp': RegExp(r'```(?:csharp|cs|c#)\s*(.*?)```', dotAll: true),
       'php': RegExp(r'```php\s*(.*?)```', dotAll: true),
+      'python': RegExp(r'```(?:python|py)\s*(.*?)```', dotAll: true),
       'ruby': RegExp(r'```(?:ruby|rb)\s*(.*?)```', dotAll: true),
+      'swift': RegExp(r'```swift\s*(.*?)```', dotAll: true),
       'go': RegExp(r'```(?:go|golang)\s*(.*?)```', dotAll: true),
       'rust': RegExp(r'```(?:rust|rs)\s*(.*?)```', dotAll: true),
       'scala': RegExp(r'```scala\s*(.*?)```', dotAll: true),
@@ -1548,54 +1556,22 @@ Be conversational and helpful!'''
       // Shell & Scripts
       'bash': RegExp(r'```(?:bash|shell|sh)\s*(.*?)```', dotAll: true),
       'powershell': RegExp(r'```(?:powershell|ps1)\s*(.*?)```', dotAll: true),
-      'batch': RegExp(r'```(?:batch|bat|cmd)\s*(.*?)```', dotAll: true),
-      'fish': RegExp(r'```fish\s*(.*?)```', dotAll: true),
       'zsh': RegExp(r'```zsh\s*(.*?)```', dotAll: true),
+      'fish': RegExp(r'```fish\s*(.*?)```', dotAll: true),
+      'batch': RegExp(r'```(?:batch|bat|cmd)\s*(.*?)```', dotAll: true),
       
-      // Markup & Documentation
+      // Documentation
       'markdown': RegExp(r'```(?:markdown|md)\s*(.*?)```', dotAll: true),
-      'text': RegExp(r'```(?:text|txt|plain)\s*(.*?)```', dotAll: true),
       'latex': RegExp(r'```(?:latex|tex)\s*(.*?)```', dotAll: true),
-      'rst': RegExp(r'```(?:rst|restructuredtext)\s*(.*?)```', dotAll: true),
-      'asciidoc': RegExp(r'```(?:asciidoc|adoc)\s*(.*?)```', dotAll: true),
+      'text': RegExp(r'```(?:text|txt|plain)\s*(.*?)```', dotAll: true),
       
-      // Functional Languages
-      'haskell': RegExp(r'```(?:haskell|hs)\s*(.*?)```', dotAll: true),
-      'elixir': RegExp(r'```(?:elixir|ex)\s*(.*?)```', dotAll: true),
-      'erlang': RegExp(r'```(?:erlang|erl)\s*(.*?)```', dotAll: true),
-      'clojure': RegExp(r'```(?:clojure|clj)\s*(.*?)```', dotAll: true),
-      'ocaml': RegExp(r'```(?:ocaml|ml)\s*(.*?)```', dotAll: true),
-      'fsharp': RegExp(r'```(?:fsharp|fs|f#)\s*(.*?)```', dotAll: true),
-      'lisp': RegExp(r'```(?:lisp|lsp)\s*(.*?)```', dotAll: true),
-      'scheme': RegExp(r'```(?:scheme|scm)\s*(.*?)```', dotAll: true),
-      
-      // Modern Languages
-      'julia': RegExp(r'```(?:julia|jl)\s*(.*?)```', dotAll: true),
-      'nim': RegExp(r'```nim\s*(.*?)```', dotAll: true),
-      'zig': RegExp(r'```zig\s*(.*?)```', dotAll: true),
-      'crystal': RegExp(r'```(?:crystal|cr)\s*(.*?)```', dotAll: true),
-      'vlang': RegExp(r'```(?:vlang|v)\s*(.*?)```', dotAll: true),
-      
-      // Mobile Development
-      'flutter': RegExp(r'```flutter\s*(.*?)```', dotAll: true),
-      'reactnative': RegExp(r'```(?:react-native|rn)\s*(.*?)```', dotAll: true),
-      'xamarin': RegExp(r'```xamarin\s*(.*?)```', dotAll: true),
-      
-      // Game Development
-      'gdscript': RegExp(r'```(?:gdscript|gd)\s*(.*?)```', dotAll: true),
-      'hlsl': RegExp(r'```hlsl\s*(.*?)```', dotAll: true),
-      'glsl': RegExp(r'```glsl\s*(.*?)```', dotAll: true),
-      'unity': RegExp(r'```unity\s*(.*?)```', dotAll: true),
-      
-      // Blockchain
-      'solidity': RegExp(r'```(?:solidity|sol)\s*(.*?)```', dotAll: true),
-      'vyper': RegExp(r'```vyper\s*(.*?)```', dotAll: true),
-      'move': RegExp(r'```move\s*(.*?)```', dotAll: true),
-      
-      // Assembly & Low Level
-      'assembly': RegExp(r'```(?:assembly|asm|nasm)\s*(.*?)```', dotAll: true),
-      'x86': RegExp(r'```x86\s*(.*?)```', dotAll: true),
-      'arm': RegExp(r'```arm\s*(.*?)```', dotAll: true),
+      // DevOps & Infrastructure
+      'dockerfile': RegExp(r'```(?:dockerfile|docker)\s*(.*?)```', dotAll: true),
+      'terraform': RegExp(r'```(?:terraform|tf)\s*(.*?)```', dotAll: true),
+      'ansible': RegExp(r'```ansible\s*(.*?)```', dotAll: true),
+      'kubernetes': RegExp(r'```(?:kubernetes|k8s)\s*(.*?)```', dotAll: true),
+      'nginx': RegExp(r'```nginx\s*(.*?)```', dotAll: true),
+      'apache': RegExp(r'```apache\s*(.*?)```', dotAll: true),
       
       // Hardware Description
       'verilog': RegExp(r'```(?:verilog|v)\s*(.*?)```', dotAll: true),

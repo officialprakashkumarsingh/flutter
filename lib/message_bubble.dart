@@ -412,39 +412,41 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     final originalText = widget.message.text;
     final displayText = widget.message.displayText; // Text with code blocks removed
     final codes = widget.message.codes;
+    final isStreaming = widget.message.isStreaming;
     
     // DEBUG: Print to understand what's happening
     if (codes.isNotEmpty) {
       print('🔍 DEBUG: originalText length: ${originalText.length}');
       print('🔍 DEBUG: displayText length: ${displayText.length}');
       print('🔍 DEBUG: codes count: ${codes.length}');
+      print('🔍 DEBUG: isStreaming: $isStreaming');
       for (int i = 0; i < codes.length; i++) {
         print('🔍 DEBUG: Code $i - Language: ${codes[i].language}, Extension: ${codes[i].extension}');
       }
     }
     
-    // If no codes detected yet, show original text (for streaming)
-    if (codes.isEmpty) {
+    // During streaming: show original text (with markdown code blocks)
+    // After streaming: show clean display text + code panels
+    if (isStreaming) {
+      // Still streaming - show original text (may contain markdown code blocks)
       if (originalText.isNotEmpty) {
         widgets.add(_buildMarkdownContent(originalText));
       }
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: widgets,
-      );
-    }
-    
-    // Show clean display text (without code blocks) + code panels after
-    if (displayText.isNotEmpty) {
-      widgets.add(_buildMarkdownContent(displayText));
-      widgets.add(const SizedBox(height: 12));
-    }
-    
-    // Add all code panels
-    for (int i = 0; i < codes.length; i++) {
-      widgets.add(_buildCodePanel(codes[i], i));
-      if (i < codes.length - 1) {
-        widgets.add(const SizedBox(height: 12));
+    } else {
+      // Streaming complete - show clean display text + code panels
+      if (displayText.isNotEmpty) {
+        widgets.add(_buildMarkdownContent(displayText));
+        if (codes.isNotEmpty) {
+          widgets.add(const SizedBox(height: 12));
+        }
+      }
+      
+      // Add all code panels after clean text
+      for (int i = 0; i < codes.length; i++) {
+        widgets.add(_buildCodePanel(codes[i], i));
+        if (i < codes.length - 1) {
+          widgets.add(const SizedBox(height: 12));
+        }
       }
     }
     
