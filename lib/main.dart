@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import 'auth_and_profile_pages.dart';
 import 'auth_service.dart';
+import 'splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -99,8 +100,35 @@ class AhamAIApp extends StatelessWidget {
         splashFactory: NoSplash.splashFactory,
         highlightColor: Colors.transparent,
       ),
-      // AuthGate will decide which page to show
-      home: const AuthGate(),
+      // Show splash screen first, then AuthGate
+      home: const AppWrapper(),
     );
+  }
+}
+
+// Wrapper to handle splash screen and main app flow
+class AppWrapper extends StatefulWidget {
+  const AppWrapper({super.key});
+
+  @override
+  State<AppWrapper> createState() => _AppWrapperState();
+}
+
+class _AppWrapperState extends State<AppWrapper> {
+  bool _showSplash = true;
+
+  void _completeSplash() {
+    setState(() {
+      _showSplash = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_showSplash) {
+      return SplashScreen(onComplete: _completeSplash);
+    } else {
+      return const AuthGate();
+    }
   }
 }
