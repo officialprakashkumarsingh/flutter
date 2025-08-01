@@ -91,13 +91,21 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     // Listen for auth state changes
     _authStateStream = SupabaseAuthService.authStateChanges;
     _authStateStream.listen((authState) {
-      // Reload chat history when user signs in
-      if (SupabaseAuthService.isSignedIn) {
-        _loadChatHistoryFromSupabase();
-      } else {
+      // Only clear chat history when user signs out
+      // Don't reload on sign in to prevent duplicates (initState handles initial load)
+      if (!SupabaseAuthService.isSignedIn) {
         // Clear chat history when user signs out
         setState(() {
           _chatHistory.clear();
+        });
+        debugPrint('User signed out, cleared chat history');
+      } else {
+        debugPrint('User signed in, scheduling delayed chat history refresh');
+        // Add a small delay to ensure auth state is fully settled before loading
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted && SupabaseAuthService.isSignedIn) {
+            _loadChatHistoryFromSupabase();
+          }
         });
       }
     });
@@ -564,16 +572,76 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                           final shouldLogout = await showDialog<bool>(
                             context: context,
                             builder: (context) => AlertDialog(
-                              title: const Text('Sign Out'),
-                              content: const Text('Are you sure you want to sign out?'),
+                              backgroundColor: const Color(0xFFF4F3F0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              title: Text(
+                                'Sign Out',
+                                style: GoogleFonts.inter(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF000000),
+                                ),
+                              ),
+                              content: Text(
+                                'Are you sure you want to sign out?',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: const Color(0xFF666666),
+                                ),
+                              ),
                               actions: [
                                 TextButton(
                                   onPressed: () => Navigator.pop(context, false),
-                                  child: const Text('Cancel'),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Cancel',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFF666666),
+                                    ),
+                                  ),
                                 ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Sign Out'),
+                                Container(
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFF6B6B),
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFFF6B6B).withOpacity(0.3),
+                                        offset: const Offset(0, 2),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                  child: TextButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      backgroundColor: Colors.transparent,
+                                      elevation: 0,
+                                    ),
+                                    child: Text(
+                                      'Sign Out',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFFFFFFFF),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
