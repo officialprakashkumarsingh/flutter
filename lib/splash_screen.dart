@@ -15,7 +15,7 @@ class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _robotController;
   late AnimationController _exciteController;
-  late AnimationController _pullController;
+  late AnimationController _logoController;
   late AnimationController _fadeController;
   
   late Animation<double> _robotFloatAnimation;
@@ -23,10 +23,9 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<Offset> _robotSlideAnimation;
   late Animation<double> _robotExciteAnimation;
   late Animation<double> _robotJumpAnimation;
-  late Animation<Offset> _robotPullPositionAnimation;
-  late Animation<Offset> _textPullAnimation;
-  late Animation<double> _textOpacityAnimation;
-  late Animation<double> _textScaleAnimation;
+  late Animation<Offset> _logoAppearAnimation;
+  late Animation<double> _logoOpacityAnimation;
+  late Animation<double> _logoScaleAnimation;
   late Animation<double> _fadeAnimation;
 
   @override
@@ -45,8 +44,8 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
     
-    // Robot pulling logo from off-screen
-    _pullController = AnimationController(
+    // Logo magical appearance (independent of robot)
+    _logoController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
@@ -101,40 +100,31 @@ class _SplashScreenState extends State<SplashScreen>
       curve: const Interval(0.0, 0.5, curve: Curves.elasticOut),
     ));
     
-    // Robot position when pulling logo
-    _robotPullPositionAnimation = Tween<Offset>(
-      begin: const Offset(0, 0),
-      end: const Offset(100, 0), // Move to right side to pull logo
+    // Logo magical appearance (independent animation)
+    _logoAppearAnimation = Tween<Offset>(
+      begin: const Offset(0, 100), // Appears from bottom center
+      end: const Offset(0, 0), // Goes to center
     ).animate(CurvedAnimation(
-      parent: _pullController,
-      curve: const Interval(0.0, 0.3, curve: Curves.easeInOut),
+      parent: _logoController,
+      curve: Curves.elasticOut,
     ));
     
-    // Text being pulled from off-screen
-    _textPullAnimation = Tween<Offset>(
-      begin: const Offset(300, 0), // Start way off-screen to the right
-      end: const Offset(0, 0), // End at center
-    ).animate(CurvedAnimation(
-      parent: _pullController,
-      curve: const Interval(0.3, 1.0, curve: Curves.elasticOut),
-    ));
-    
-    // Text opacity (only visible when being pulled)
-    _textOpacityAnimation = Tween<double>(
+    // Logo opacity (fades in magically)
+    _logoOpacityAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(
-      parent: _pullController,
-      curve: const Interval(0.2, 0.8, curve: Curves.easeIn),
+      parent: _logoController,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
     ));
     
-    // Text scale animation
-    _textScaleAnimation = Tween<double>(
-      begin: 0.8,
+    // Logo scale animation
+    _logoScaleAnimation = Tween<double>(
+      begin: 0.3,
       end: 1.0,
     ).animate(CurvedAnimation(
-      parent: _pullController,
-      curve: const Interval(0.5, 1.0, curve: Curves.elasticOut),
+      parent: _logoController,
+      curve: Curves.elasticOut,
     ));
     
     // Fade out animation
@@ -156,15 +146,18 @@ class _SplashScreenState extends State<SplashScreen>
     // Robot slides in and starts playing
     await Future.delayed(const Duration(milliseconds: 800));
     
-    // Robot gets excited, laughs, bounces around
+    // Robot gets excited, laughs, bounces around (no touching logo)
     _exciteController.repeat(reverse: true);
     await Future.delayed(const Duration(milliseconds: 3000));
     
-    // Stop excitement and start pulling sequence
+    // Stop robot excitement
     _exciteController.stop();
-    _pullController.forward();
     
-    // Wait for logo placement, then fade out
+    // Logo appears magically by itself (robot just watches)
+    await Future.delayed(const Duration(milliseconds: 500));
+    _logoController.forward();
+    
+    // Wait for logo to settle, then fade out
     await Future.delayed(const Duration(milliseconds: 2500));
     _fadeController.forward();
     
@@ -177,7 +170,7 @@ class _SplashScreenState extends State<SplashScreen>
   void dispose() {
     _robotController.dispose();
     _exciteController.dispose();
-    _pullController.dispose();
+    _logoController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
@@ -190,7 +183,7 @@ class _SplashScreenState extends State<SplashScreen>
         animation: Listenable.merge([
           _robotController, 
           _exciteController,
-          _pullController,
+          _logoController,
           _fadeController
         ]),
         builder: (context, child) {
@@ -200,11 +193,11 @@ class _SplashScreenState extends State<SplashScreen>
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // AhamAI Text (pulled from off-screen)
-                  _buildPulledText(),
+                  // AhamAI Logo (appears magically)
+                  _buildMagicalLogo(),
                   
-                  // Excited Robot (bigger, more animated)
-                  _buildExcitedRobot(),
+                  // Robot (plays around, stays on left side)
+                  _buildPlayfulRobot(),
                 ],
               ),
             ),
@@ -214,13 +207,13 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
   
-  Widget _buildPulledText() {
+  Widget _buildMagicalLogo() {
     return Transform.translate(
-      offset: _textPullAnimation.value,
+      offset: _logoAppearAnimation.value,
       child: Transform.scale(
-        scale: _textScaleAnimation.value,
+        scale: _logoScaleAnimation.value,
         child: Opacity(
-          opacity: _textOpacityAnimation.value,
+          opacity: _logoOpacityAnimation.value,
           child: Text(
             'AhamAI',
             style: GoogleFonts.spaceMono(
@@ -235,9 +228,10 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
   
-  Widget _buildExcitedRobot() {
+  Widget _buildPlayfulRobot() {
+    // Robot stays on the left side, doesn't touch logo
     return Transform.translate(
-      offset: _robotPullPositionAnimation.value,
+      offset: const Offset(-80, 0), // Keep robot on left side
       child: SlideTransition(
         position: _robotSlideAnimation,
         child: Transform.translate(
@@ -245,7 +239,7 @@ class _SplashScreenState extends State<SplashScreen>
           child: Transform.rotate(
             angle: _robotRotateAnimation.value,
             child: Transform.scale(
-              scale: _robotExciteAnimation.value * 1.0, // Bigger robot (was 0.7)
+              scale: _robotExciteAnimation.value * 1.0, // Bigger robot
               child: _buildRobot(),
             ),
           ),
@@ -256,8 +250,8 @@ class _SplashScreenState extends State<SplashScreen>
   
   Widget _buildRobot() {
     return Container(
-      width: 120, // Increased from 100
-      height: 120, // Increased from 100
+      width: 120,
+      height: 120,
       child: CustomPaint(
         painter: RobotPainter(),
       ),
@@ -322,27 +316,49 @@ class RobotPainter extends CustomPainter {
       strokePaint,
     );
     
-    // Antenna tip (glowing) - bigger
-    paint.color = const Color(0xFF000000);
-    canvas.drawCircle(center.translate(0, -50), 3, paint);
+    // Antenna tip with India Flag! 🇮🇳
     paint.color = Colors.white;
+    canvas.drawCircle(center.translate(0, -50), 6, paint);
+    canvas.drawCircle(center.translate(0, -50), 6, strokePaint);
+    
+    // India Flag in the antenna bulb
+    // Saffron (top)
+    paint.color = const Color(0xFFFF9933);
+    canvas.drawArc(
+      Rect.fromCenter(center: center.translate(0, -50), width: 10, height: 10),
+      -math.pi, math.pi / 3, true, paint);
+    
+    // White (middle)
+    paint.color = Colors.white;
+    canvas.drawRect(
+      Rect.fromCenter(center: center.translate(0, -50), width: 10, height: 3.3),
+      paint);
+    
+    // Green (bottom)
+    paint.color = const Color(0xFF138808);
+    canvas.drawArc(
+      Rect.fromCenter(center: center.translate(0, -50), width: 10, height: 10),
+      0, math.pi / 3, true, paint);
+    
+    // Chakra (wheel) in center - simplified
+    paint.color = const Color(0xFF000080);
     canvas.drawCircle(center.translate(0, -50), 1.5, paint);
     
-    // Arms (more excited pose) - longer
+    // Arms (excited pose, pointing towards center where logo will appear)
     strokePaint.strokeWidth = 4;
     strokePaint.strokeCap = StrokeCap.round;
     
-    // Left arm (raised high in excitement)
+    // Left arm (raised in excitement)
     canvas.drawLine(
       center.translate(-22, -2),
       center.translate(-35, -18),
       strokePaint,
     );
     
-    // Right arm (pulling/reaching)
+    // Right arm (pointing towards center, not touching)
     canvas.drawLine(
       center.translate(22, -2),
-      center.translate(38, -5),
+      center.translate(40, -8),
       strokePaint,
     );
     
