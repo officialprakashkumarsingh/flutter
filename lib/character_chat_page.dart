@@ -194,7 +194,6 @@ class _CharacterChatPageState extends State<CharacterChatPage> {
         'model': widget.selectedModel,
         'messages': messages,
         'stream': true,
-        'max_tokens': 2000,
         'temperature': 0.8, // Slightly higher for more character personality
       });
 

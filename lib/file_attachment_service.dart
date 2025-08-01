@@ -247,12 +247,6 @@ class FileAttachmentService {
     String rawText = extractor.extractText();
     document.dispose();
 
-    // Truncate extremely long content – we keep roughly 40k characters (≈8K tokens)
-    const int maxChars = 40000;
-    if (rawText.length > maxChars) {
-      rawText = rawText.substring(0, maxChars) + '\n\n[TRUNCATED]';
-    }
-
     return rawText;
   }
 
