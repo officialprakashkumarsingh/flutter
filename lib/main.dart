@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'splash_screen.dart';
 import 'auth_gate.dart';
+import 'smooth_scroll_behavior.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +35,7 @@ class AhamAIApp extends StatelessWidget {
     return MaterialApp(
       title: 'AhamAI',
       debugShowCheckedModeBanner: false,
+      scrollBehavior: const SmoothScrollBehavior(),
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
