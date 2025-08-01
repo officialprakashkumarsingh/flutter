@@ -52,8 +52,7 @@ class ChatPageState extends State<ChatPage> {
   final _controller = TextEditingController();
   final _scroll = ScrollController();
   final _messages = <Message>[
-    // Start completely empty - no auto-greeting
-    // Bot greeting will be added when user sends first message
+    Message.bot('Hi, I\'m AhamAI. Ask me anything!'),
   ];
   bool _awaitingReply = false;
   String? _editingMessageId;
@@ -83,7 +82,6 @@ class ChatPageState extends State<ChatPage> {
   // Current conversation tracking
   String? _currentConversationId;
   static const int _maxMemorySize = 10;
-  bool _isSavingChat = false; // Prevent concurrent saves
 
   http.Client? _httpClient;
   final CharacterService _characterService = CharacterService();
@@ -110,122 +108,60 @@ class ChatPageState extends State<ChatPage> {
 
   @override
   void initState() {
-    debugPrint('🎬 CHATPAGE: initState() called - setting up ChatPage...');
     super.initState();
     _characterService.addListener(_onCharacterChanged);
-    // REMOVED: External tools service listener
-    
     _updateGreetingForCharacter();
-    debugPrint('🎬 CHATPAGE: Calling _loadConversationMemory...');
-    _loadConversationMemory();
     _loadImageModels();
     _controller.addListener(() {
       setState(() {}); // Refresh UI when text changes
     });
-    debugPrint('✅ CHATPAGE: initState() completed');
   }
   
       Future<void> _loadConversationMemory() async {
-    try {
-      debugPrint('💭 CONVERSATION: _loadConversationMemory() called');
-      // Skip loading from Supabase if in temporary chat mode
-      if (widget.isTemporaryChatMode) {
-        debugPrint('💭 CONVERSATION: Temporary chat mode - starting empty');
-        setState(() {
-          _currentConversationId = null;
-          _conversationMemory = [];
-          _messages.clear();
-          // DON'T add bot greeting - wait for user interaction
-        });
-        return;
-      }
-      
-      // Check if user is signed in before attempting to load from Supabase
-      if (!SupabaseAuthService.isSignedIn) {
-        debugPrint('💭 CONVERSATION: User not signed in - starting empty');
-        setState(() {
-          _currentConversationId = null;
-          _conversationMemory = [];
-          _messages.clear();
-          // DON'T add bot greeting - wait for user interaction
-        });
-        return;
-      }
-      
-      // CHANGED: Start completely empty - no auto-greeting
-      // Bot greeting will be added when user sends first message
-      debugPrint('💭 CONVERSATION: Starting empty - no auto-greeting');
-      setState(() {
-        _currentConversationId = null;
-        _conversationMemory = [];
-        _messages.clear();
-        // DON'T add bot greeting - completely empty start
-      });
-      debugPrint('✅ CONVERSATION: Empty chat initialized with ${_messages.length} messages');
-      
-    } catch (e) {
-      debugPrint('❌ CONVERSATION: Error in conversation memory setup: $e');
-      // On error, start empty
-      setState(() {
-        _currentConversationId = null;
-        _conversationMemory = [];
-        _messages.clear();
-        // DON'T add bot greeting even on error
-      });
-    }
+    debugPrint('CONVERSATION: Starting fresh chat');
+    setState(() {
+      _currentConversationId = null;
+      _conversationMemory = [];
+      _messages.clear();
+      _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
+    });
   }
   
     Future<void> _saveChatHistory() async {
-    // Prevent concurrent saves
-    if (_isSavingChat) {
-      debugPrint('💾 SAVE: Already saving, skipping concurrent save request');
-      return;
-    }
-    
     try {
-      _isSavingChat = true;
-      debugPrint('💾 SAVE: Starting save operation...');
-      
-      if (_messages.isEmpty) {
-        debugPrint('💾 SAVE: No messages to save');
+      // Only save if we have a real conversation (user + bot messages)
+      if (_messages.length < 2) {
+        debugPrint('SAVE: Not enough messages for a conversation');
         return;
       }
       
-      // Skip saving if in temporary chat mode
-      if (widget.isTemporaryChatMode) {
-        debugPrint('Temporary chat mode: Not saving chat history to Supabase');
+      // Only save if user is signed in and not in temporary mode
+      if (!SupabaseAuthService.isSignedIn || widget.isTemporaryChatMode) {
+        debugPrint('SAVE: User not signed in or in temporary mode');
         return;
       }
       
-      // Skip saving if only contains initial bot greeting (prevent empty conversations)
-      if (_messages.length == 1 && 
-          _messages.first.sender == Sender.bot && 
-          (_messages.first.text.contains('Hi, I\'m AhamAI') || 
-           _messages.first.text.contains('Fresh chat started'))) {
-        debugPrint('Skipping save: Only contains initial bot greeting');
+      // Check if we have at least one user message and one bot message
+      bool hasUserMessage = _messages.any((msg) => msg.sender == Sender.user);
+      bool hasBotMessage = _messages.any((msg) => msg.sender == Sender.bot);
+      
+      if (!hasUserMessage || !hasBotMessage) {
+        debugPrint('SAVE: Not a complete conversation (missing user or bot message)');
         return;
       }
       
-      // Generate title for new conversations
+      debugPrint('SAVE: Saving conversation with ${_messages.length} messages, ID: $_currentConversationId');
+      
+      // Generate title from first user message
       String title = 'New Chat';
-      if (_currentConversationId == null && _messages.length > 1) {
-        title = SupabaseChatService.generateConversationTitle(_messages);
-        debugPrint('💬 SAVE: Generated new title for new conversation: "$title"');
-      } else if (_currentConversationId != null) {
-        // For existing conversations, generate title from messages if not set properly
-        // This prevents "New Chat" from overwriting existing conversation titles
-        title = SupabaseChatService.generateConversationTitle(_messages);
-        debugPrint('💬 SAVE: Generated title for existing conversation: "$title" (ID: $_currentConversationId)');
-      } else {
-        debugPrint('💬 SAVE: Using default title: "$title"');
+      final firstUserMsg = _messages.firstWhere(
+        (msg) => msg.sender == Sender.user,
+        orElse: () => _messages.first,
+      );
+      if (firstUserMsg.text.isNotEmpty) {
+        final words = firstUserMsg.text.split(' ').take(5).join(' ');
+        title = words.length > 30 ? '${words.substring(0, 30)}...' : words;
       }
-      
-      final isNewConversation = _currentConversationId == null;
-      
-      debugPrint('💾 SAVE: Saving chat with ${_messages.length} messages');
-      debugPrint('💾 SAVE: isNewConversation: $isNewConversation');
-      debugPrint('💾 SAVE: conversationId: $_currentConversationId');
-      debugPrint('💾 SAVE: title: "$title"');
       
       // Save to Supabase
       final conversationId = await SupabaseChatService.saveConversation(
@@ -235,30 +171,16 @@ class ChatPageState extends State<ChatPage> {
         title: title,
       );
       
+      // Update conversation ID if this was a new conversation
       if (conversationId != null && _currentConversationId == null) {
-        setState(() {
-          _currentConversationId = conversationId;
-        });
-        debugPrint('💾 SAVE: Assigned new conversation ID: $conversationId');
-      } else if (conversationId != null && _currentConversationId != null) {
-        debugPrint('💾 SAVE: Updated existing conversation ID: $conversationId (was: $_currentConversationId)');
-      } else {
-        debugPrint('💾 SAVE: No conversation ID returned from save operation');
-      }
-      
-      debugPrint('💾 SAVE: Final conversation ID state: $_currentConversationId');
-      
-      // Only notify parent of new conversations, not every message update
-      if (isNewConversation && conversationId != null) {
-        debugPrint('New conversation created, refreshing chat history list');
+        _currentConversationId = conversationId;
+        debugPrint('SAVE: New conversation saved with ID: $conversationId');
+        // Notify parent to refresh chat history
         widget.onChatHistoryChanged?.call();
       }
       
     } catch (e) {
-      debugPrint('Error saving chat history: $e');
-    } finally {
-      _isSavingChat = false;
-      debugPrint('💾 SAVE: Save operation completed');
+      debugPrint('SAVE: Error - $e');
     }
   }
   
@@ -268,30 +190,23 @@ class ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
-    debugPrint('🎬 CHATPAGE: dispose() called - cleaning up ChatPage...');
     _characterService.removeListener(_onCharacterChanged);
-    // REMOVED: External tools service listener removal
     _controller.dispose();
     _scroll.dispose();
     _httpClient?.close();
     super.dispose();
-    debugPrint('✅ CHATPAGE: dispose() completed');
   }
 
   List<Message> getMessages() => _messages;
 
   void loadChatSession(List<Message> messages, {String? conversationId}) {
-    debugPrint('📂 LOAD: loadChatSession called with ${messages.length} messages');
-    debugPrint('📂 LOAD: Current conversation ID: $_currentConversationId');
-    debugPrint('📂 LOAD: New conversation ID: $conversationId');
     setState(() {
       _awaitingReply = false;
       _httpClient?.close();
       _messages.clear();
       _messages.addAll(messages);
-      _currentConversationId = conversationId; // Set the conversation ID so messages save to correct conversation
+      _currentConversationId = conversationId;
     });
-    debugPrint('✅ LOAD: Loaded chat session with ${messages.length} messages, conversation ID: $_currentConversationId');
   }
 
   void _onCharacterChanged() {
@@ -967,21 +882,17 @@ Be conversational and helpful!'''
   }
 
   void startNewChat() {
-    debugPrint('🆕 NEWCHAT: startNewChat() called');
-    debugPrint('🆕 NEWCHAT: Current conversation ID before reset: $_currentConversationId');
+    debugPrint('NEWCHAT: Starting new chat');
     setState(() {
       _awaitingReply = false;
       _editingMessageId = null;
       _currentConversationId = null;
-      _conversationMemory.clear(); // Clear memory for fresh start
+      _conversationMemory.clear();
       _httpClient?.close();
       _httpClient = null;
       _messages.clear();
-      // DON'T add any bot greeting - let it be completely empty
-      // Bot greeting will be added when user sends first message
+      _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
     });
-    debugPrint('✅ NEWCHAT: Empty chat created with ${_messages.length} messages');
-    debugPrint('✅ NEWCHAT: Conversation ID reset to: $_currentConversationId');
   }
   
   // Public method to reload conversation memory (for auth state changes)

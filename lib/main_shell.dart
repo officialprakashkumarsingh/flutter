@@ -92,39 +92,22 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     // Listen for auth state changes
     _authStateStream = SupabaseAuthService.authStateChanges;
     _authStateStream.listen((authState) {
-      // Only clear chat history when user signs out
-      // Don't reload on sign in to prevent duplicates (initState handles initial load)
       if (!SupabaseAuthService.isSignedIn) {
-        debugPrint('🚪 AUTH STATE: User signed out, starting cleanup...');
-        // Clear chat history when user signs out
+        // User signed out - clear everything
         setState(() {
           _chatHistory.clear();
         });
-        _lastChatHistoryLoad = null; // Reset debounce timer
-        
-        // Clear the current active chat to prevent it from being saved as "New Chat"
-        debugPrint('🧹 AUTH STATE: Calling startNewChat to clear active conversation...');
+        _lastChatHistoryLoad = null;
         _chatPageKey.currentState?.startNewChat();
-        
-        debugPrint('✅ AUTH STATE: User signed out cleanup completed');
+        debugPrint('AUTH: User signed out, cleared state');
       } else {
-        debugPrint('🔑 AUTH STATE: User signed in, checking if refresh needed...');
-        // Only load if we haven't loaded recently (debounced)
-        final now = DateTime.now();
-        if (_lastChatHistoryLoad == null || 
-            now.difference(_lastChatHistoryLoad!).inMilliseconds > 2000) {
-          debugPrint('📥 AUTH STATE: Scheduling delayed chat history refresh after signin');
-          // Add a small delay to ensure auth state is fully settled before loading
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted && SupabaseAuthService.isSignedIn) {
-              debugPrint('⏰ AUTH STATE: Loading chat history after delay...');
-              _loadChatHistoryFromSupabase();
-              // Remove reloadConversationMemory - initState already handles conversation setup
-            }
-          });
-        } else {
-          debugPrint('⏰ AUTH STATE: Chat history loaded recently, skipping signin refresh');
-        }
+        // User signed in - load chat history after a delay
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (mounted && SupabaseAuthService.isSignedIn) {
+            _loadChatHistoryFromSupabase();
+          }
+        });
+        debugPrint('AUTH: User signed in, scheduled history load');
       }
     });
     
