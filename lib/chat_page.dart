@@ -9,8 +9,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/vs2015.dart'; // Dark theme for AMOLED
 import 'models.dart';
@@ -22,6 +20,7 @@ import 'image_generation_service.dart';
 import 'message_bubble.dart';
 import 'input_bar.dart';
 import 'chat_utils.dart';
+import 'supabase_chat_service.dart';
 
 
 
@@ -69,6 +68,9 @@ class ChatPageState extends State<ChatPage> {
 
   // Add memory system for general chat
   List<String> _conversationMemory = [];
+  
+  // Current conversation tracking
+  String? _currentConversationId;
   static const int _maxMemorySize = 10;
 
   http.Client? _httpClient;
@@ -108,68 +110,67 @@ class ChatPageState extends State<ChatPage> {
     });
   }
   
-    Future<void> _loadConversationMemory() async {
+      Future<void> _loadConversationMemory() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedMemoryStr = prefs.getString('conversation_memory');
-      if (savedMemoryStr != null) {
-        final savedMemory = Map<String, dynamic>.from(jsonDecode(savedMemoryStr));
+      // Load the latest conversation from Supabase
+      final latestConversation = await SupabaseChatService.loadLatestConversation();
+      
+      if (latestConversation != null) {
         setState(() {
-          _conversationMemory = Map<String, String>.from(savedMemory);
+          _currentConversationId = latestConversation['id'];
+          _conversationMemory = List<String>.from(latestConversation['conversationMemory']);
+          _messages.clear();
+          _messages.addAll(List<Message>.from(latestConversation['messages']));
+        });
+        
+        debugPrint('Loaded conversation: ${latestConversation['title']} with ${_messages.length} messages');
+      } else {
+        // No existing conversations, start fresh
+        setState(() {
+          _currentConversationId = null;
+          _conversationMemory = [];
+          _messages.clear();
+          _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
         });
       }
-      
-      // Also load chat history
-      await _loadChatHistory();
     } catch (e) {
       debugPrint('Error loading conversation memory: $e');
     }
   }
   
-  Future<void> _saveChatHistory() async {
+    Future<void> _saveChatHistory() async {
     try {
-      final chatData = _messages.map((message) => {
-        'text': message.text,
-        'sender': message.sender.toString(),
-        'timestamp': message.timestamp.millisecondsSinceEpoch,
-        'isStreaming': message.isStreaming,
-      }).toList();
+      if (_messages.isEmpty) return;
       
-              final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('chat_history', jsonEncode(chatData));
-      debugPrint('Chat history saved: ${chatData.length} messages');
+      // Generate title for new conversations
+      String title = 'New Chat';
+      if (_currentConversationId == null && _messages.length > 1) {
+        title = SupabaseChatService.generateConversationTitle(_messages);
+      }
+      
+      // Save to Supabase
+      final conversationId = await SupabaseChatService.saveConversation(
+        messages: _messages,
+        conversationMemory: _conversationMemory,
+        conversationId: _currentConversationId,
+        title: title,
+      );
+      
+      if (conversationId != null && _currentConversationId == null) {
+        setState(() {
+          _currentConversationId = conversationId;
+        });
+      }
+      
+      debugPrint('Chat history saved to Supabase: ${_messages.length} messages');
     } catch (e) {
       debugPrint('Error saving chat history: $e');
     }
   }
   
-  Future<void> _loadChatHistory() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final chatHistoryStr = prefs.getString('chat_history');
-      if (chatHistoryStr != null && chatHistoryStr.isNotEmpty) {
-        final List<dynamic> chatData = jsonDecode(chatHistoryStr);
-        final loadedMessages = chatData.map((data) => Message(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          text: data['text'] as String,
-          sender: (data['sender'] as String) == 'Sender.bot' ? Sender.bot : Sender.user,
-          timestamp: DateTime.fromMillisecondsSinceEpoch(data['timestamp'] as int),
-          isStreaming: data['isStreaming'] as bool? ?? false,
-        )).toList();
-        
-        if (loadedMessages.isNotEmpty) {
-          setState(() {
-            // Clear existing messages except greeting and add loaded messages
-            _messages.clear();
-            _messages.addAll(loadedMessages);
-          });
-          debugPrint('Chat history loaded: ${loadedMessages.length} messages');
-        }
-      }
-    } catch (e) {
-      debugPrint('Error loading chat history: $e');
-    }
-  }
+
+  
+
 
   @override
   void dispose() {
@@ -868,6 +869,7 @@ Be conversational and helpful!'''
     setState(() {
       _awaitingReply = false;
       _editingMessageId = null;
+      _currentConversationId = null;
       _conversationMemory.clear(); // Clear memory for fresh start
       _httpClient?.close();
       _httpClient = null;

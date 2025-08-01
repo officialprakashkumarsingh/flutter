@@ -14,6 +14,7 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user();
 DROP FUNCTION IF EXISTS public.handle_user_update();
+DROP TABLE IF EXISTS public.chat_conversations;
 DROP TABLE IF EXISTS public.profiles;
 ```
 
@@ -30,20 +31,43 @@ CREATE TABLE public.profiles (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Enable RLS on profiles table
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+-- Create chat conversations table
+CREATE TABLE public.chat_conversations (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    title TEXT DEFAULT 'New Chat',
+    messages JSONB NOT NULL DEFAULT '[]',
+    conversation_memory JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
 
--- Create policy for users to see their own profile
+-- Enable RLS on all tables
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.chat_conversations ENABLE ROW LEVEL SECURITY;
+
+-- Profiles policies
 CREATE POLICY "Users can view own profile" ON public.profiles
     FOR SELECT USING (auth.uid() = id);
 
--- Create policy for users to update their own profile
 CREATE POLICY "Users can update own profile" ON public.profiles
     FOR UPDATE USING (auth.uid() = id);
 
--- Create policy for users to insert their own profile
 CREATE POLICY "Users can insert own profile" ON public.profiles
     FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- Chat conversations policies
+CREATE POLICY "Users can view own conversations" ON public.chat_conversations
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own conversations" ON public.chat_conversations
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own conversations" ON public.chat_conversations
+    FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own conversations" ON public.chat_conversations
+    FOR DELETE USING (auth.uid() = user_id);
 
 -- Create function to handle user creation
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -89,6 +113,7 @@ CREATE TRIGGER on_auth_user_updated
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
 GRANT ALL ON public.profiles TO authenticated;
 GRANT SELECT ON public.profiles TO anon;
+GRANT ALL ON public.chat_conversations TO authenticated;
 ```
 
 **Step 3: Test the setup (optional verification):**
@@ -112,9 +137,10 @@ JOIN pg_attribute a ON a.attrelid = (
     )
 )
 JOIN pg_type ty ON ty.oid = a.atttypid
-WHERE t.tablename = 'profiles' 
+WHERE t.tablename IN ('profiles', 'chat_conversations') 
 AND t.schemaname = 'public'
-AND a.attnum > 0;
+AND a.attnum > 0
+ORDER BY t.tablename, a.attnum;
 ```
 
 ## 📱 Features
@@ -124,6 +150,12 @@ AND a.attnum > 0;
 - **Auto Profile Creation**: Automatic user profile creation on signup
 - **Password Reset**: Email-based password recovery
 - **Session Management**: Secure session handling with auto-expiry
+
+### 💬 **Chat History & Storage**
+- **Cloud Storage**: Chat history stored securely in Supabase
+- **Real-time Sync**: Messages sync across devices
+- **Conversation Memory**: AI context preserved per conversation
+- **User Isolation**: Each user's chats are completely private
 
 ### 🎛️ **Admin Panel** (Coming Soon)
 - **Model Switching**: Switch between GPT-4, Claude, Gemini, etc.
@@ -165,6 +197,7 @@ AND a.attnum > 0;
 ```
 Flutter App
 ├── Authentication (Supabase)
+├── Chat Storage (Supabase Database)
 ├── Admin Panel (Local + Supabase)
 ├── Chat Interface
 ├── File Processing
@@ -174,7 +207,7 @@ Flutter App
 ### Data Flow
 
 ```
-User Input → Admin Settings → Cloudflare Workers → AI APIs → Response
+User Input → Admin Settings → Cloudflare Workers → AI APIs → Response → Supabase Storage
 ```
 
 ## 📊 Database Schema
@@ -184,6 +217,15 @@ User Input → Admin Settings → Cloudflare Workers → AI APIs → Response
 - `email` (Text, Unique)
 - `full_name` (Text, Optional)
 - `avatar_url` (Text, Optional)
+- `created_at` (Timestamp)
+- `updated_at` (Timestamp)
+
+### Chat Conversations Table
+- `id` (UUID, Primary Key)
+- `user_id` (UUID, References auth.users)
+- `title` (Text, Default: 'New Chat')
+- `messages` (JSONB Array)
+- `conversation_memory` (JSONB Object)
 - `created_at` (Timestamp)
 - `updated_at` (Timestamp)
 
@@ -201,6 +243,7 @@ User Input → Admin Settings → Cloudflare Workers → AI APIs → Response
 2. **Verify Email**: Check email for verification link
 3. **Start Chatting**: Begin conversations with AI
 4. **Attach Files**: Upload documents, images, and more
+5. **Chat History**: All conversations automatically saved to cloud
 
 ### For Admins
 1. **Access Admin Panel**: Use admin password to access controls
@@ -223,6 +266,11 @@ User Input → Admin Settings → Cloudflare Workers → AI APIs → Response
 3. **Permission denied errors**
    - Make sure you're running commands as the database owner
    - Check that all GRANT statements executed successfully
+
+4. **Chat history not saving**
+   - Verify chat_conversations table exists
+   - Check RLS policies are properly configured
+   - Ensure user is authenticated before saving
 
 ## 🤝 Contributing
 
