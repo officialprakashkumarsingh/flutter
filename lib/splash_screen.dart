@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
 
 class SplashScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _robotController;
   late AnimationController _textController;
   late AnimationController _fadeController;
+  late AnimationController _playController;
   
   late Animation<double> _robotFloatAnimation;
   late Animation<double> _robotRotateAnimation;
@@ -22,12 +24,13 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _textScaleAnimation;
   late Animation<double> _textOpacityAnimation;
   late Animation<double> _fadeAnimation;
+  late Animation<double> _robotPlayAnimation;
 
   @override
   void initState() {
     super.initState();
     
-    // Robot animation controller
+    // Robot animation controller (floating)
     _robotController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
@@ -39,6 +42,12 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
     
+    // Robot play animation (interacting with text)
+    _playController = AnimationController(
+      duration: const Duration(milliseconds: 2500),
+      vsync: this,
+    );
+    
     // Fade out controller
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -47,8 +56,8 @@ class _SplashScreenState extends State<SplashScreen>
     
     // Robot floating animation
     _robotFloatAnimation = Tween<double>(
-      begin: -20.0,
-      end: 20.0,
+      begin: -15.0,
+      end: 15.0,
     ).animate(CurvedAnimation(
       parent: _robotController,
       curve: Curves.easeInOut,
@@ -56,8 +65,8 @@ class _SplashScreenState extends State<SplashScreen>
     
     // Robot rotation animation
     _robotRotateAnimation = Tween<double>(
-      begin: -0.1,
-      end: 0.1,
+      begin: -0.05,
+      end: 0.05,
     ).animate(CurvedAnimation(
       parent: _robotController,
       curve: Curves.easeInOut,
@@ -65,11 +74,20 @@ class _SplashScreenState extends State<SplashScreen>
     
     // Robot slide in animation
     _robotSlideAnimation = Tween<Offset>(
-      begin: const Offset(-1.5, 0),
+      begin: const Offset(-1.2, 0),
       end: const Offset(0, 0),
     ).animate(CurvedAnimation(
       parent: _robotController,
       curve: Curves.elasticOut,
+    ));
+    
+    // Robot play animation (moves around the text)
+    _robotPlayAnimation = Tween<double>(
+      begin: 0.0,
+      end: 2 * math.pi,
+    ).animate(CurvedAnimation(
+      parent: _playController,
+      curve: Curves.easeInOut,
     ));
     
     // Text scale animation
@@ -87,7 +105,7 @@ class _SplashScreenState extends State<SplashScreen>
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _textController,
-      curve: const Interval(0.3, 1.0, curve: Curves.easeIn),
+      curve: const Interval(0.2, 1.0, curve: Curves.easeIn),
     ));
     
     // Fade out animation
@@ -103,15 +121,19 @@ class _SplashScreenState extends State<SplashScreen>
   }
   
   void _startAnimations() async {
-    // Start robot animation (repeating)
+    // Start robot floating animation (repeating)
     _robotController.repeat(reverse: true);
     
     // Delay and start text animation
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 300));
     _textController.forward();
     
-    // Wait for animations to complete, then fade out
-    await Future.delayed(const Duration(seconds: 3));
+    // Start robot playing around text after text appears
+    await Future.delayed(const Duration(milliseconds: 800));
+    _playController.forward();
+    
+    // Wait for play animation, then fade out
+    await Future.delayed(const Duration(seconds: 2));
     _fadeController.forward();
     
     // Complete splash after fade
@@ -123,6 +145,7 @@ class _SplashScreenState extends State<SplashScreen>
   void dispose() {
     _robotController.dispose();
     _textController.dispose();
+    _playController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
@@ -132,55 +155,33 @@ class _SplashScreenState extends State<SplashScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF4F3F0), // App's background color
       body: AnimatedBuilder(
-        animation: Listenable.merge([_robotController, _textController, _fadeController]),
+        animation: Listenable.merge([_robotController, _textController, _playController, _fadeController]),
         builder: (context, child) {
           return Opacity(
             opacity: _fadeAnimation.value,
             child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  // Animated Robot
-                  SlideTransition(
-                    position: _robotSlideAnimation,
-                    child: Transform.translate(
-                      offset: Offset(0, _robotFloatAnimation.value),
-                      child: Transform.rotate(
-                        angle: _robotRotateAnimation.value,
-                        child: _buildRobot(),
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 60),
-                  
-                  // AhamAI Banner
+                  // AhamAI Text (centered)
                   Transform.scale(
                     scale: _textScaleAnimation.value,
                     child: Opacity(
                       opacity: _textOpacityAnimation.value,
-                      child: _buildAhamAIBanner(),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 40),
-                  
-                  // Subtitle
-                  Transform.scale(
-                    scale: _textScaleAnimation.value * 0.8,
-                    child: Opacity(
-                      opacity: _textOpacityAnimation.value * 0.7,
                       child: Text(
-                        'Intelligent AI Assistant',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: const Color(0xFFA3A3A3),
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 1.2,
+                        'AhamAI',
+                        style: GoogleFonts.spaceMono(
+                          fontSize: 42,
+                          color: const Color(0xFF000000),
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 2.0,
                         ),
                       ),
                     ),
                   ),
+                  
+                  // Robot playing around the text
+                  _buildPlayingRobot(),
                 ],
               ),
             ),
@@ -190,62 +191,37 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
   
-  Widget _buildRobot() {
-    return Container(
-      width: 120,
-      height: 120,
-      child: CustomPaint(
-        painter: RobotPainter(),
+  Widget _buildPlayingRobot() {
+    // Calculate robot position around the text (circular motion)
+    final radius = 80.0;
+    final angle = _robotPlayAnimation.value;
+    final x = radius * math.cos(angle);
+    final y = radius * math.sin(angle);
+    
+    return Transform.translate(
+      offset: Offset(x, y),
+      child: SlideTransition(
+        position: _robotSlideAnimation,
+        child: Transform.translate(
+          offset: Offset(0, _robotFloatAnimation.value),
+          child: Transform.rotate(
+            angle: _robotRotateAnimation.value,
+            child: Transform.scale(
+              scale: 0.7, // Smaller robot for playful interaction
+              child: _buildRobot(),
+            ),
+          ),
+        ),
       ),
     );
   }
   
-  Widget _buildAhamAIBanner() {
+  Widget _buildRobot() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFEAE9E5), width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF000000).withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // AI Icon
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: const Color(0xFF000000),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.psychology_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-          ),
-          
-          const SizedBox(width: 12),
-          
-          // AhamAI Text
-          Text(
-            'AhamAI',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF000000),
-              letterSpacing: -0.5,
-            ),
-          ),
-        ],
+      width: 100,
+      height: 100,
+      child: CustomPaint(
+        painter: RobotPainter(),
       ),
     );
   }
@@ -268,29 +244,30 @@ class RobotPainter extends CustomPainter {
     // Robot Body (rounded rectangle)
     paint.color = Colors.white;
     final bodyRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: center.translate(0, 10), width: 50, height: 60),
-      const Radius.circular(12),
+      Rect.fromCenter(center: center.translate(0, 8), width: 40, height: 50),
+      const Radius.circular(10),
     );
     canvas.drawRRect(bodyRect, paint);
     canvas.drawRRect(bodyRect, strokePaint);
     
     // Robot Head (circle)
     paint.color = Colors.white;
-    canvas.drawCircle(center.translate(0, -20), 25, paint);
-    canvas.drawCircle(center.translate(0, -20), 25, strokePaint);
+    canvas.drawCircle(center.translate(0, -18), 20, paint);
+    canvas.drawCircle(center.translate(0, -18), 20, strokePaint);
     
-    // Eyes
+    // Eyes (happy/excited eyes)
     paint.color = const Color(0xFF000000);
-    canvas.drawCircle(center.translate(-8, -24), 4, paint);
-    canvas.drawCircle(center.translate(8, -24), 4, paint);
+    canvas.drawCircle(center.translate(-6, -20), 3, paint);
+    canvas.drawCircle(center.translate(6, -20), 3, paint);
     
-    // Eye glow effect
-    paint.color = const Color(0xFF000000).withOpacity(0.3);
-    canvas.drawCircle(center.translate(-8, -24), 6, paint);
-    canvas.drawCircle(center.translate(8, -24), 6, paint);
+    // Eye sparkles (playful effect)
+    paint.color = Colors.white;
+    canvas.drawCircle(center.translate(-5, -21), 1, paint);
+    canvas.drawCircle(center.translate(7, -21), 1, paint);
     
-    // Mouth (small arc)
+    // Happy mouth (curved smile)
     strokePaint.strokeWidth = 2;
+    strokePaint.strokeCap = StrokeCap.round;
     canvas.drawArc(
       Rect.fromCenter(center: center.translate(0, -12), width: 12, height: 8),
       0,
@@ -299,67 +276,69 @@ class RobotPainter extends CustomPainter {
       strokePaint,
     );
     
-    // Antenna
+    // Antenna with bouncing effect
     strokePaint.strokeWidth = 2;
     canvas.drawLine(
+      center.translate(0, -38),
       center.translate(0, -45),
-      center.translate(0, -55),
       strokePaint,
     );
     
-    // Antenna tip
+    // Antenna tip (glowing)
     paint.color = const Color(0xFF000000);
-    canvas.drawCircle(center.translate(0, -55), 3, paint);
+    canvas.drawCircle(center.translate(0, -45), 2.5, paint);
+    paint.color = Colors.white;
+    canvas.drawCircle(center.translate(0, -45), 1, paint);
     
-    // Arms
+    // Arms (waving/playful pose)
     strokePaint.strokeWidth = 3;
     strokePaint.strokeCap = StrokeCap.round;
     
-    // Left arm
+    // Left arm (raised)
     canvas.drawLine(
-      center.translate(-25, 0),
-      center.translate(-40, -10),
+      center.translate(-20, -2),
+      center.translate(-30, -12),
       strokePaint,
     );
     
-    // Right arm
+    // Right arm (pointing/playing)
     canvas.drawLine(
-      center.translate(25, 0),
-      center.translate(40, -10),
+      center.translate(20, -2),
+      center.translate(32, -8),
       strokePaint,
     );
     
     // Legs
     canvas.drawLine(
-      center.translate(-12, 40),
-      center.translate(-12, 55),
+      center.translate(-10, 33),
+      center.translate(-10, 45),
       strokePaint,
     );
     
     canvas.drawLine(
-      center.translate(12, 40),
-      center.translate(12, 55),
+      center.translate(10, 33),
+      center.translate(10, 45),
       strokePaint,
     );
     
     // Feet
     paint.color = const Color(0xFF000000);
-    canvas.drawCircle(center.translate(-12, 58), 4, paint);
-    canvas.drawCircle(center.translate(12, 58), 4, paint);
+    canvas.drawCircle(center.translate(-10, 47), 3, paint);
+    canvas.drawCircle(center.translate(10, 47), 3, paint);
     
     // Body details (chest panel)
     strokePaint.strokeWidth = 1;
     final panelRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: center.translate(0, 5), width: 20, height: 25),
-      const Radius.circular(4),
+      Rect.fromCenter(center: center.translate(0, 3), width: 16, height: 20),
+      const Radius.circular(3),
     );
     canvas.drawRRect(panelRect, strokePaint);
     
-    // Chest buttons
-    paint.color = const Color(0xFFA3A3A3);
-    canvas.drawCircle(center.translate(-5, 0), 2, paint);
-    canvas.drawCircle(center.translate(5, 0), 2, paint);
-    canvas.drawCircle(center.translate(0, 8), 2, paint);
+    // Chest buttons (playful colors)
+    paint.color = const Color(0xFF000000);
+    canvas.drawCircle(center.translate(-4, -2), 1.5, paint);
+    canvas.drawCircle(center.translate(4, -2), 1.5, paint);
+    canvas.drawCircle(center.translate(0, 6), 1.5, paint);
   }
 
   @override
