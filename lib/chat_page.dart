@@ -52,7 +52,8 @@ class ChatPageState extends State<ChatPage> {
   final _controller = TextEditingController();
   final _scroll = ScrollController();
   final _messages = <Message>[
-    Message.bot('Hi, I\'m AhamAI. Ask me anything!'),
+    // Start completely empty - no auto-greeting
+    // Bot greeting will be added when user sends first message
   ];
   bool _awaitingReply = false;
   String? _editingMessageId;
@@ -128,47 +129,47 @@ class ChatPageState extends State<ChatPage> {
       debugPrint('💭 CONVERSATION: _loadConversationMemory() called');
       // Skip loading from Supabase if in temporary chat mode
       if (widget.isTemporaryChatMode) {
-        debugPrint('💭 CONVERSATION: Temporary chat mode - starting fresh');
+        debugPrint('💭 CONVERSATION: Temporary chat mode - starting empty');
         setState(() {
           _currentConversationId = null;
           _conversationMemory = [];
           _messages.clear();
-          _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
+          // DON'T add bot greeting - wait for user interaction
         });
         return;
       }
       
       // Check if user is signed in before attempting to load from Supabase
       if (!SupabaseAuthService.isSignedIn) {
-        debugPrint('💭 CONVERSATION: User not signed in - starting fresh');
+        debugPrint('💭 CONVERSATION: User not signed in - starting empty');
         setState(() {
           _currentConversationId = null;
           _conversationMemory = [];
           _messages.clear();
-          _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
+          // DON'T add bot greeting - wait for user interaction
         });
         return;
       }
       
-      // CHANGED: Always start fresh instead of auto-loading latest conversation
-      // This prevents the logout/login issue where user sees the same chat
-      debugPrint('💭 CONVERSATION: Starting fresh chat - no auto-loading');
+      // CHANGED: Start completely empty - no auto-greeting
+      // Bot greeting will be added when user sends first message
+      debugPrint('💭 CONVERSATION: Starting empty - no auto-greeting');
       setState(() {
         _currentConversationId = null;
         _conversationMemory = [];
         _messages.clear();
-        _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
+        // DON'T add bot greeting - completely empty start
       });
-      debugPrint('✅ CONVERSATION: Fresh chat created with ${_messages.length} messages');
+      debugPrint('✅ CONVERSATION: Empty chat initialized with ${_messages.length} messages');
       
     } catch (e) {
       debugPrint('❌ CONVERSATION: Error in conversation memory setup: $e');
-      // On error, start fresh
+      // On error, start empty
       setState(() {
         _currentConversationId = null;
         _conversationMemory = [];
         _messages.clear();
-        _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
+        // DON'T add bot greeting even on error
       });
     }
   }
@@ -940,14 +941,10 @@ Be conversational and helpful!'''
       _httpClient?.close();
       _httpClient = null;
       _messages.clear();
-      final selectedCharacter = _characterService.selectedCharacter;
-      if (selectedCharacter != null) {
-        _messages.add(Message.bot('Fresh chat started with ${selectedCharacter.name}. How can I help?'));
-      } else {
-        _messages.add(Message.bot('Hi, I\'m AhamAI. Ask me anything!'));
-      }
+      // DON'T add any bot greeting - let it be completely empty
+      // Bot greeting will be added when user sends first message
     });
-    debugPrint('✅ NEWCHAT: Fresh chat created with ${_messages.length} messages');
+    debugPrint('✅ NEWCHAT: Empty chat created with ${_messages.length} messages');
   }
   
   // Public method to reload conversation memory (for auth state changes)
