@@ -381,7 +381,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                               decoration: BoxDecoration(
                                 color: isSelected ? const Color(0xFFEAE9E5) : const Color(0xFFF4F3F0),
                                 borderRadius: BorderRadius.circular(12),
-                                border: isSelected ? Border.all(color: const Color(0xFF000000), width: 1) : null,
+                                // Tick icon already shows selection; border removed for cleaner look
+                                border: null,
                               ),
                               child: ListTile(
                                 title: Text(
