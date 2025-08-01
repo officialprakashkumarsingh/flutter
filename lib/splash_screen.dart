@@ -14,24 +14,20 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _robotController;
-  late AnimationController _textController;
+  late AnimationController _exciteController;
+  late AnimationController _pullController;
   late AnimationController _fadeController;
-  late AnimationController _playController;
-  late AnimationController _pickupController;
-  late AnimationController _placeController;
   
   late Animation<double> _robotFloatAnimation;
   late Animation<double> _robotRotateAnimation;
   late Animation<Offset> _robotSlideAnimation;
-  late Animation<double> _textScaleAnimation;
+  late Animation<double> _robotExciteAnimation;
+  late Animation<double> _robotJumpAnimation;
+  late Animation<Offset> _robotPullPositionAnimation;
+  late Animation<Offset> _textPullAnimation;
   late Animation<double> _textOpacityAnimation;
+  late Animation<double> _textScaleAnimation;
   late Animation<double> _fadeAnimation;
-  late Animation<double> _robotPlayAnimation;
-  late Animation<Offset> _robotPickupAnimation;
-  late Animation<Offset> _textPickupAnimation;
-  late Animation<double> _textPickupScaleAnimation;
-  late Animation<Offset> _robotPlaceAnimation;
-  late Animation<Offset> _textPlaceAnimation;
 
   @override
   void initState() {
@@ -43,27 +39,15 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
     );
     
-    // Text animation controller
-    _textController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+    // Robot excitement animation (laughing, bouncing)
+    _exciteController = AnimationController(
+      duration: const Duration(milliseconds: 3000),
       vsync: this,
     );
     
-    // Robot play animation (circling around text)
-    _playController = AnimationController(
+    // Robot pulling logo from off-screen
+    _pullController = AnimationController(
       duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
-    
-    // Robot pickup animation
-    _pickupController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-    
-    // Robot place animation (moving to center)
-    _placeController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
     
@@ -75,8 +59,8 @@ class _SplashScreenState extends State<SplashScreen>
     
     // Robot floating animation
     _robotFloatAnimation = Tween<double>(
-      begin: -15.0,
-      end: 15.0,
+      begin: -20.0,
+      end: 20.0,
     ).animate(CurvedAnimation(
       parent: _robotController,
       curve: Curves.easeInOut,
@@ -84,8 +68,8 @@ class _SplashScreenState extends State<SplashScreen>
     
     // Robot rotation animation
     _robotRotateAnimation = Tween<double>(
-      begin: -0.05,
-      end: 0.05,
+      begin: -0.1,
+      end: 0.1,
     ).animate(CurvedAnimation(
       parent: _robotController,
       curve: Curves.easeInOut,
@@ -100,73 +84,57 @@ class _SplashScreenState extends State<SplashScreen>
       curve: Curves.elasticOut,
     ));
     
-    // Robot play animation (moves around the text)
-    _robotPlayAnimation = Tween<double>(
-      begin: 0.0,
-      end: 2 * math.pi,
-    ).animate(CurvedAnimation(
-      parent: _playController,
-      curve: Curves.easeInOut,
-    ));
-    
-    // Robot pickup animations
-    _robotPickupAnimation = Tween<Offset>(
-      begin: const Offset(0, 0),
-      end: const Offset(0, -30), // Move robot closer to text
-    ).animate(CurvedAnimation(
-      parent: _pickupController,
-      curve: Curves.easeInOut,
-    ));
-    
-    _textPickupAnimation = Tween<Offset>(
-      begin: const Offset(0, 0),
-      end: const Offset(0, -20), // Lift text up
-    ).animate(CurvedAnimation(
-      parent: _pickupController,
-      curve: Curves.easeInOut,
-    ));
-    
-    _textPickupScaleAnimation = Tween<double>(
+    // Robot excitement animations (bouncing, scaling)
+    _robotExciteAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.8, // Slightly shrink text when picked up
+      end: 1.15,
     ).animate(CurvedAnimation(
-      parent: _pickupController,
-      curve: Curves.easeInOut,
+      parent: _exciteController,
+      curve: Curves.elasticInOut,
     ));
     
-    // Robot and text place animations (moving to center)
-    _robotPlaceAnimation = Tween<Offset>(
-      begin: const Offset(0, -30),
-      end: const Offset(-50, 20), // Robot moves to left side of center
-    ).animate(CurvedAnimation(
-      parent: _placeController,
-      curve: Curves.easeInOut,
-    ));
-    
-    _textPlaceAnimation = Tween<Offset>(
-      begin: const Offset(0, -20),
-      end: const Offset(0, 0), // Text goes to perfect center
-    ).animate(CurvedAnimation(
-      parent: _placeController,
-      curve: Curves.easeInOut,
-    ));
-    
-    // Text scale animation
-    _textScaleAnimation = Tween<double>(
+    _robotJumpAnimation = Tween<double>(
       begin: 0.0,
-      end: 1.0,
+      end: -30.0,
     ).animate(CurvedAnimation(
-      parent: _textController,
-      curve: Curves.elasticOut,
+      parent: _exciteController,
+      curve: const Interval(0.0, 0.5, curve: Curves.elasticOut),
     ));
     
-    // Text opacity animation
+    // Robot position when pulling logo
+    _robotPullPositionAnimation = Tween<Offset>(
+      begin: const Offset(0, 0),
+      end: const Offset(100, 0), // Move to right side to pull logo
+    ).animate(CurvedAnimation(
+      parent: _pullController,
+      curve: const Interval(0.0, 0.3, curve: Curves.easeInOut),
+    ));
+    
+    // Text being pulled from off-screen
+    _textPullAnimation = Tween<Offset>(
+      begin: const Offset(300, 0), // Start way off-screen to the right
+      end: const Offset(0, 0), // End at center
+    ).animate(CurvedAnimation(
+      parent: _pullController,
+      curve: const Interval(0.3, 1.0, curve: Curves.elasticOut),
+    ));
+    
+    // Text opacity (only visible when being pulled)
     _textOpacityAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(
-      parent: _textController,
-      curve: const Interval(0.2, 1.0, curve: Curves.easeIn),
+      parent: _pullController,
+      curve: const Interval(0.2, 0.8, curve: Curves.easeIn),
+    ));
+    
+    // Text scale animation
+    _textScaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _pullController,
+      curve: const Interval(0.5, 1.0, curve: Curves.elasticOut),
     ));
     
     // Fade out animation
@@ -185,24 +153,19 @@ class _SplashScreenState extends State<SplashScreen>
     // Start robot floating animation (repeating)
     _robotController.repeat(reverse: true);
     
-    // Delay and start text animation
-    await Future.delayed(const Duration(milliseconds: 300));
-    _textController.forward();
-    
-    // Start robot playing around text after text appears
+    // Robot slides in and starts playing
     await Future.delayed(const Duration(milliseconds: 800));
-    _playController.forward();
     
-    // Wait for robot to finish playing, then pickup sequence
-    await Future.delayed(const Duration(milliseconds: 2000));
-    _pickupController.forward();
+    // Robot gets excited, laughs, bounces around
+    _exciteController.repeat(reverse: true);
+    await Future.delayed(const Duration(milliseconds: 3000));
     
-    // Wait for pickup, then place in center
-    await Future.delayed(const Duration(milliseconds: 1000));
-    _placeController.forward();
+    // Stop excitement and start pulling sequence
+    _exciteController.stop();
+    _pullController.forward();
     
-    // Wait for placement, then fade out
-    await Future.delayed(const Duration(milliseconds: 1500));
+    // Wait for logo placement, then fade out
+    await Future.delayed(const Duration(milliseconds: 2500));
     _fadeController.forward();
     
     // Complete splash after fade
@@ -213,10 +176,8 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _robotController.dispose();
-    _textController.dispose();
-    _playController.dispose();
-    _pickupController.dispose();
-    _placeController.dispose();
+    _exciteController.dispose();
+    _pullController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
@@ -228,10 +189,8 @@ class _SplashScreenState extends State<SplashScreen>
       body: AnimatedBuilder(
         animation: Listenable.merge([
           _robotController, 
-          _textController, 
-          _playController, 
-          _pickupController,
-          _placeController,
+          _exciteController,
+          _pullController,
           _fadeController
         ]),
         builder: (context, child) {
@@ -241,11 +200,11 @@ class _SplashScreenState extends State<SplashScreen>
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // AhamAI Text (moves through the sequence)
-                  _buildAnimatedText(),
+                  // AhamAI Text (pulled from off-screen)
+                  _buildPulledText(),
                   
-                  // Robot (plays around, picks up, and places text)
-                  _buildAnimatedRobot(),
+                  // Excited Robot (bigger, more animated)
+                  _buildExcitedRobot(),
                 ],
               ),
             ),
@@ -255,22 +214,11 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
   
-  Widget _buildAnimatedText() {
-    // Combine all text transformations
-    Offset totalOffset = Offset(0, 0);
-    double totalScale = _textScaleAnimation.value;
-    
-    // Add pickup offset
-    totalOffset = totalOffset + _textPickupAnimation.value;
-    totalScale *= _textPickupScaleAnimation.value;
-    
-    // Add place offset
-    totalOffset = totalOffset + _textPlaceAnimation.value;
-    
+  Widget _buildPulledText() {
     return Transform.translate(
-      offset: totalOffset,
+      offset: _textPullAnimation.value,
       child: Transform.scale(
-        scale: totalScale,
+        scale: _textScaleAnimation.value,
         child: Opacity(
           opacity: _textOpacityAnimation.value,
           child: Text(
@@ -287,35 +235,17 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
   
-  Widget _buildAnimatedRobot() {
-    // Calculate robot position based on current animation phase
-    Offset robotOffset = Offset(0, 0);
-    
-    // Phase 1: Playing around text (circular motion)
-    if (_playController.value > 0 && _pickupController.value == 0) {
-      final radius = 80.0;
-      final angle = _robotPlayAnimation.value;
-      final x = radius * math.cos(angle);
-      final y = radius * math.sin(angle);
-      robotOffset = Offset(x, y);
-    }
-    
-    // Phase 2: Pickup motion
-    robotOffset = robotOffset + _robotPickupAnimation.value;
-    
-    // Phase 3: Place motion
-    robotOffset = robotOffset + _robotPlaceAnimation.value;
-    
+  Widget _buildExcitedRobot() {
     return Transform.translate(
-      offset: robotOffset,
+      offset: _robotPullPositionAnimation.value,
       child: SlideTransition(
         position: _robotSlideAnimation,
         child: Transform.translate(
-          offset: Offset(0, _robotFloatAnimation.value),
+          offset: Offset(0, _robotFloatAnimation.value + _robotJumpAnimation.value),
           child: Transform.rotate(
             angle: _robotRotateAnimation.value,
             child: Transform.scale(
-              scale: 0.7, // Smaller robot for playful interaction
+              scale: _robotExciteAnimation.value * 1.0, // Bigger robot (was 0.7)
               child: _buildRobot(),
             ),
           ),
@@ -326,8 +256,8 @@ class _SplashScreenState extends State<SplashScreen>
   
   Widget _buildRobot() {
     return Container(
-      width: 100,
-      height: 100,
+      width: 120, // Increased from 100
+      height: 120, // Increased from 100
       child: CustomPaint(
         painter: RobotPainter(),
       ),
@@ -349,104 +279,104 @@ class RobotPainter extends CustomPainter {
     
     final center = Offset(size.width / 2, size.height / 2);
     
-    // Robot Body (rounded rectangle)
+    // Robot Body (rounded rectangle) - slightly larger
     paint.color = Colors.white;
     final bodyRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: center.translate(0, 8), width: 40, height: 50),
-      const Radius.circular(10),
+      Rect.fromCenter(center: center.translate(0, 8), width: 45, height: 55),
+      const Radius.circular(12),
     );
     canvas.drawRRect(bodyRect, paint);
     canvas.drawRRect(bodyRect, strokePaint);
     
-    // Robot Head (circle)
+    // Robot Head (circle) - larger
     paint.color = Colors.white;
-    canvas.drawCircle(center.translate(0, -18), 20, paint);
-    canvas.drawCircle(center.translate(0, -18), 20, strokePaint);
+    canvas.drawCircle(center.translate(0, -18), 22, paint);
+    canvas.drawCircle(center.translate(0, -18), 22, strokePaint);
     
-    // Eyes (happy/excited eyes)
+    // Eyes (excited/happy eyes) - larger
     paint.color = const Color(0xFF000000);
-    canvas.drawCircle(center.translate(-6, -20), 3, paint);
-    canvas.drawCircle(center.translate(6, -20), 3, paint);
+    canvas.drawCircle(center.translate(-7, -20), 4, paint);
+    canvas.drawCircle(center.translate(7, -20), 4, paint);
     
-    // Eye sparkles (playful effect)
+    // Eye sparkles (playful effect) - more prominent
     paint.color = Colors.white;
-    canvas.drawCircle(center.translate(-5, -21), 1, paint);
-    canvas.drawCircle(center.translate(7, -21), 1, paint);
+    canvas.drawCircle(center.translate(-6, -22), 1.5, paint);
+    canvas.drawCircle(center.translate(8, -22), 1.5, paint);
     
-    // Happy mouth (curved smile)
-    strokePaint.strokeWidth = 2;
+    // Big excited smile
+    strokePaint.strokeWidth = 3;
     strokePaint.strokeCap = StrokeCap.round;
     canvas.drawArc(
-      Rect.fromCenter(center: center.translate(0, -12), width: 12, height: 8),
+      Rect.fromCenter(center: center.translate(0, -10), width: 16, height: 12),
       0,
       math.pi,
       false,
       strokePaint,
     );
     
-    // Antenna with bouncing effect
+    // Antenna with bouncing effect - taller
     strokePaint.strokeWidth = 2;
     canvas.drawLine(
-      center.translate(0, -38),
-      center.translate(0, -45),
+      center.translate(0, -40),
+      center.translate(0, -50),
       strokePaint,
     );
     
-    // Antenna tip (glowing)
+    // Antenna tip (glowing) - bigger
     paint.color = const Color(0xFF000000);
-    canvas.drawCircle(center.translate(0, -45), 2.5, paint);
+    canvas.drawCircle(center.translate(0, -50), 3, paint);
     paint.color = Colors.white;
-    canvas.drawCircle(center.translate(0, -45), 1, paint);
+    canvas.drawCircle(center.translate(0, -50), 1.5, paint);
     
-    // Arms (waving/playful pose)
-    strokePaint.strokeWidth = 3;
+    // Arms (more excited pose) - longer
+    strokePaint.strokeWidth = 4;
     strokePaint.strokeCap = StrokeCap.round;
     
-    // Left arm (raised)
+    // Left arm (raised high in excitement)
     canvas.drawLine(
-      center.translate(-20, -2),
-      center.translate(-30, -12),
+      center.translate(-22, -2),
+      center.translate(-35, -18),
       strokePaint,
     );
     
-    // Right arm (pointing/playing)
+    // Right arm (pulling/reaching)
     canvas.drawLine(
-      center.translate(20, -2),
-      center.translate(32, -8),
+      center.translate(22, -2),
+      center.translate(38, -5),
       strokePaint,
     );
     
-    // Legs
+    // Legs - more stable
     canvas.drawLine(
-      center.translate(-10, 33),
-      center.translate(-10, 45),
+      center.translate(-12, 35),
+      center.translate(-12, 50),
       strokePaint,
     );
     
     canvas.drawLine(
-      center.translate(10, 33),
-      center.translate(10, 45),
+      center.translate(12, 35),
+      center.translate(12, 50),
       strokePaint,
     );
     
-    // Feet
+    // Feet - bigger
     paint.color = const Color(0xFF000000);
-    canvas.drawCircle(center.translate(-10, 47), 3, paint);
-    canvas.drawCircle(center.translate(10, 47), 3, paint);
+    canvas.drawCircle(center.translate(-12, 52), 4, paint);
+    canvas.drawCircle(center.translate(12, 52), 4, paint);
     
-    // Body details (chest panel)
+    // Body details (chest panel) - larger
     strokePaint.strokeWidth = 1;
     final panelRect = RRect.fromRectAndRadius(
-      Rect.fromCenter(center: center.translate(0, 3), width: 16, height: 20),
-      const Radius.circular(3),
+      Rect.fromCenter(center: center.translate(0, 3), width: 18, height: 24),
+      const Radius.circular(4),
     );
     canvas.drawRRect(panelRect, strokePaint);
     
-    // Chest buttons (playful colors)
+    // Chest buttons (excited colors) - bigger
     paint.color = const Color(0xFF000000);
-    canvas.drawCircle(center.translate(-4, -2), 1.5, paint);
-    canvas.drawCircle(center.translate(4, -2), 1.5, paint);
-    canvas.drawCircle(center.translate(0, 6), 1.5, paint);
+    canvas.drawCircle(center.translate(-5, -3), 2, paint);
+    canvas.drawCircle(center.translate(5, -3), 2, paint);
+    canvas.drawCircle(center.translate(0, 8), 2, paint);
   }
 
   @override
