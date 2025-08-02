@@ -658,7 +658,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFEAE9E5),
+                          color: const Color(0xFFF8F9FA),
                           borderRadius: BorderRadius.circular(21),
                         ),
                         child: Center(
@@ -700,8 +700,12 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                           ],
                         ),
                       ),
-                      IconButton(
-                        onPressed: () async {
+                      Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () async {
                           Navigator.pop(context);
                           // Show logout confirmation
                           final shouldLogout = await showDialog<bool>(
@@ -775,7 +779,15 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                             await SupabaseAuthService.signOut();
                           }
                         },
-                        icon: const FaIcon(FontAwesomeIcons.rightFromBracket, color: Color(0xFFA3A3A3), size: 16),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          child: const Icon(
+                            Icons.logout_rounded,
+                            color: Color(0xFF71717A),
+                            size: 20,
+                          ),
+                        ),
+                        ),
                       ),
                     ],
                   ),
@@ -813,7 +825,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
               child: Material(
-                color: const Color(0xFFEAE9E5),
+                color: const Color(0xFFF8F9FA),
                 borderRadius: BorderRadius.circular(12),
                 child: InkWell(
                   onTap: () {
@@ -844,7 +856,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     child: Row(
                       children: [
-                        const FaIcon(FontAwesomeIcons.userGroup, color: Color(0xFF000000), size: 20),
+                        const Icon(Icons.people_outline_rounded, color: Color(0xFF09090B), size: 22),
                         const SizedBox(width: 16),
                         const Expanded(
                           child: Text(
@@ -882,18 +894,26 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                   ),
                   const Spacer(),
                   // Refresh button
-                  GestureDetector(
-                    onTap: _manualRefreshChatHistory,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE0DED9),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(
-                        Icons.refresh_rounded,
-                        size: 16,
-                        color: Color(0xFF666666),
+                  Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        _manualRefreshChatHistory();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.refresh_rounded,
+                          size: 18,
+                          color: Color(0xFF71717A),
+                        ),
                       ),
                     ),
                   ),
@@ -917,9 +937,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
               child: Container(
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+                  color: const Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: TextField(
                   onChanged: (value) => setState(() => _chatSearchQuery = value),
