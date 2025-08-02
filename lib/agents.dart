@@ -49,10 +49,10 @@ class AgentsService {
     
     // Look for patterns like "search for X" or "searching for X"
     final searchPatterns = [
-      r'search(?:ing)?\s+for\s+["\']?([^"\'.,!?]+)',
-      r'look(?:ing)?\s+up\s+["\']?([^"\'.,!?]+)',
-      r'find(?:ing)?\s+(?:information\s+about\s+)?["\']?([^"\'.,!?]+)',
-      r'get\s+latest\s+(?:information\s+on\s+)?["\']?([^"\'.,!?]+)',
+      r'search(?:ing)?\s+for\s+["\x27]?([^"\x27.,!?]+)',
+      r'look(?:ing)?\s+up\s+["\x27]?([^"\x27.,!?]+)',
+      r'find(?:ing)?\s+(?:information\s+about\s+)?["\x27]?([^"\x27.,!?]+)',
+      r'get\s+latest\s+(?:information\s+on\s+)?["\x27]?([^"\x27.,!?]+)',
     ];
     
     for (final pattern in searchPatterns) {
