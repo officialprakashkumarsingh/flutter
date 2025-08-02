@@ -106,7 +106,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   void _initializeCodePanels() {
     final codes = widget.message.codes;
     for (int i = 0; i < codes.length; i++) {
-      _codeExpandedStates[i] = false;
+      _codeExpandedStates[i] = true; // Default open
       _codeAnimationControllers[i] = AnimationController(
         duration: const Duration(milliseconds: 300),
         vsync: this,
@@ -201,7 +201,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
 
   void _toggleCode(int index) {
     setState(() {
-      _codeExpandedStates[index] = !(_codeExpandedStates[index] ?? false);
+      _codeExpandedStates[index] = !(_codeExpandedStates[index] ?? true); // Default open
       if (_codeExpandedStates[index]!) {
         _codeAnimationControllers[index]?.forward();
       } else {
@@ -870,7 +870,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
 
   // Code Panel Widget - Shadcn UI Style
   Widget _buildCodePanel(CodeContent codeContent, int index) {
-    final isExpanded = _codeExpandedStates[index] ?? false;
+    final isExpanded = _codeExpandedStates[index] ?? true; // Default open
     
     return Container(
       width: double.infinity,

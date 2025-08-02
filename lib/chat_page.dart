@@ -128,6 +128,10 @@ class ChatPageState extends State<ChatPage> {
     _controller.addListener(() {
       setState(() {}); // Refresh UI when text changes
     });
+    
+    // Add scroll listener for scroll to bottom button
+    _scroll.addListener(_scrollListener);
+    
     debugPrint('✅ CHATPAGE: initState() completed');
   }
   
@@ -276,6 +280,7 @@ class ChatPageState extends State<ChatPage> {
     debugPrint('🎬 CHATPAGE: dispose() called - cleaning up ChatPage...');
     _characterService.removeListener(_onCharacterChanged);
     // REMOVED: External tools service listener removal
+    _scroll.removeListener(_scrollListener);
     _controller.dispose();
     _scroll.dispose();
     _httpClient?.close();
@@ -1867,78 +1872,91 @@ When users want to create images, photos, artwork, or illustrations, guide them 
       child: Column(
         children: [
           Expanded(
-            child: emptyChat && _editingMessageId == null
-                ? Center(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Welcome message - centered in screen
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: _buildWelcomeMessage(),
-                          ),
-                          
-                          const SizedBox(height: 60),
-                          
-                          // Suggestions
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: _prompts.map((p) => Container(
-                                  margin: const EdgeInsets.only(right: 12),
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(20),
-                                      onTap: () {
-                                        HapticFeedback.lightImpact();
-                                        _controller.text = p;
-                                        _send();
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFF8F9FA),
+            child: Stack(
+              children: [
+                // Main chat content
+                emptyChat && _editingMessageId == null
+                    ? Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Welcome message - centered in screen
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 24),
+                                child: _buildWelcomeMessage(),
+                              ),
+                              
+                              const SizedBox(height: 60),
+                              
+                              // Suggestions
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: _prompts.map((p) => Container(
+                                      margin: const EdgeInsets.only(right: 12),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: InkWell(
                                           borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: Text(
-                                          p,
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Color(0xFF000000),
-                                            fontWeight: FontWeight.w500,
+                                          onTap: () {
+                                            HapticFeedback.lightImpact();
+                                            _controller.text = p;
+                                            _send();
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF8F9FA),
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: Text(
+                                              p,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Color(0xFF000000),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
+                                    )).toList(),
                                   ),
-                                )).toList(),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
+                      )
+                    : ListView.builder(
+                        controller: _scroll,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        itemCount: _messages.length,
+                        itemBuilder: (_, index) {
+                          final message = _messages[index];
+                          return MessageBubble(
+                            message: message,
+                            onRegenerate: () => _regenerateResponse(index),
+                            onUserMessageTap: () => _showUserMessageOptions(context, message),
+                            onSaveImage: _saveImageToDevice,
+                            onEditMessage: _editMessage,
+                          );
+                        },
                       ),
-                    ),
-                  )
-                : ListView.builder(
-                    controller: _scroll,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    itemCount: _messages.length,
-                    itemBuilder: (_, index) {
-                      final message = _messages[index];
-                      return MessageBubble(
-                        message: message,
-                        onRegenerate: () => _regenerateResponse(index),
-                        onUserMessageTap: () => _showUserMessageOptions(context, message),
-                        onSaveImage: _saveImageToDevice,
-                        onEditMessage: _editMessage,
-                      );
-                    },
+                
+                // Scroll to bottom button
+                if (_showScrollToBottom)
+                  Positioned(
+                    bottom: 20,
+                    right: 20,
+                    child: _buildScrollToBottomButton(),
                   ),
+              ],
+            ),
           ),
 
           // External tools now execute silently - no status panel
@@ -2050,6 +2068,66 @@ When users want to create images, photos, artwork, or illustrations, guide them 
           ),
         ),
       ],
+    );
+  }
+
+  void _scrollListener() {
+    if (!_scroll.hasClients) return;
+    
+    // Show scroll to bottom button when:
+    // 1. Chat has started (more than 1 message - initial greeting)
+    // 2. Not currently streaming
+    // 3. Not at the bottom of the scroll
+    final hasStarted = _messages.length > 1;
+    final isNotStreaming = !_awaitingReply;
+    final notAtBottom = _scroll.position.pixels < (_scroll.position.maxScrollExtent - 100);
+    
+    final shouldShow = hasStarted && isNotStreaming && notAtBottom;
+    
+    if (_showScrollToBottom != shouldShow) {
+      setState(() {
+        _showScrollToBottom = shouldShow;
+      });
+    }
+  }
+
+  // Build scroll to bottom button with shadcn styling
+  Widget _buildScrollToBottomButton() {
+    return AnimatedScale(
+      scale: _showScrollToBottom ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            _scrollToBottom();
+          },
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Color(0xFF71717A),
+              size: 20,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
