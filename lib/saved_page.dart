@@ -42,7 +42,7 @@ class _SavedPageState extends State<SavedPage> {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: const Color(0xFFF4F3F0),
+        color: Colors.white,
       ),
       child: Column(
         children: [
@@ -99,8 +99,16 @@ class _CustomSegmentedControl extends StatelessWidget {
       margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F3F0),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Stack(
         children: [

@@ -277,7 +277,7 @@ class _CharactersPageState extends State<CharactersPage> with TickerProviderStat
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFF4F3F0),
+        backgroundColor: Colors.white,
         title: const Text('Delete Character', style: TextStyle(color: Color(0xFF000000))),
         content: Text('Are you sure you want to delete "${character.name}"?', style: const TextStyle(color: Color(0xFFA3A3A3))),
         actions: [
@@ -304,9 +304,9 @@ class _CharactersPageState extends State<CharactersPage> with TickerProviderStat
     final characters = _filteredCharacters;
     
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F3F0),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF4F3F0),
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
@@ -579,7 +579,7 @@ class _CharactersPageState extends State<CharactersPage> with TickerProviderStat
   void _showCharacterOptions(Character character) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFFF4F3F0),
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
