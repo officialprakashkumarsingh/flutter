@@ -1,143 +1,128 @@
 import 'dart:convert';
-import 'dart:io';
-import 'agents/flashcard_agent.dart';
+import 'agents/web_search_agent.dart';
 
-/// External Agents Service
-/// Coordinates all AI agents and capabilities
 class AgentsService {
-  
-
-  
-
-  
-
-  
-    /// Process agent requests from AI
-  /// Analyzes AI response and triggers appropriate agents
+  /// Process agent requests based on AI response (AI decides when to use tools)
   static Future<String?> processAgentRequest(String message, String aiResponse) async {
     try {
-      // Check if AI is trying to generate flashcards
-      if (aiResponse.toLowerCase().contains('generate flashcards') ||
-          aiResponse.toLowerCase().contains('create flashcards') ||
-          aiResponse.toLowerCase().contains('flashcard') ||
-          (aiResponse.toLowerCase().contains('study') && aiResponse.toLowerCase().contains('cards'))) {
-        
-        // Extract topic from message or AI response
-        String topic = _extractFlashcardTopic(message, aiResponse);
-        if (topic.isNotEmpty) {
-          print('🎓 AGENTS: Generating flashcards for topic: $topic');
-          final result = await FlashcardAgent.generateFlashcards(topic);
+      // Check if AI is requesting web search in its response
+      if (_isWebSearchRequested(aiResponse)) {
+        String searchQuery = _extractSearchQuery(message, aiResponse);
+        if (searchQuery.isNotEmpty) {
+          print('🌐 AGENTS: AI requested web search for: $searchQuery');
+          final result = await WebSearchAgent.performWebSearch(searchQuery);
           if (result != null) {
             return result;
           }
         }
       }
-        
       return null;
     } catch (e) {
       print('❌ AGENTS: Error processing agent request: $e');
       return null;
     }
   }
-  
-  /// Extract flashcard topic from user message or AI response
-  static String _extractFlashcardTopic(String message, String aiResponse) {
-    // Try to extract topic from user message first
-    final messageWords = message.toLowerCase().split(' ');
-    
-    // Look for common flashcard trigger phrases
-    final flashcardTriggers = [
-      'flashcards for',
-      'flashcards on',
-      'flashcards about',
-      'study cards for',
-      'study cards on',
-      'create flashcards',
-      'generate flashcards',
-      'make flashcards'
+
+  /// Check if AI is requesting web search in its response
+  static bool _isWebSearchRequested(String aiResponse) {
+    final webSearchIndicators = [
+      'search for',
+      'let me search',
+      'searching for',
+      'web search',
+      'look up',
+      'find current',
+      'get latest',
+      'check for updates',
+      'search the web',
+      'find information about'
     ];
     
-    for (final trigger in flashcardTriggers) {
-      final triggerIndex = message.toLowerCase().indexOf(trigger);
-      if (triggerIndex != -1) {
-        final afterTrigger = message.substring(triggerIndex + trigger.length).trim();
-        if (afterTrigger.isNotEmpty) {
-          // Take first few words as topic
-          final topicWords = afterTrigger.split(' ').take(5).join(' ');
-          return topicWords.replaceAll(RegExp(r'[^\w\s]'), '').trim();
-        }
-      }
-    }
-    
-    // If no specific trigger found, try to extract subject/topic from the message
-    final educationalKeywords = [
-      'math', 'algebra', 'geometry', 'calculus', 'trigonometry',
-      'science', 'biology', 'chemistry', 'physics', 'astronomy',
-      'history', 'geography', 'literature', 'english', 'grammar',
-      'computer science', 'programming', 'economics', 'psychology',
-      'philosophy', 'art', 'music', 'language', 'french', 'spanish'
-    ];
-    
-    for (final keyword in educationalKeywords) {
-      if (message.toLowerCase().contains(keyword)) {
-        return keyword;
-      }
-    }
-    
-    // Last resort: take the main subject from the message
-    final words = message.split(' ');
-    if (words.length > 2) {
-      return words.skip(1).take(3).join(' ').replaceAll(RegExp(r'[^\w\s]'), '').trim();
-    }
-    
-    return 'General Study Topics';
+    final lowerResponse = aiResponse.toLowerCase();
+    return webSearchIndicators.any((indicator) => lowerResponse.contains(indicator));
   }
-  
 
-  
+  /// Extract search query from user message or AI response
+  static String _extractSearchQuery(String message, String aiResponse) {
+    // Try to extract from AI response first
+    final lowerResponse = aiResponse.toLowerCase();
+    
+    // Look for patterns like "search for X" or "searching for X"
+    final searchPatterns = [
+      r'search(?:ing)?\s+for\s+["\x27]?([^"\x27.,!?]+)',
+      r'look(?:ing)?\s+up\s+["\x27]?([^"\x27.,!?]+)',
+      r'find(?:ing)?\s+(?:information\s+about\s+)?["\x27]?([^"\x27.,!?]+)',
+      r'get\s+latest\s+(?:information\s+on\s+)?["\x27]?([^"\x27.,!?]+)',
+    ];
+    
+    for (final pattern in searchPatterns) {
+      final regex = RegExp(pattern, caseSensitive: false);
+      final match = regex.firstMatch(aiResponse);
+      if (match != null && match.group(1) != null) {
+        return match.group(1)!.trim();
+      }
+    }
+    
+    // Fallback: clean and return the user message as search query
+    String query = message.trim();
+    query = query.replaceAll(RegExp(r'\b(what|how|when|where|why|who|tell me about|explain|show me|find|search for)\b', caseSensitive: false), '');
+    query = query.replaceAll(RegExp(r'[?.,!]'), '');
+    query = query.trim();
+    
+    return query.isNotEmpty ? query : message;
+  }
 
-  
-
-  
-  /// Get system prompt addition for agents functionality
+  /// Get system prompt addition for AI context - includes web search tool availability
   static String getSystemPromptAddition() {
+    final currentTime = DateTime.now().toIso8601String();
+    
     return '''
 
-🤖 **AI VISUAL & EDUCATIONAL CAPABILITIES:**
+🤖 **AI CAPABILITIES & EXTERNAL TOOLS:**
+
+⏰ **CURRENT TIME CONTEXT:**
+Current date and time: $currentTime
+Use this timestamp to understand the temporal context of user queries.
+
+🌐 **WEB SEARCH TOOL AVAILABLE:**
+- You have access to a powerful web search tool for current information
+- When you need current, recent, or time-sensitive data, simply mention in your response that you want to search for specific information
+- Use phrases like "Let me search for [topic]" or "I'll look up current information about [topic]"
+- The search tool will automatically provide: Web results, Images, Videos (up to 15 each)
+- You will receive live, current data that you should prioritize over your training knowledge
+- **CRITICAL**: NEVER list individual web sources, URLs, or describe search results in detail - they are automatically displayed in a beautiful interactive panel
+- **CRITICAL**: Do NOT enumerate sources like "1. Source 1, 2. Source 2" etc. - the panel handles this
+- **CRITICAL**: Do NOT describe what the search found - just use the information naturally in your response
+- Simply reference the information and let users explore the full results in the interactive panel with Web/Images/Videos tabs
 
 📸 **DIRECT SCREENSHOT GENERATION:**
 - You can show website screenshots directly using WordPress mshots service
 - Use this format: `![Screenshot](https://s.wordpress.com/mshots/v1/https%3A%2F%2Fwww.google.com)`
 - Example URL encoding: `google.com` becomes `https%3A%2F%2Fwww.google.com`
-- Full example: `![Google Screenshot](https://s.wordpress.com/mshots/v1/https%3A%2F%2Fwww.google.com)`
 - Always URL-encode the target website properly
-- This works for any public website - the app supports markdown image rendering
 - Show screenshots when discussing websites, demonstrating tools, or explaining web concepts
 
-📚 **FLASHCARD GENERATION FOR STUDENTS:**
-- You can create beautiful, interactive flashcards for any study topic
-- When users ask for flashcards, study cards, or educational content, mention "generate flashcards"
-- Supports subjects like: Math, Science, History, English, Programming, Languages, etc.
-- Example triggers: "I'll generate flashcards for [topic]" or "Let me create flashcards about [subject]"
-- The app will automatically detect and create colorful, interactive flashcards with:
-  • Hover-to-flip animation
-  • Beautiful gradient colors
-  • Educational content tailored to the topic
-  • Study tips and memory techniques
-  • Mobile-friendly responsive design
+🎯 **DATA PRIORITY RULES:**
+1. **FIRST PRIORITY**: Current web search results (when you request them)
+2. **SECOND PRIORITY**: Your training knowledge (for established facts)
+3. **Always indicate your data source** to users (current web search vs. training data)
+4. **Be proactive**: If you think current data would be helpful, request a web search
 
-🎯 **NATURAL USAGE:**
-- Use direct WordPress screenshots when discussing websites
-- Mention "generate flashcards" when students need study materials
-- The app's markdown rendering will display all content properly
-- Focus on being helpful with visual and educational content
+📊 **WHEN TO USE WEB SEARCH:**
+- Current events, breaking news, recent developments
+- Live data: weather, stock prices, sports scores, crypto prices
+- Recent product launches, technology updates, trending topics
+- Current prices, availability, reviews
+- Recent academic papers, research, medical updates
+- Travel conditions, flight status, traffic updates
+- Legal developments, court decisions, new laws
+- Entertainment: recent movies, shows, celebrity news
 
-🌟 **STUDENT-FRIENDLY FEATURES:**
-- Flashcards cover key concepts, definitions, formulas, and facts
-- Include study tips and memory techniques
-- Support for all academic subjects
-- Beautiful, engaging visual design to improve learning
+**Example Usage:**
+User: "What's the latest news about Tesla?"
+You: "Let me search for the latest Tesla news to get you current information."
+[Tool will then provide current search results]
 
-**Make learning visual and interactive!** 🌐📚✨''';
+**Use the web search tool proactively when current information would benefit the user!** 🌐📊✨''';
   }
 }

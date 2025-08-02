@@ -253,6 +253,10 @@ class InputBar extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFFF8F9FA), // Subtle background
               borderRadius: BorderRadius.circular(16), // More rounded for smooth feel
+              border: Border.all(
+                color: const Color(0xFFE4E4E7), // Subtle border
+                width: 1,
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.04),

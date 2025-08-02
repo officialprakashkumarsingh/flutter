@@ -27,7 +27,7 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
         decoration: const BoxDecoration(
-          color: Color(0xFFF4F3F0),
+          color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: StatefulBuilder(

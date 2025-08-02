@@ -132,7 +132,7 @@ class _AdminPanelPageState extends State<AdminPanelPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F3F0),
+              backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           'Admin Panel',

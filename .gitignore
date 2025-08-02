@@ -10,6 +10,14 @@
 .svn/
 migrate_working_dir/
 
+# SDKs and large files
+flutter/
+android-sdk/
+*.tar.xz
+*.zip
+commandlinetools*.zip
+flutter*.tar.xz
+
 # IntelliJ related
 *.iml
 *.ipr
@@ -22,15 +30,28 @@ migrate_working_dir/
 #.vscode/
 
 # Flutter/Dart/Pub related
+# Libraries should not include pubspec.lock, per https://dart.dev/guides/libraries/private-files#pubspeclock.
+/pubspec.lock
 **/doc/api/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/Runner/GeneratedPluginRegistrant.h
+**/ios/Runner/GeneratedPluginRegistrant.m
+**/ios/.generated/
+**/ios/Flutter/App.framework
 **/ios/Flutter/Flutter.framework
 **/ios/Flutter/Flutter.podspec
 **/ios/Flutter/Generated.xcconfig
-**/ios/Flutter/app.framework
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
 **/ios/Flutter/flutter_assets/
 **/ios/Flutter/flutter_export_environment.sh
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
+
+# Web related
+lib/generated_plugin_registrant.dart
 
 # Symbolication related
 app.*.symbols
@@ -43,20 +64,15 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Flutter SDK and development tools
-flutter/
-flutter_linux_*
-android-sdk/
-commandlinetools-linux-*
-
-# APK files
+# APK and AAB files (general ignore)
 *.apk
 *.aab
 
-# Exception: Include the release APK in repository
+# Allow specific APK files for distribution
 !aham-app-release.apk
 !aham-app-v6.1-latest-build.apk
 !aham-ai-*-agents-*.apk
+!aham-ai-updated-*.apk
 
 # Build outputs
 build/core

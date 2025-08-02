@@ -237,21 +237,21 @@ class _CharacterEditorState extends State<CharacterEditor> {
     final isEditing = widget.character != null;
     
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F3F0),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
           isEditing ? 'Edit Character' : 'Create Character',
           style: GoogleFonts.inter(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF000000),
+            color: const Color(0xFF09090B),
           ),
         ),
-        backgroundColor: const Color(0xFFF4F3F0),
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF000000)),
+                      icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF09090B)),
         ),
         actions: [
           if (isEditing && !widget.character!.isBuiltIn)
@@ -272,7 +272,7 @@ class _CharacterEditorState extends State<CharacterEditor> {
                     'Save',
                     style: GoogleFonts.inter(
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF000000),
+                      color: const Color(0xFF09090B),
                     ),
                   ),
           ),
@@ -295,7 +295,7 @@ class _CharacterEditorState extends State<CharacterEditor> {
                       child: Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.blue.shade200, width: 3),
+                          border: Border.all(color: const Color(0xFFE4E4E7), width: 2),
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
@@ -318,13 +318,13 @@ class _CharacterEditorState extends State<CharacterEditor> {
                     const SizedBox(height: 8),
                     TextButton.icon(
                       onPressed: _showAvatarSelection,
-                      icon: const Icon(Icons.edit_rounded, color: Color(0xFF000000), size: 18),
+                      icon: const Icon(Icons.edit_rounded, color: Color(0xFF09090B), size: 18),
                       label: Text(
                         'Change Avatar',
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF000000),
+                          color: const Color(0xFF09090B),
                         ),
                       ),
                     ),

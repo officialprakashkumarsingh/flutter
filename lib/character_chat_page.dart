@@ -416,7 +416,7 @@ class _CharacterChatPageState extends State<CharacterChatPage> {
             ),
           ],
         ),
-        backgroundColor: const Color(0xFFF4F3F0),
+        backgroundColor: Colors.white,
         elevation: 0,
         actions: [
           if (_awaitingReply)
@@ -606,7 +606,7 @@ class _CharacterChatPageState extends State<CharacterChatPage> {
             child: Container(
               padding: const EdgeInsets.only(bottom: 16),
               decoration: const BoxDecoration(
-                color: Color(0xFFF4F3F0),
+                color: Colors.white,
               ),
               child: Container(
                 margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -712,7 +712,7 @@ class _CharacterChatPageState extends State<CharacterChatPage> {
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
         decoration: const BoxDecoration(
-          color: Color(0xFFF4F3F0),
+                            color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -960,7 +960,7 @@ class _ThoughtsPanelState extends State<_ThoughtsPanel> with SingleTickerProvide
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF4F3F0),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: const Color(0xFFC4C4C4)),
                   ),
