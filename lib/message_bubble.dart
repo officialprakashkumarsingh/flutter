@@ -11,7 +11,6 @@ import 'dart:math' as math;
 
 import 'models.dart';
 import 'file_attachment_widget.dart';
-import 'agents/flashcard_agent.dart';
 
 import 'chat_page.dart'; // For accessing ChatPageState
 
@@ -481,47 +480,15 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
       }
     }
     
-    // Check for flashcard data first (for completed messages)
-    final flashcardWidget = _buildFlashcardWidget(originalText);
-    if (flashcardWidget != null && !isStreaming) {
-      // Extract text before flashcard data
-      final flashcardStartIndex = originalText.indexOf('**FLASHCARD_DATA_START**');
-      if (flashcardStartIndex > 0) {
-        final textBeforeFlashcard = originalText.substring(0, flashcardStartIndex).trim();
-        final cleanText = _cleanText(textBeforeFlashcard);
-        if (cleanText.isNotEmpty) {
-          widgets.add(_buildMarkdownContent(cleanText));
-          widgets.add(const SizedBox(height: 16));
-        }
-      }
-      
-      // Add the flashcard widget
-      widgets.add(flashcardWidget);
-      widgets.add(const SizedBox(height: 16));
-      
-      // Extract text after flashcard data
-      final flashcardEndIndex = originalText.indexOf('**FLASHCARD_DATA_END**');
-      if (flashcardEndIndex != -1) {
-        final textAfterFlashcard = originalText.substring(flashcardEndIndex + '**FLASHCARD_DATA_END**'.length).trim();
-        final cleanText = _cleanText(textAfterFlashcard);
-        if (cleanText.isNotEmpty) {
-          widgets.add(_buildMarkdownContent(cleanText));
-        }
-      }
-    }
     // If no codes yet or still streaming, show original text or typing indicator
-    else if (codes.isEmpty || isStreaming) {
+    if (codes.isEmpty || isStreaming) {
       if (originalText.isNotEmpty) {
         // Stop typing animation immediately when text starts streaming
         if (_typingAnimationController.isAnimating) {
           _typingAnimationController.stop();
           _typingAnimationController.reset();
         }
-        // Remove flashcard data markers from display during streaming
         String displayContent = originalText;
-        if (displayContent.contains('**FLASHCARD_DATA_START**')) {
-          displayContent = displayContent.split('**FLASHCARD_DATA_START**')[0].trim();
-        }
         widgets.add(_buildMarkdownContent(displayContent));
       } else if (isStreaming) {
         // Show typing indicator when streaming but no text yet
@@ -551,36 +518,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     final widgets = <Widget>[];
     String remainingText = originalText;
     
-    // Check for flashcard data first
-    final flashcardWidget = _buildFlashcardWidget(originalText);
-    if (flashcardWidget != null) {
-      // Extract text before flashcard data
-      final flashcardStartIndex = originalText.indexOf('**FLASHCARD_DATA_START**');
-      if (flashcardStartIndex > 0) {
-        final textBeforeFlashcard = originalText.substring(0, flashcardStartIndex).trim();
-        final cleanText = _cleanText(textBeforeFlashcard);
-        if (cleanText.isNotEmpty) {
-          widgets.add(_buildMarkdownContent(cleanText));
-          widgets.add(const SizedBox(height: 16));
-        }
-      }
-      
-      // Add the flashcard widget
-      widgets.add(flashcardWidget);
-      widgets.add(const SizedBox(height: 16));
-      
-      // Extract text after flashcard data
-      final flashcardEndIndex = originalText.indexOf('**FLASHCARD_DATA_END**');
-      if (flashcardEndIndex != -1) {
-        final textAfterFlashcard = originalText.substring(flashcardEndIndex + '**FLASHCARD_DATA_END**'.length).trim();
-        final cleanText = _cleanText(textAfterFlashcard);
-        if (cleanText.isNotEmpty) {
-          widgets.add(_buildMarkdownContent(cleanText));
-        }
-      }
-      
-      return widgets;
-    }
+
     
     for (int i = 0; i < codes.length; i++) {
       final code = codes[i];
@@ -621,39 +559,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     return widgets;
   }
 
-  // Build flashcard widget from JSON data
-  Widget? _buildFlashcardWidget(String text) {
-    try {
-      final startIndex = text.indexOf('**FLASHCARD_DATA_START**');
-      final endIndex = text.indexOf('**FLASHCARD_DATA_END**');
-      
-      if (startIndex == -1 || endIndex == -1) {
-        return null;
-      }
-      
-      final jsonString = text.substring(
-        startIndex + '**FLASHCARD_DATA_START**'.length,
-        endIndex,
-      ).trim();
-      
-      final jsonData = jsonDecode(jsonString);
-      if (jsonData['type'] != 'flashcards') {
-        return null;
-      }
-      
-      final flashcards = (jsonData['cards'] as List)
-          .map((cardJson) => FlashcardData.fromJson(cardJson))
-          .toList();
-      
-      return FlashcardGrid(
-        flashcards: flashcards,
-        topic: jsonData['topic'],
-      );
-    } catch (e) {
-      print('Error parsing flashcard data: $e');
-      return null;
-    }
-  }
+
 
   // Clean text by removing thinking tags
   String _cleanText(String text) {
