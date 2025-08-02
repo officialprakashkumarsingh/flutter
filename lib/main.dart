@@ -20,7 +20,7 @@ void main() async {
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
     statusBarBrightness: Brightness.light,
-    systemNavigationBarColor: Color(0xFFF4F3F0),
+    systemNavigationBarColor: Colors.white, // Changed to white
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
   
@@ -39,39 +39,86 @@ class AhamAIApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF000000),
+          seedColor: const Color(0xFF09090B), // zinc-950
           brightness: Brightness.light,
+        ).copyWith(
+          primary: const Color(0xFF09090B), // zinc-950  
+          onPrimary: const Color(0xFFFAFAFA), // zinc-50
+          surface: const Color(0xFFFFFFFF), // white
+          onSurface: const Color(0xFF09090B), // zinc-950
+          surfaceContainerHighest: const Color(0xFFF4F4F5), // zinc-100
+          outline: const Color(0xFFE4E4E7), // zinc-200
         ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF4F3F0),
-          foregroundColor: Colors.black,
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFFFFFFFF),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFE4E4E7), width: 1), // Changed from black
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          hintStyle: const TextStyle(color: Color(0xFF71717A)), // zinc-500
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF09090B),
+            foregroundColor: const Color(0xFFFAFAFA),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            elevation: 0,
+            shadowColor: Colors.transparent,
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF09090B),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+        cardTheme: CardTheme(
+          color: Colors.white,
           elevation: 0,
-          // Remove Material 3 scroll overlay & shadow tint
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
+          ),
+          margin: EdgeInsets.zero,
+        ),
+        scaffoldBackgroundColor: Colors.white, // Changed from cream to white
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white, // Changed to white
+          foregroundColor: Color(0xFF09090B),
+          elevation: 0,
           surfaceTintColor: Colors.transparent,
           scrolledUnderElevation: 0,
           shadowColor: Colors.transparent,
         ),
-        cardTheme: CardThemeData(
-          color: Colors.white,
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.black,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          filled: true,
-          fillColor: Colors.white,
-        ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Colors.white,
-          selectedItemColor: Colors.black,
-          unselectedItemColor: Colors.grey,
+          selectedItemColor: Color(0xFF09090B),
+          unselectedItemColor: Color(0xFF71717A),
+          elevation: 8,
         ),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {

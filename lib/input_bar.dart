@@ -52,7 +52,7 @@ class InputBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(bottom: 16),
       decoration: const BoxDecoration(
-        color: Color(0xFFF4F3F0), // Main theme background
+        color: Colors.white, // Clean white background
       ),
       child: Column(
         children: [
@@ -245,21 +245,19 @@ class InputBar extends StatelessWidget {
             ),
           
           // Main input container
-          Container(
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
             margin: EdgeInsets.fromLTRB(20, isEditing ? 0 : 16, 20, 0),
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              color: Colors.white, // White input background
-              borderRadius: BorderRadius.circular(24), // Fully rounded border
-              border: Border.all(
-                color: const Color(0xFFEAE9E5),
-                width: 1,
-              ),
+              color: const Color(0xFFF8F9FA), // Subtle background
+              borderRadius: BorderRadius.circular(16), // More rounded for smooth feel
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -270,25 +268,30 @@ class InputBar extends StatelessWidget {
                 if (!awaitingReply && !isImageGenerationMode)
                   Padding(
                     padding: const EdgeInsets.only(left: 8, bottom: 6),
-                    child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        onUnifiedAttachment();  // Single unified attachment function
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: attachedFiles.isNotEmpty 
-                              ? const Color(0xFF4CAF50).withOpacity(0.1)
-                              : const Color(0xFFA3A3A3).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: FaIcon(
-                          FontAwesomeIcons.paperclip,  // Universal attachment icon
-                          color: attachedFiles.isNotEmpty 
-                              ? const Color(0xFF4CAF50)
-                              : const Color(0xFFA3A3A3),
-                          size: 18,
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          onUnifiedAttachment();  // Single unified attachment function
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: attachedFiles.isNotEmpty 
+                                ? const Color(0xFF22C55E).withOpacity(0.1)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.attach_file_rounded,  // Modern attachment icon
+                            color: attachedFiles.isNotEmpty 
+                                ? const Color(0xFF22C55E)
+                                : const Color(0xFF71717A),
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),
@@ -306,9 +309,10 @@ class InputBar extends StatelessWidget {
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => onSend(),
                     style: const TextStyle(
-                      color: Color(0xFF000000),
+                      color: Color(0xFF09090B), // Zinc-950
                       fontSize: 16,
                       height: 1.4,
+                      fontWeight: FontWeight.w400,
                     ),
                     decoration: InputDecoration(
                       hintText: awaitingReply 
@@ -321,9 +325,10 @@ class InputBar extends StatelessWidget {
                                   ? 'Attachments ready - Ask about them...'
                                   : 'Message AhamAI',
                       hintStyle: const TextStyle(
-                        color: Color(0xFFA3A3A3),
+                        color: Color(0xFF71717A), // Zinc-500
                         fontSize: 16,
                         height: 1.4,
+                        fontWeight: FontWeight.w400,
                       ),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
@@ -342,35 +347,53 @@ class InputBar extends StatelessWidget {
                 // Send/Stop button
                 Padding(
                   padding: const EdgeInsets.only(right: 12, bottom: 6),
-                  child: GestureDetector(
-                    onTap: awaitingReply ? onStop : onSend,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: awaitingReply 
-                            ? Colors.red.withOpacity(0.1)
-                            : const Color(0xFF000000),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    curve: Curves.easeInOut,
+                    decoration: BoxDecoration(
+                      color: awaitingReply 
+                          ? const Color(0xFFFEE2E2) // Light red background
+                          : const Color(0xFF09090B), // Zinc-950
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InkWell(
                         borderRadius: BorderRadius.circular(12),
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          awaitingReply ? onStop() : onSend();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          child: awaitingReply 
+                              ? const Icon(Icons.stop_rounded, color: Color(0xFFEF4444), size: 20)
+                              : isGeneratingImage
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : Icon(
+                                      isImageGenerationMode 
+                                          ? Icons.auto_fix_high_rounded
+                                          : Icons.arrow_upward_rounded,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                        ),
                       ),
-                      child: awaitingReply 
-                          ? const Icon(Icons.stop_circle, color: Colors.red, size: 18)
-                          : isGeneratingImage
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                  ),
-                                )
-                              : Icon(
-                                  isImageGenerationMode 
-                                      ? FontAwesomeIcons.wandMagic 
-                                      : Icons.arrow_upward_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
                     ),
                   ),
                 ),

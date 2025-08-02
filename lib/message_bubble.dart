@@ -4,8 +4,10 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/vs2015.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'models.dart';
 import 'file_attachment_widget.dart';
@@ -48,6 +50,10 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   late AnimationController _thinkingAnimationController;
   late Animation<double> _thinkingAnimation;
   
+  // Typing indicator state
+  late AnimationController _typingAnimationController;
+  late Animation<double> _typingAnimation;
+  
   // Code panel state
   Map<int, bool> _codeExpandedStates = {};
   Map<int, AnimationController> _codeAnimationControllers = {};
@@ -83,6 +89,16 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
       curve: Curves.easeInOut,
     );
     
+    // Typing indicator animation
+    _typingAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    _typingAnimation = CurvedAnimation(
+      parent: _typingAnimationController,
+      curve: Curves.easeInOut,
+    );
+    
     // Initialize code panel controllers
     _initializeCodePanels();
   }
@@ -90,7 +106,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   void _initializeCodePanels() {
     final codes = widget.message.codes;
     for (int i = 0; i < codes.length; i++) {
-      _codeExpandedStates[i] = false;
+      _codeExpandedStates[i] = true; // Default open
       _codeAnimationControllers[i] = AnimationController(
         duration: const Duration(milliseconds: 300),
         vsync: this,
@@ -107,6 +123,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     _actionsAnimationController.dispose();
     _userActionsAnimationController.dispose();
     _thinkingAnimationController.dispose();
+    _typingAnimationController.dispose();
     _disposeCodeControllers();
     super.dispose();
   }
@@ -184,7 +201,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
 
   void _toggleCode(int index) {
     setState(() {
-      _codeExpandedStates[index] = !(_codeExpandedStates[index] ?? false);
+      _codeExpandedStates[index] = !(_codeExpandedStates[index] ?? true); // Default open
       if (_codeExpandedStates[index]!) {
         _codeAnimationControllers[index]?.forward();
       } else {
@@ -361,6 +378,32 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     }
   }
 
+  // Animated sad emoji widget for image errors
+  Widget _buildAnimatedSadEmoji() {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 1000),
+      tween: Tween(begin: 0.8, end: 1.0),
+      curve: Curves.easeInOut,
+      builder: (context, scale, child) {
+        return Transform.scale(
+          scale: scale,
+          child: const Text(
+            '😢',
+            style: TextStyle(fontSize: 24),
+          ),
+        );
+      },
+      onEnd: () {
+        // Restart animation after a brief pause
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            setState(() {});
+          }
+        });
+      },
+    );
+  }
+
   Widget _buildUserMessage() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -369,7 +412,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFEAE9E5),
+            color: const Color(0xFFF8F9FA),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
@@ -394,17 +437,10 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // AI message content with inline code panels
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Flexible(
-              child: Container(
-                decoration: null, // Transparent background for AI messages
-                padding: const EdgeInsets.all(16),
-                child: _buildBotMessageWithInlinePanels(),
-              ),
-            ),
-          ],
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          child: _buildBotMessageWithInlinePanels(),
         ),
         // File attachments below the message (if any)
         if (widget.message.attachments.isNotEmpty) ...[
@@ -444,14 +480,30 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
       }
     }
     
-    // If no codes yet or still streaming, show original text
+    // If no codes yet or still streaming, show original text or typing indicator
     if (codes.isEmpty || isStreaming) {
       if (originalText.isNotEmpty) {
+        // Stop typing animation immediately when text starts streaming
+        if (_typingAnimationController.isAnimating) {
+          _typingAnimationController.stop();
+          _typingAnimationController.reset();
+        }
         widgets.add(_buildMarkdownContent(originalText));
+      } else if (isStreaming) {
+        // Show typing indicator when streaming but no text yet
+        widgets.add(_buildTypingIndicator());
+        if (!_typingAnimationController.isAnimating) {
+          _typingAnimationController.repeat();
+        }
       }
     } else {
       // Streaming complete - build inline content with code panels at correct positions
       widgets.addAll(_buildInlineContentWithCodePanels(originalText, displayText, codes));
+      // Stop typing animation when streaming is complete
+      if (_typingAnimationController.isAnimating) {
+        _typingAnimationController.stop();
+        _typingAnimationController.reset();
+      }
     }
     
     return Column(
@@ -517,78 +569,273 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   }
 
 
-  // Build markdown content widget
-  Widget _buildMarkdownContent(String text) {
-    return Container(
-      width: double.infinity,
-      child: MarkdownBody(
-        data: text,
-        styleSheet: MarkdownStyleSheet(
-          p: const TextStyle(color: Colors.black, fontSize: 16),
-          strong: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-          em: const TextStyle(color: Colors.black, fontStyle: FontStyle.italic),
-          code: TextStyle(
-            backgroundColor: Colors.grey[800],
-            color: Colors.white, // Match code panel styling
-            fontFamily: 'monospace',
-          ),
-          codeblockDecoration: BoxDecoration(
-            color: Colors.grey[900],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          blockquoteDecoration: BoxDecoration(
-            color: Colors.grey[800],
-            borderRadius: BorderRadius.circular(4),
-            border: Border(left: BorderSide(color: Colors.blue, width: 4)),
-          ),
-        ),
+      // Build simple text content widget (like user messages) - no internal scrolling
+  Widget _buildSimpleTextContent(String text) {
+    return SelectableText(
+      text,
+      style: GoogleFonts.inter(
+        color: const Color(0xFF09090B),
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        height: 1.5,
       ),
     );
   }
 
-  // Thinking Panel Widget
+  // Build markdown content widget with enhanced styling and image support
+  Widget _buildMarkdownContent(String text) {
+    return MarkdownBody(
+      data: text,
+      selectable: true,
+      shrinkWrap: true,
+      fitContent: true,
+      softLineBreak: true,
+      imageBuilder: (uri, title, alt) {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              uri.toString(),
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildAnimatedSadEmoji(),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Image could not be loaded',
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFF71717A),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      if (alt != null && alt!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          alt!,
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFF9CA3AF),
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF09090B)),
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+      },
+      styleSheet: MarkdownStyleSheet(
+          // Text styles
+          p: GoogleFonts.inter(
+            color: const Color(0xFF09090B), 
+            fontSize: 16,
+            height: 1.5,
+          ),
+          strong: GoogleFonts.inter(
+            color: const Color(0xFF09090B), 
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+          em: GoogleFonts.inter(
+            color: const Color(0xFF09090B), 
+            fontStyle: FontStyle.italic,
+            fontSize: 16,
+          ),
+          
+          // Headers
+          h1: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            height: 1.3,
+          ),
+          h2: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            height: 1.3,
+          ),
+          h3: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            height: 1.3,
+          ),
+          
+          // Code styling - white background for code blocks
+          code: GoogleFonts.jetBrainsMono(
+            backgroundColor: const Color(0xFFF4F4F5),
+            color: const Color(0xFF1F2937),
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+          codeblockDecoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          codeblockPadding: const EdgeInsets.all(16),
+          
+          // Lists
+          listBullet: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 16,
+          ),
+          
+          // Blockquotes
+          blockquote: GoogleFonts.inter(
+            color: const Color(0xFF71717A),
+            fontSize: 16,
+            fontStyle: FontStyle.italic,
+          ),
+          blockquoteDecoration: BoxDecoration(
+            color: const Color(0xFFF8F9FA),
+            borderRadius: BorderRadius.circular(8),
+            border: const Border(
+              left: BorderSide(color: Color(0xFF3B82F6), width: 4),
+            ),
+          ),
+          blockquotePadding: const EdgeInsets.all(16),
+          
+          // Links
+          a: GoogleFonts.inter(
+            color: const Color(0xFF3B82F6),
+            fontSize: 16,
+            decoration: TextDecoration.underline,
+          ),
+          
+          // Tables
+          tableHead: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+          tableBody: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 14,
+          ),
+          tableBorder: TableBorder.all(
+            color: const Color(0xFFE4E4E7),
+            width: 1,
+          ),
+          tableHeadAlign: TextAlign.left,
+          tableColumnWidth: const FlexColumnWidth(),
+          
+          // Horizontal rule
+          horizontalRuleDecoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: const Color(0xFFE4E4E7),
+                width: 1,
+              ),
+            ),
+          ),
+          
+          // Checkbox styling
+          checkbox: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 16,
+          ),
+          
+          // Additional spacing
+          h1Padding: const EdgeInsets.only(top: 16, bottom: 8),
+          h2Padding: const EdgeInsets.only(top: 12, bottom: 6),
+          h3Padding: const EdgeInsets.only(top: 8, bottom: 4),
+          pPadding: const EdgeInsets.only(bottom: 8),
+          listIndent: 16,
+        ),
+    );
+  }
+
+  // Thinking Panel Widget - Shadcn UI Style
   Widget _buildThinkingPanel() {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA), // Light background for thinking
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
+        border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Column(
         children: [
           // Header with toggle
-          GestureDetector(
-                         onTap: _toggleThinking,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  FaIcon(
-                    FontAwesomeIcons.brain,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'AI Thinking Process',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
-                      fontSize: 14,
+          Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: _toggleThinking,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Text(
+                      'AI Thinking Process',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF09090B),
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                  const Spacer(),
-                  AnimatedRotation(
-                    turns: _isThinkingExpanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 300),
-                    child: FaIcon(
-                      FontAwesomeIcons.chevronDown,
-                      size: 12,
-                      color: Colors.grey[600],
+                    const Spacer(),
+                    AnimatedRotation(
+                      turns: _isThinkingExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: const Color(0xFF71717A),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -604,18 +851,19 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
                         return Container(
                           width: double.infinity,
                           margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
+                            border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
                           ),
                           child: Text(
                             thought.text,
-                            style: TextStyle(
-                              color: Colors.grey[800],
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFF52525B),
                               fontSize: 14,
-                              height: 1.4,
+                              fontWeight: FontWeight.w400,
+                              height: 1.5,
                             ),
                           ),
                         );
@@ -629,74 +877,92 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     );
   }
 
-  // Code Panel Widget with Clean Styling (independent, no web preview)
+  // Code Panel Widget - Shadcn UI Style
   Widget _buildCodePanel(CodeContent codeContent, int index) {
-    final isExpanded = _codeExpandedStates[index] ?? false;
+    final isExpanded = _codeExpandedStates[index] ?? true; // Default open
     
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.black, // Single AMOLED Black background
+        color: const Color(0xFF09090B), // Shadcn dark background
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[800]!, width: 1),
+        border: Border.all(color: const Color(0xFF27272A), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          // Header with language and copy button (no preview)
-          GestureDetector(
-            onTap: () => _toggleCode(index),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  // Language badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[600],
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      codeContent.language.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  
-                  // Copy button only
-                  GestureDetector(
-                    onTap: () => _copyCode(codeContent.code),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
+          // Header with language and copy button
+          Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _toggleCode(index),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    // Language badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.grey[800], // Subtle gray for contrast
+                        color: const Color(0xFF3B82F6),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const FaIcon(
-                        FontAwesomeIcons.copy,
-                        size: 16,
-                        color: Colors.white,
+                      child: Text(
+                        codeContent.language.toUpperCase(),
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
-                  ),
-                  
-                  const SizedBox(width: 8),
-                  
-                  // Expand/Collapse button
-                  AnimatedRotation(
-                    turns: isExpanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 300),
-                    child: const FaIcon(
-                      FontAwesomeIcons.chevronDown,
-                      size: 14,
-                      color: Colors.white,
+                    const Spacer(),
+                    
+                    // Copy button
+                    Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onTap: () => _copyCode(codeContent.code),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3F3F46),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Icon(
+                            Icons.copy_rounded,
+                            size: 16,
+                            color: Color(0xFFA1A1AA),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    
+                    const SizedBox(width: 8),
+                    
+                    // Expand/Collapse button
+                    AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: Color(0xFFA1A1AA),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -744,6 +1010,183 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
         margin: const EdgeInsets.all(16),
         elevation: 4,
         duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // Build smooth typing indicator with three dots animation
+  Widget _buildTypingIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildDot(0),
+          const SizedBox(width: 4),
+          _buildDot(1),
+          const SizedBox(width: 4),
+          _buildDot(2),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDot(int index) {
+    return AnimatedBuilder(
+      animation: _typingAnimationController,
+      builder: (context, child) {
+        final animationValue = _typingAnimationController.value * 3;
+        final dotValue = (animationValue - index).clamp(0.0, 1.0);
+        final opacity = (math.sin(dotValue * math.pi) * 0.7 + 0.3).clamp(0.3, 1.0);
+        final scale = (math.sin(dotValue * math.pi) * 0.3 + 0.7).clamp(0.7, 1.0);
+        
+        return Transform.scale(
+          scale: scale,
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: const Color(0xFF71717A).withOpacity(opacity),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Parse and build content with images (for simple text content)
+  Widget _buildContentWithImages(String text) {
+    // Check if text contains image markdown
+    final imageRegex = RegExp(r'!\[([^\]]*)\]\(([^)]+)\)');
+    final matches = imageRegex.allMatches(text);
+    
+    if (matches.isEmpty) {
+      // No images, just return simple text
+      return _buildSimpleTextContent(text);
+    }
+    
+    // Build content with images
+    final widgets = <Widget>[];
+    int lastEnd = 0;
+    
+    for (final match in matches) {
+      // Add text before image
+      if (match.start > lastEnd) {
+        final textBefore = text.substring(lastEnd, match.start).trim();
+        if (textBefore.isNotEmpty) {
+          widgets.add(_buildSimpleTextContent(textBefore));
+          widgets.add(const SizedBox(height: 8));
+        }
+      }
+      
+      // Add image
+      final alt = match.group(1) ?? '';
+      final url = match.group(2) ?? '';
+      widgets.add(_buildImage(url, alt));
+      widgets.add(const SizedBox(height: 8));
+      
+      lastEnd = match.end;
+    }
+    
+    // Add remaining text after last image
+    if (lastEnd < text.length) {
+      final remainingText = text.substring(lastEnd).trim();
+      if (remainingText.isNotEmpty) {
+        widgets.add(_buildSimpleTextContent(remainingText));
+      }
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets,
+    );
+  }
+  
+  // Build image widget with error handling
+  Widget _buildImage(String url, String alt) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        url,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF71717A)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Loading image...',
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFF71717A),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildAnimatedSadEmoji(),
+                const SizedBox(height: 12),
+                Text(
+                  'Image could not be loaded',
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFF71717A),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (alt.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    alt,
+                    style: GoogleFonts.inter(
+                      color: const Color(0xFF9CA3AF),
+                      fontSize: 12,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }

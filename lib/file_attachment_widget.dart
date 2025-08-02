@@ -98,9 +98,16 @@ class _FileAttachmentWidgetState extends State<FileAttachmentWidget>
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFFF8F9FA),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE0E0E0), width: 1),
+                border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
               child: Row(
                 children: [

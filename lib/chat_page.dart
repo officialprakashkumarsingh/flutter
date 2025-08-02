@@ -22,6 +22,7 @@ import 'input_bar.dart';
 import 'chat_utils.dart';
 import 'supabase_chat_service.dart';
 import 'supabase_auth_service.dart';
+import 'agents.dart';
 
 
 
@@ -56,7 +57,11 @@ class ChatPageState extends State<ChatPage> {
     // Bot greeting will be added when user sends first message
   ];
   bool _awaitingReply = false;
+  DateTime? _lastStreamUpdate;
   String? _editingMessageId;
+  
+  // Scroll to bottom button
+  bool _showScrollToBottom = false;
 
 
 
@@ -108,6 +113,8 @@ class ChatPageState extends State<ChatPage> {
     }
   }
 
+
+
   @override
   void initState() {
     debugPrint('🎬 CHATPAGE: initState() called - setting up ChatPage...');
@@ -122,6 +129,10 @@ class ChatPageState extends State<ChatPage> {
     _controller.addListener(() {
       setState(() {}); // Refresh UI when text changes
     });
+    
+    // Add scroll listener for scroll to bottom button
+    _scroll.addListener(_scrollListener);
+    
     debugPrint('✅ CHATPAGE: initState() completed');
   }
   
@@ -270,6 +281,7 @@ class ChatPageState extends State<ChatPage> {
     debugPrint('🎬 CHATPAGE: dispose() called - cleaning up ChatPage...');
     _characterService.removeListener(_onCharacterChanged);
     // REMOVED: External tools service listener removal
+    _scroll.removeListener(_scrollListener);
     _controller.dispose();
     _scroll.dispose();
     _httpClient?.close();
@@ -332,7 +344,7 @@ class ChatPageState extends State<ChatPage> {
   void _showUserMessageOptions(BuildContext context, Message message) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFFF4F3F0),
+                  backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return Wrap(
@@ -435,15 +447,38 @@ class ChatPageState extends State<ChatPage> {
         'role': 'system',
         'content': '''You are AhamAI, an intelligent assistant focused on helpful conversations and image generation capabilities.
 
-🎨 IMAGE GENERATION CAPABILITY:
+🎨 **RESPONSE FORMATTING GUIDELINES:**
+- Use **bold** for important points and headings
+- Use *italics* for emphasis and subtle highlighting
+- Use emojis 🤗 to make responses friendly and engaging
+- Use `code formatting` for technical terms, commands, and file names
+- Use > blockquotes for important notes, tips, and warnings
+- Use numbered lists (1. 2. 3.) for step-by-step instructions
+- Use bullet points (- • *) for feature lists and options
+- Use ## Headers and ### Sub-headers to structure long responses
+- Use ~~strikethrough~~ for corrections or outdated information
+- Use --- horizontal rules to separate major sections
+- Use tables when presenting structured data or comparisons
+- Use - [ ] checkboxes for task lists and action items
+- Include relevant emojis throughout your responses 📝✨🚀
+- Make your responses **well-structured and readable** using rich markdown formatting
+
+🖼️ **IMAGE & MEDIA SUPPORT:**
+- You can reference images, GIFs, and media files when relevant
+- Support markdown image syntax: ![alt text](image_url)
+- Encourage visual learning and multimedia responses when appropriate
+
+🎨 **IMAGE GENERATION CAPABILITY:**
 This app has a built-in image generator with model selection (Flux, Turbo) and follow-up options for consistent style. Users can access it through the attachment button or you can mention this feature when relevant.
 
-🎨 FOR IMAGE GENERATION:
+🎨 **FOR IMAGE GENERATION:**
 When users want to create images, photos, artwork, or illustrations, guide them to use the attachment button (📎) to access the built-in image generator. Say something like: "I can help you create images! Please click the attachment button (📎) and select 'Generate Image' to access our image generator with different models like Flux and Turbo."
 
-Always use proper JSON format and explain what you're doing to help the user understand the process.
+**Always use proper JSON format and explain what you're doing to help the user understand the process.**
 
-Be conversational and helpful!'''
+${AgentsService.getSystemPromptAddition()}
+
+**Be conversational, helpful, and make your responses visually appealing with proper formatting!** 🚀'''
       };
 
       request.body = json.encode({
@@ -478,27 +513,35 @@ Be conversational and helpful!'''
               if (content != null) {
                 accumulatedText += _fixServerEncoding(content);
                 
-                // Parse thinking content in real-time during streaming
-                final streamingParseResult = _parseContentStreaming(accumulatedText);
-                
-                // Use original display text from parsing without any processing
-                String displayText = streamingParseResult['displayText'];
+                // Throttle updates for smoother performance (every 50ms)
+                if (_lastStreamUpdate == null || 
+                    DateTime.now().difference(_lastStreamUpdate!).inMilliseconds > 50) {
+                  
+                  // Parse thinking content in real-time during streaming
+                  final streamingParseResult = _parseContentStreaming(accumulatedText);
+                  
+                  // Use original display text from parsing without any processing
+                  String displayText = streamingParseResult['displayText'];
 
-                setState(() {
-                  _messages[botMessageIndex] = Message(
-                    id: botMessage.id,
-                    sender: Sender.bot,
-                    text: accumulatedText,
-                    isStreaming: true,
-                    timestamp: botMessage.timestamp,
-                    thoughts: streamingParseResult['thoughts'],
-                    codes: streamingParseResult['codes'],
-                    displayText: displayText,
-                    toolData: botMessage.toolData,
-                  );
-                });
-                
-                _scrollToBottom();
+                  if (mounted) {
+                    setState(() {
+                      _messages[botMessageIndex] = Message(
+                        id: botMessage.id,
+                        sender: Sender.bot,
+                        text: accumulatedText,
+                        isStreaming: true,
+                        timestamp: botMessage.timestamp,
+                        thoughts: streamingParseResult['thoughts'],
+                        codes: streamingParseResult['codes'],
+                        displayText: displayText,
+                        toolData: botMessage.toolData,
+                      );
+                    });
+                    
+                    _scrollToBottom();
+                    _lastStreamUpdate = DateTime.now();
+                  }
+                }
               }
             } catch (e) {
               // Continue on JSON parsing errors
@@ -512,24 +555,34 @@ Be conversational and helpful!'''
         // Parse final content to preserve codes and thoughts
         final finalParseResult = _parseContentStreaming(textToUse);
         
+        // Process agents (screenshot generation, etc.)
+        String finalText = textToUse;
+        try {
+          final agentResult = await AgentsService.processAgentRequest(prompt, textToUse);
+          if (agentResult != null) {
+            finalText = textToUse + agentResult;
+            print('🤖 AGENTS: Added agent content to response');
+          }
+        } catch (e) {
+          print('❌ AGENTS: Error processing agents: $e');
+        }
+        
         setState(() {
           _messages[botMessageIndex] = Message(
             id: _messages[botMessageIndex].id,
             sender: Sender.bot,
-            text: textToUse,
+            text: finalText,
             isStreaming: false,
             timestamp: _messages[botMessageIndex].timestamp,
             thoughts: finalParseResult['thoughts'],
             codes: finalParseResult['codes'],
-            displayText: finalParseResult['displayText'],
+            displayText: finalText, // Use final text with agents content
             toolData: _messages[botMessageIndex].toolData,
           );
         });
 
-
-
         // FIXED: Use original text for memory, no cleaning of code blocks
-        _updateConversationMemory(prompt, accumulatedText);
+        _updateConversationMemory(prompt, finalText);
         
         // Save complete chat history to SharedPreferences
         await _saveChatHistory();
@@ -1055,7 +1108,7 @@ Be conversational and helpful!'''
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
-          color: Color(0xFFF4F3F0),
+          color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -1828,66 +1881,97 @@ Be conversational and helpful!'''
   Widget build(BuildContext context) {
     final emptyChat = _messages.length <= 1;
     return Container(
-      color: const Color(0xFFF4F3F0),
+              color: Colors.white,
       child: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              controller: _scroll,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              itemCount: _messages.length,
-              itemBuilder: (_, index) {
-                final message = _messages[index];
-                return MessageBubble(
-                  message: message,
-                  onRegenerate: () => _regenerateResponse(index),
-                  onUserMessageTap: () => _showUserMessageOptions(context, message),
-                  onSaveImage: _saveImageToDevice,
-                  onEditMessage: _editMessage,
-                );
-              },
-            ),
-          ),
-          if (emptyChat && _editingMessageId == null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _prompts.map((p) => Container(
-                        margin: const EdgeInsets.only(right: 12),
-                        child: GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            _controller.text = p;
-                            _send();
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEAE9E5),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              p,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF000000),
-                                fontWeight: FontWeight.w500,
+            child: Stack(
+              children: [
+                // Main chat content
+                emptyChat && _editingMessageId == null
+                    ? Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Welcome message - centered in screen
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 24),
+                                child: _buildWelcomeMessage(),
                               ),
-                            ),
+                              
+                              const SizedBox(height: 60),
+                              
+                              // Suggestions
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: _prompts.map((p) => Container(
+                                      margin: const EdgeInsets.only(right: 12),
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: InkWell(
+                                          borderRadius: BorderRadius.circular(20),
+                                          onTap: () {
+                                            HapticFeedback.lightImpact();
+                                            _controller.text = p;
+                                            _send();
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF8F9FA),
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: Text(
+                                              p,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Color(0xFF000000),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    )).toList(),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      )).toList(),
-                    ),
+                      )
+                    : ListView.builder(
+                        controller: _scroll,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        itemCount: _messages.length,
+                        itemBuilder: (_, index) {
+                          final message = _messages[index];
+                          return MessageBubble(
+                            message: message,
+                            onRegenerate: () => _regenerateResponse(index),
+                            onUserMessageTap: () => _showUserMessageOptions(context, message),
+                            onSaveImage: _saveImageToDevice,
+                            onEditMessage: _editMessage,
+                          );
+                        },
+                      ),
+                
+                // Scroll to bottom button
+                if (_showScrollToBottom)
+                  Positioned(
+                    bottom: 20,
+                    right: 20,
+                    child: _buildScrollToBottomButton(),
                   ),
-                ],
-              ),
+              ],
             ),
+          ),
+
           // External tools now execute silently - no status panel
                         SafeArea(
             top: false,
@@ -1927,4 +2011,136 @@ Be conversational and helpful!'''
     await _generateResponse(text);
   }
 
+  // Build welcome message with styled user name
+  Widget _buildWelcomeMessage() {
+    final now = DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 30)); // IST
+    final hour = now.hour;
+    final user = SupabaseAuthService.currentUser;
+    
+    String greeting;
+    if (hour >= 5 && hour < 12) {
+      greeting = "Good morning";
+    } else if (hour >= 12 && hour < 17) {
+      greeting = "Good afternoon";
+    } else if (hour >= 17 && hour < 21) {
+      greeting = "Good evening";
+    } else {
+      greeting = "Good night";
+    }
+    
+    String userName = SupabaseAuthService.userFullName ?? 
+                     user?.email?.split('@')[0] ?? 
+                     "there";
+    
+    return Column(
+      children: [
+        // Greeting with larger user name
+        RichText(
+          textAlign: TextAlign.center,
+          text: TextSpan(
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF09090B),
+              height: 1.3,
+            ),
+            children: [
+              TextSpan(text: "$greeting, "),
+              TextSpan(
+                text: userName,
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF09090B),
+                ),
+              ),
+              const TextSpan(text: "!"),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "How can I help you today?",
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: const Color(0xFF09090B),
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "I'm here to help you with questions, tasks, and conversations.",
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: const Color(0xFF71717A),
+            height: 1.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _scrollListener() {
+    if (!_scroll.hasClients) return;
+    
+    // Show scroll to bottom button when:
+    // 1. Chat has started (more than 1 message - initial greeting)
+    // 2. Not currently streaming
+    // 3. Not at the bottom of the scroll
+    final hasStarted = _messages.length > 1;
+    final isNotStreaming = !_awaitingReply;
+    final notAtBottom = _scroll.position.pixels < (_scroll.position.maxScrollExtent - 100);
+    
+    final shouldShow = hasStarted && isNotStreaming && notAtBottom;
+    
+    if (_showScrollToBottom != shouldShow) {
+      setState(() {
+        _showScrollToBottom = shouldShow;
+      });
+    }
+  }
+
+  // Build scroll to bottom button with shadcn styling
+  Widget _buildScrollToBottomButton() {
+    return AnimatedScale(
+      scale: _showScrollToBottom ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            _scrollToBottom();
+          },
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Color(0xFF71717A),
+              size: 20,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
