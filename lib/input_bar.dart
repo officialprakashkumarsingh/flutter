@@ -249,17 +249,13 @@ class InputBar extends StatelessWidget {
             margin: EdgeInsets.fromLTRB(20, isEditing ? 0 : 16, 20, 0),
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              color: Colors.white, // White input background
+              color: const Color(0xFFF8F9FA), // Subtle background
               borderRadius: BorderRadius.circular(12), // Shadcn style border radius
-              border: Border.all(
-                color: const Color(0xFFE4E4E7), // Zinc-200
-                width: 1,
-              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
                 ),
               ],
             ),
@@ -280,14 +276,8 @@ class InputBar extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: attachedFiles.isNotEmpty 
                               ? const Color(0xFF22C55E).withOpacity(0.1)
-                              : const Color(0xFFF4F4F5),
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: attachedFiles.isNotEmpty 
-                                ? const Color(0xFF22C55E).withOpacity(0.3)
-                                : const Color(0xFFE4E4E7),
-                            width: 1,
-                          ),
                         ),
                         child: Icon(
                           Icons.attach_file_rounded,  // Modern attachment icon
@@ -360,12 +350,6 @@ class InputBar extends StatelessWidget {
                             ? const Color(0xFFFEE2E2) // Light red background
                             : const Color(0xFF09090B), // Zinc-950
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: awaitingReply 
-                              ? const Color(0xFFEF4444) // Red border
-                              : const Color(0xFF09090B),
-                          width: 1,
-                        ),
                       ),
                       child: awaitingReply 
                           ? const Icon(Icons.stop_rounded, color: Color(0xFFEF4444), size: 18)

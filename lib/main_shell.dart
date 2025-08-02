@@ -1063,9 +1063,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFFF4F4F5),
+              color: const Color(0xFFF8F9FA),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1115,15 +1114,14 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
                 ),
                 child: const Center(
                   child: Icon(
                     Icons.menu_rounded,
                     color: Color(0xFF09090B),
-                    size: 20,
+                    size: 22,
                   ),
                 ),
               ),
@@ -1140,9 +1138,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: _isTemporaryChatMode ? const Color(0xFF09090B) : Colors.white,
+                  color: _isTemporaryChatMode ? const Color(0xFF09090B) : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
                 ),
                 child: Material(
                   color: Colors.transparent,
@@ -1184,9 +1181,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
                 ),
                 child: Material(
                   color: Colors.transparent,

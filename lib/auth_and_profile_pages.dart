@@ -50,18 +50,18 @@ class ShadcnInput extends StatelessWidget {
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: const Color(0xFFF8F9FA),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFE4E4E7), width: 1), // Changed from black to same gray
+          borderSide: BorderSide.none,
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -69,7 +69,7 @@ class ShadcnInput extends StatelessWidget {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
@@ -112,11 +112,7 @@ class ShadcnButton extends StatelessWidget {
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
-            side: variant == ShadcnButtonVariant.ghost 
-                ? BorderSide.none 
-                : variant == ShadcnButtonVariant.secondary
-                    ? const BorderSide(color: Color(0xFFE4E4E7), width: 1)
-                    : BorderSide.none,
+            side: BorderSide.none,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),

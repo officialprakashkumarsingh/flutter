@@ -332,7 +332,7 @@ class ChatPageState extends State<ChatPage> {
   void _showUserMessageOptions(BuildContext context, Message message) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFFF4F3F0),
+                  backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return Wrap(
@@ -1055,7 +1055,7 @@ Be conversational and helpful!'''
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
-          color: Color(0xFFF4F3F0),
+          color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -1828,7 +1828,7 @@ Be conversational and helpful!'''
   Widget build(BuildContext context) {
     final emptyChat = _messages.length <= 1;
     return Container(
-      color: const Color(0xFFF4F3F0),
+              color: Colors.white,
       child: Column(
         children: [
           Expanded(
