@@ -127,20 +127,19 @@ class WebSearchAgent {
         _searchVideos(query),
       ]);
 
-      final webResults = futures[0] as List<WebSearchResult>?;
-      final imageResults = futures[1] as List<WebImageResult>?;
-      final videoResults = futures[2] as List<WebVideoResult>?;
+      final webResults = futures[0] as List<WebSearchResult>? ?? [];
+      final imageResults = futures[1] as List<WebImageResult>? ?? [];
+      final videoResults = futures[2] as List<WebVideoResult>? ?? [];
 
-      if (webResults == null && imageResults == null && videoResults == null) {
-        return null;
-      }
+      // Always return results even if some categories are empty
+      print('🌐 SEARCH RESULTS: Web: ${webResults.length}, Images: ${imageResults.length}, Videos: ${videoResults.length}');
 
       final searchResults = WebSearchResults(
-        webResults: webResults ?? [],
-        imageResults: imageResults ?? [],
-        videoResults: videoResults ?? [],
+        webResults: webResults,
+        imageResults: imageResults,
+        videoResults: videoResults,
         query: query,
-        totalResults: (webResults?.length ?? 0) + (imageResults?.length ?? 0) + (videoResults?.length ?? 0),
+        totalResults: webResults.length + imageResults.length + videoResults.length,
       );
 
       // Format results for AI context
@@ -640,6 +639,21 @@ class _WebSearchResultsWidgetState extends State<WebSearchResultsWidget> with Si
   }
 
   Widget _buildVideoResults() {
+    if (widget.results.videoResults.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Text(
+            'No video results found',
+            style: TextStyle(
+              fontSize: 16,
+              color: Color(0xFF71717A),
+            ),
+          ),
+        ),
+      );
+    }
+    
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: widget.results.videoResults.length,
