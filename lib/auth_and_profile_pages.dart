@@ -61,7 +61,7 @@ class ShadcnInput extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: Color(0xFF09090B), width: 1),
+          borderSide: const BorderSide(color: Color(0xFF71717A), width: 1),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(6),
@@ -312,39 +312,8 @@ class _LoginPageState extends State<LoginPage> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Logo and Title
-        Column(
-          children: [
-            Text(
-              'AhamAI',
-              style: GoogleFonts.spaceMono(
-                fontSize: 36,
-                color: const Color(0xFF09090B),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Sign in to continue',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                color: const Color(0xFF09090B),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Welcome back to AhamAI',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF71717A),
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
-        
-        const SizedBox(height: 32),
+        // No duplicate title needed - already shown above
+        const SizedBox(height: 16),
         
         // Login Form
         Form(
@@ -575,39 +544,8 @@ class _SignUpPageState extends State<SignUpPage> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Logo and Title
-        Column(
-          children: [
-            Text(
-              'AhamAI',
-              style: GoogleFonts.spaceMono(
-                fontSize: 36,
-                color: const Color(0xFF09090B),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Create Account',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                color: const Color(0xFF09090B),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Join AhamAI today',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF71717A),
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ],
-        ),
-        
-        const SizedBox(height: 32),
+        // No duplicate title needed - already shown above
+        const SizedBox(height: 16),
         
         // Sign Up Form
         Form(
