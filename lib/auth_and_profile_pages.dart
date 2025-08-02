@@ -191,11 +191,11 @@ class _AuthAndProfilePagesState extends State<AuthAndProfilePages> {
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.dark,
         statusBarBrightness: Brightness.light,
-        systemNavigationBarColor: Color(0xFFF8F9FA),
+        systemNavigationBarColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA), // Light gray background instead of white
+        backgroundColor: Colors.white, // Solid white background
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
