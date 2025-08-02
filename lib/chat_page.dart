@@ -109,29 +109,7 @@ class ChatPageState extends State<ChatPage> {
     }
   }
 
-  // Generate welcome message with user name and time-based greeting
-  String _getWelcomeMessage() {
-    final now = DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 30)); // IST
-    final hour = now.hour;
-    final user = SupabaseAuthService.currentUser;
-    
-    String greeting;
-    if (hour >= 5 && hour < 12) {
-      greeting = "Good morning";
-    } else if (hour >= 12 && hour < 17) {
-      greeting = "Good afternoon";
-    } else if (hour >= 17 && hour < 21) {
-      greeting = "Good evening";
-    } else {
-      greeting = "Good night";
-    }
-    
-    String userName = SupabaseAuthService.userFullName ?? 
-                     user?.email?.split('@')[0] ?? 
-                     "there";
-    
-    return "$greeting, $userName! How can I help you today?";
-  }
+
 
   @override
   void initState() {
@@ -1865,102 +1843,80 @@ Be conversational and helpful!'''
       child: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              controller: _scroll,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              itemCount: _messages.length,
-              itemBuilder: (_, index) {
-                final message = _messages[index];
-                return MessageBubble(
-                  message: message,
-                  onRegenerate: () => _regenerateResponse(index),
-                  onUserMessageTap: () => _showUserMessageOptions(context, message),
-                  onSaveImage: _saveImageToDevice,
-                  onEditMessage: _editMessage,
-                );
-              },
-            ),
-          ),
-          if (emptyChat && _editingMessageId == null)
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Welcome message - shadcn UI style
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      children: [
-                        Text(
-                          _getWelcomeMessage(),
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF09090B),
-                            height: 1.3,
-                            letterSpacing: -0.25,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "I'm here to help you with questions, tasks, and conversations.",
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: const Color(0xFF71717A),
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 40),
-                  
-                  // Suggestions
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: emptyChat && _editingMessageId == null
+                ? Center(
                     child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _prompts.map((p) => Container(
-                        margin: const EdgeInsets.only(right: 12),
-                        child: Material(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              _controller.text = p;
-                              _send();
-                            },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              p,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF000000),
-                                fontWeight: FontWeight.w500,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Welcome message - centered in screen
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: _buildWelcomeMessage(),
+                          ),
+                          
+                          const SizedBox(height: 60),
+                          
+                          // Suggestions
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: _prompts.map((p) => Container(
+                                  margin: const EdgeInsets.only(right: 12),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(20),
+                                      onTap: () {
+                                        HapticFeedback.lightImpact();
+                                        _controller.text = p;
+                                        _send();
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF8F9FA),
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          p,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Color(0xFF000000),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )).toList(),
                               ),
                             ),
                           ),
-                          ),
-                        ),
-                      )).toList(),
+                        ],
+                      ),
                     ),
-                    ),
+                  )
+                : ListView.builder(
+                    controller: _scroll,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    itemCount: _messages.length,
+                    itemBuilder: (_, index) {
+                      final message = _messages[index];
+                      return MessageBubble(
+                        message: message,
+                        onRegenerate: () => _regenerateResponse(index),
+                        onUserMessageTap: () => _showUserMessageOptions(context, message),
+                        onSaveImage: _saveImageToDevice,
+                        onEditMessage: _editMessage,
+                      );
+                    },
                   ),
-                ],
-              ),
-            ),
+          ),
+
           // External tools now execute silently - no status panel
                         SafeArea(
             top: false,
@@ -2000,4 +1956,76 @@ Be conversational and helpful!'''
     await _generateResponse(text);
   }
 
+  // Build welcome message with styled user name
+  Widget _buildWelcomeMessage() {
+    final now = DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 30)); // IST
+    final hour = now.hour;
+    final user = SupabaseAuthService.currentUser;
+    
+    String greeting;
+    if (hour >= 5 && hour < 12) {
+      greeting = "Good morning";
+    } else if (hour >= 12 && hour < 17) {
+      greeting = "Good afternoon";
+    } else if (hour >= 17 && hour < 21) {
+      greeting = "Good evening";
+    } else {
+      greeting = "Good night";
+    }
+    
+    String userName = SupabaseAuthService.userFullName ?? 
+                     user?.email?.split('@')[0] ?? 
+                     "there";
+    
+    return Column(
+      children: [
+        // Greeting with larger user name
+        RichText(
+          textAlign: TextAlign.center,
+          text: TextSpan(
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF09090B),
+              height: 1.3,
+            ),
+            children: [
+              TextSpan(text: "$greeting, "),
+              TextSpan(
+                text: userName,
+                style: GoogleFonts.inter(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF09090B),
+                ),
+              ),
+              const TextSpan(text: "!"),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "How can I help you today?",
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            color: const Color(0xFF09090B),
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "I'm here to help you with questions, tasks, and conversations.",
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w400,
+            color: const Color(0xFF71717A),
+            height: 1.5,
+          ),
+        ),
+      ],
+    );
+  }
 }
