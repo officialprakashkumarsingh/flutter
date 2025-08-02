@@ -2,8 +2,175 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'supabase_auth_service.dart';
+
+// Custom shadcn-inspired Input component
+class ShadcnInput extends StatelessWidget {
+  final TextEditingController controller;
+  final String placeholder;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final bool enabled;
+  final Widget? prefixIcon;
+  final Widget? suffixIcon;
+  final String? Function(String?)? validator;
+
+  const ShadcnInput({
+    super.key,
+    required this.controller,
+    required this.placeholder,
+    this.obscureText = false,
+    this.keyboardType,
+    this.enabled = true,
+    this.prefixIcon,
+    this.suffixIcon,
+    this.validator,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      enabled: enabled,
+      validator: validator,
+      style: GoogleFonts.inter(
+        fontSize: 14,
+        color: const Color(0xFF09090B),
+        fontWeight: FontWeight.w400,
+      ),
+      decoration: InputDecoration(
+        hintText: placeholder,
+        hintStyle: GoogleFonts.inter(
+          fontSize: 14,
+          color: const Color(0xFF71717A),
+          fontWeight: FontWeight.w400,
+        ),
+        prefixIcon: prefixIcon,
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF09090B), width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
+  }
+}
+
+// Custom shadcn-inspired Button component
+class ShadcnButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final Widget child;
+  final ShadcnButtonVariant variant;
+  final bool isLoading;
+
+  const ShadcnButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+    this.variant = ShadcnButtonVariant.primary,
+    this.isLoading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: variant == ShadcnButtonVariant.primary 
+              ? const Color(0xFF09090B) 
+              : variant == ShadcnButtonVariant.ghost
+                  ? Colors.transparent
+                  : const Color(0xFFF4F4F5),
+          foregroundColor: variant == ShadcnButtonVariant.primary 
+              ? const Color(0xFFFAFAFA)
+              : const Color(0xFF09090B),
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: variant == ShadcnButtonVariant.ghost 
+                ? BorderSide.none 
+                : variant == ShadcnButtonVariant.secondary
+                    ? const BorderSide(color: Color(0xFFE4E4E7), width: 1)
+                    : BorderSide.none,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFAFAFA)),
+                ),
+              )
+            : child,
+      ),
+    );
+  }
+}
+
+// Button variants enum
+enum ShadcnButtonVariant { primary, secondary, ghost }
+
+// Custom shadcn-inspired Card component
+class ShadcnCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+
+  const ShadcnCard({
+    super.key,
+    required this.child,
+    this.padding,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: padding ?? const EdgeInsets.all(32),
+        child: child,
+      ),
+    );
+  }
+}
 
 // Custom rounded SnackBar utility
 void showRoundedSnackBar(BuildContext context, String message, {bool isError = false}) {
@@ -12,26 +179,27 @@ void showRoundedSnackBar(BuildContext context, String message, {bool isError = f
       content: Text(
         message,
         style: GoogleFonts.inter(
-          color: const Color(0xFF000000),
+          color: const Color(0xFF09090B),
           fontWeight: FontWeight.w500,
           fontSize: 13,
         ),
       ),
-      backgroundColor: isError ? const Color(0xFFFFE5E5) : const Color(0xFFE8F5E8),
+      backgroundColor: isError ? const Color(0xFFFEE2E2) : const Color(0xFFF0FDF4),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         side: BorderSide(
-          color: isError ? const Color(0xFFFF6B6B) : const Color(0xFF4CAF50),
+          color: isError ? const Color(0xFFFECACA) : const Color(0xFFBBF7D0),
           width: 1,
         ),
       ),
       margin: const EdgeInsets.only(
-        bottom: 120, // Position above input area
+        bottom: 120,
         left: 16,
         right: 16,
       ),
       duration: const Duration(seconds: 3),
+      elevation: 0,
     ),
   );
 }
@@ -110,7 +278,6 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (response.user != null) {
-        // User signed in successfully, AuthGate will handle navigation
         if (mounted) {
           showRoundedSnackBar(context, '✅ Welcome back!');
         }
@@ -146,200 +313,210 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Logo and Title
-            Column(
+    return ShadcnCard(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Logo and Title
+          Column(
+            children: [
+              Text(
+                'AhamAI',
+                style: GoogleFonts.spaceMono(
+                  fontSize: 36,
+                  color: const Color(0xFF09090B),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Sign in to continue',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  color: const Color(0xFF09090B),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Welcome back to AhamAI',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF71717A),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Login Form
+          Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'AhamAI',
-                  style: GoogleFonts.spaceMono(
-                    fontSize: 36,
-                    color: const Color(0xFF000000),
-                    fontWeight: FontWeight.bold,
-                  ),
+                // Email Field
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Email',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF09090B),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    ShadcnInput(
+                      controller: _emailController,
+                      placeholder: 'Enter your email',
+                      keyboardType: TextInputType.emailAddress,
+                      enabled: !_isLoading,
+                      prefixIcon: const Icon(
+                        Icons.email_outlined,
+                        size: 18,
+                        color: Color(0xFF71717A),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your email';
+                        }
+                        if (!value.contains('@')) {
+                          return 'Please enter a valid email';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Sign in to continue',
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    color: const Color(0xFF000000),
-                    fontWeight: FontWeight.w600,
-                  ),
+                
+                const SizedBox(height: 20),
+                
+                // Password Field
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Password',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF09090B),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    ShadcnInput(
+                      controller: _passwordController,
+                      placeholder: 'Enter your password',
+                      obscureText: _obscurePassword,
+                      enabled: !_isLoading,
+                      prefixIcon: const Icon(
+                        Icons.lock_outlined,
+                        size: 18,
+                        color: Color(0xFF71717A),
+                      ),
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          size: 18,
+                          color: const Color(0xFF71717A),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your password';
+                        }
+                        if (value.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Welcome back to AhamAI',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: const Color(0xFF6B7280),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // Login Form
-            Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Email Field
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Email',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF374151),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Input(
-                        controller: _emailController,
-                        placeholder: 'Enter your email',
-                        keyboardType: TextInputType.emailAddress,
-                        enabled: !_isLoading,
-                        prefix: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Icon(
-                            Icons.email_outlined,
-                            size: 18,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Password Field
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Password',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF374151),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Input(
-                        controller: _passwordController,
-                        placeholder: 'Enter your password',
-                        obscureText: _obscurePassword,
-                        enabled: !_isLoading,
-                        prefix: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Icon(
-                            Icons.lock_outlined,
-                            size: 18,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
-                        suffix: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                            child: Icon(
-                              _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                              size: 18,
-                              color: const Color(0xFF6B7280),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // Forgot Password
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Button.ghost(
-                      onPressed: _isLoading ? null : _resetPassword,
-                      child: Text(
-                        'Forgot Password?',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
+                
+                const SizedBox(height: 12),
+                
+                // Forgot Password
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _isLoading ? null : _resetPassword,
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      'Forgot Password?',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF09090B),
                       ),
                     ),
                   ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Sign In Button
-                  Button(
-                    onPressed: _isLoading ? null : _signIn,
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text(
-                            'Sign In',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Sign In Button
+                ShadcnButton(
+                  onPressed: _signIn,
+                  isLoading: _isLoading,
+                  child: Text(
+                    'Sign In',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Toggle to Sign Up
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account? ",
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Toggle to Sign Up
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an account? ",
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: const Color(0xFF71717A),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: widget.onToggle,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Sign Up',
                         style: GoogleFonts.inter(
                           fontSize: 14,
-                          color: const Color(0xFF6B7280),
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF09090B),
                         ),
                       ),
-                      Button.link(
-                        onPressed: widget.onToggle,
-                        child: Text(
-                          'Sign Up',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -377,7 +554,6 @@ class _SignUpPageState extends State<SignUpPage> {
       );
 
       if (response.user != null) {
-        // Create user profile
         await SupabaseAuthService.createUserProfile(
           userId: response.user!.id,
           email: _emailController.text.trim(),
@@ -386,8 +562,6 @@ class _SignUpPageState extends State<SignUpPage> {
 
         if (mounted) {
           showRoundedSnackBar(context, '✅ Account created! Please check your email to verify.');
-          
-          // Switch to login page
           widget.onToggle();
         }
       }
@@ -404,267 +578,277 @@ class _SignUpPageState extends State<SignUpPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Logo and Title
-            Column(
+    return ShadcnCard(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Logo and Title
+          Column(
+            children: [
+              Text(
+                'AhamAI',
+                style: GoogleFonts.spaceMono(
+                  fontSize: 36,
+                  color: const Color(0xFF09090B),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Create Account',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  color: const Color(0xFF09090B),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Join AhamAI today',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: const Color(0xFF71717A),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Sign Up Form
+          Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'AhamAI',
-                  style: GoogleFonts.spaceMono(
-                    fontSize: 36,
-                    color: const Color(0xFF000000),
-                    fontWeight: FontWeight.bold,
+                // Full Name Field
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Full Name',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF09090B),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    ShadcnInput(
+                      controller: _fullNameController,
+                      placeholder: 'Enter your full name',
+                      enabled: !_isLoading,
+                      prefixIcon: const Icon(
+                        Icons.person_outlined,
+                        size: 18,
+                        color: Color(0xFF71717A),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your full name';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Email Field
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Email',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF09090B),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    ShadcnInput(
+                      controller: _emailController,
+                      placeholder: 'Enter your email',
+                      keyboardType: TextInputType.emailAddress,
+                      enabled: !_isLoading,
+                      prefixIcon: const Icon(
+                        Icons.email_outlined,
+                        size: 18,
+                        color: Color(0xFF71717A),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your email';
+                        }
+                        if (!value.contains('@')) {
+                          return 'Please enter a valid email';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Password Field
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Password',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF09090B),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    ShadcnInput(
+                      controller: _passwordController,
+                      placeholder: 'Enter your password',
+                      obscureText: _obscurePassword,
+                      enabled: !_isLoading,
+                      prefixIcon: const Icon(
+                        Icons.lock_outlined,
+                        size: 18,
+                        color: Color(0xFF71717A),
+                      ),
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          size: 18,
+                          color: const Color(0xFF71717A),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your password';
+                        }
+                        if (value.length < 6) {
+                          return 'Password must be at least 6 characters';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Confirm Password Field
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Confirm Password',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF09090B),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    ShadcnInput(
+                      controller: _confirmPasswordController,
+                      placeholder: 'Confirm your password',
+                      obscureText: _obscureConfirmPassword,
+                      enabled: !_isLoading,
+                      prefixIcon: const Icon(
+                        Icons.lock_outlined,
+                        size: 18,
+                        color: Color(0xFF71717A),
+                      ),
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                        icon: Icon(
+                          _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          size: 18,
+                          color: const Color(0xFF71717A),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';
+                        }
+                        if (value != _passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Sign Up Button
+                ShadcnButton(
+                  onPressed: _signUp,
+                  isLoading: _isLoading,
+                  child: Text(
+                    'Create Account',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Create Account',
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    color: const Color(0xFF000000),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Join AhamAI today',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    color: const Color(0xFF6B7280),
-                    fontWeight: FontWeight.w400,
-                  ),
+                
+                const SizedBox(height: 20),
+                
+                // Toggle to Sign In
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Already have an account? ",
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: const Color(0xFF71717A),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: widget.onToggle,
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Sign In',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF09090B),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            
-            const SizedBox(height: 32),
-            
-            // Sign Up Form
-            Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Full Name Field
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Full Name',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF374151),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Input(
-                        controller: _fullNameController,
-                        placeholder: 'Enter your full name',
-                        enabled: !_isLoading,
-                        prefix: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Icon(
-                            Icons.person_outlined,
-                            size: 18,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Email Field
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Email',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF374151),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Input(
-                        controller: _emailController,
-                        placeholder: 'Enter your email',
-                        keyboardType: TextInputType.emailAddress,
-                        enabled: !_isLoading,
-                        prefix: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Icon(
-                            Icons.email_outlined,
-                            size: 18,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Password Field
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Password',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF374151),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Input(
-                        controller: _passwordController,
-                        placeholder: 'Enter your password',
-                        obscureText: _obscurePassword,
-                        enabled: !_isLoading,
-                        prefix: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Icon(
-                            Icons.lock_outlined,
-                            size: 18,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
-                        suffix: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                            child: Icon(
-                              _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                              size: 18,
-                              color: const Color(0xFF6B7280),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Confirm Password Field
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Confirm Password',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF374151),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Input(
-                        controller: _confirmPasswordController,
-                        placeholder: 'Confirm your password',
-                        obscureText: _obscureConfirmPassword,
-                        enabled: !_isLoading,
-                        prefix: const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Icon(
-                            Icons.lock_outlined,
-                            size: 18,
-                            color: Color(0xFF6B7280),
-                          ),
-                        ),
-                        suffix: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _obscureConfirmPassword = !_obscureConfirmPassword;
-                              });
-                            },
-                            child: Icon(
-                              _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                              size: 18,
-                              color: const Color(0xFF6B7280),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Sign Up Button
-                  Button(
-                    onPressed: _isLoading ? null : _signUp,
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text(
-                            'Create Account',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Toggle to Sign In
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Already have an account? ",
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: const Color(0xFF6B7280),
-                        ),
-                      ),
-                      Button.link(
-                        onPressed: widget.onToggle,
-                        child: Text(
-                          'Sign In',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-// Profile page remains unchanged for now
+// Profile page remains the same but with updated styling
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -741,7 +925,7 @@ class _ProfilePageState extends State<ProfilePage> {
               'Profile',
               style: GoogleFonts.spaceMono(
                 fontSize: 32,
-                color: const Color(0xFF000000),
+                color: const Color(0xFF09090B),
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -749,23 +933,10 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 32),
             
             if (_isLoading)
-              const CircularProgressIndicator(color: Colors.black)
+              const CircularProgressIndicator(color: Color(0xFF09090B))
             else ...[
               // Profile Info
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
+              ShadcnCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -773,7 +944,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       'Full Name',
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: const Color(0xFFA3A3A3),
+                        color: const Color(0xFF71717A),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -782,7 +953,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       _fullName ?? 'Not available',
                       style: GoogleFonts.inter(
                         fontSize: 16,
-                        color: const Color(0xFF000000),
+                        color: const Color(0xFF09090B),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -793,7 +964,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       'Email',
                       style: GoogleFonts.inter(
                         fontSize: 12,
-                        color: const Color(0xFFA3A3A3),
+                        color: const Color(0xFF71717A),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -802,7 +973,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       _email ?? 'Not available',
                       style: GoogleFonts.inter(
                         fontSize: 16,
-                        color: const Color(0xFF000000),
+                        color: const Color(0xFF09090B),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -813,37 +984,28 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 32),
               
               // Sign Out Button
-              Container(
-                width: double.infinity,
-                height: 44,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+              ShadcnButton(
+                onPressed: _signOut,
+                isLoading: _isLoading,
+                variant: ShadcnButtonVariant.secondary,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.logout,
+                      size: 18,
+                      color: Color(0xFFEF4444),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Sign Out',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFEF4444),
+                      ),
                     ),
                   ],
-                ),
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _signOut,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF4444),
-                    foregroundColor: const Color(0xFFFFFFFF),
-                    elevation: 0,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'Sign Out',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
                 ),
               ),
             ],
