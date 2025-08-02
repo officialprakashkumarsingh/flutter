@@ -52,7 +52,7 @@ class InputBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(bottom: 16),
       decoration: const BoxDecoration(
-        color: Color(0xFFF4F3F0), // Main theme background
+        color: Colors.white, // Clean white background
       ),
       child: Column(
         children: [
@@ -250,16 +250,16 @@ class InputBar extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: Colors.white, // White input background
-              borderRadius: BorderRadius.circular(24), // Fully rounded border
+              borderRadius: BorderRadius.circular(12), // Shadcn style border radius
               border: Border.all(
-                color: const Color(0xFFEAE9E5),
+                color: const Color(0xFFE4E4E7), // Zinc-200
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -276,18 +276,24 @@ class InputBar extends StatelessWidget {
                         onUnifiedAttachment();  // Single unified attachment function
                       },
                       child: Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: attachedFiles.isNotEmpty 
-                              ? const Color(0xFF4CAF50).withOpacity(0.1)
-                              : const Color(0xFFA3A3A3).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                              ? const Color(0xFF22C55E).withOpacity(0.1)
+                              : const Color(0xFFF4F4F5),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: attachedFiles.isNotEmpty 
+                                ? const Color(0xFF22C55E).withOpacity(0.3)
+                                : const Color(0xFFE4E4E7),
+                            width: 1,
+                          ),
                         ),
-                        child: FaIcon(
-                          FontAwesomeIcons.paperclip,  // Universal attachment icon
+                        child: Icon(
+                          Icons.attach_file_rounded,  // Modern attachment icon
                           color: attachedFiles.isNotEmpty 
-                              ? const Color(0xFF4CAF50)
-                              : const Color(0xFFA3A3A3),
+                              ? const Color(0xFF22C55E)
+                              : const Color(0xFF71717A),
                           size: 18,
                         ),
                       ),
@@ -306,9 +312,10 @@ class InputBar extends StatelessWidget {
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => onSend(),
                     style: const TextStyle(
-                      color: Color(0xFF000000),
+                      color: Color(0xFF09090B), // Zinc-950
                       fontSize: 16,
                       height: 1.4,
+                      fontWeight: FontWeight.w400,
                     ),
                     decoration: InputDecoration(
                       hintText: awaitingReply 
@@ -321,9 +328,10 @@ class InputBar extends StatelessWidget {
                                   ? 'Attachments ready - Ask about them...'
                                   : 'Message AhamAI',
                       hintStyle: const TextStyle(
-                        color: Color(0xFFA3A3A3),
+                        color: Color(0xFF71717A), // Zinc-500
                         fontSize: 16,
                         height: 1.4,
+                        fontWeight: FontWeight.w400,
                       ),
                       border: InputBorder.none,
                       enabledBorder: InputBorder.none,
@@ -346,15 +354,21 @@ class InputBar extends StatelessWidget {
                     onTap: awaitingReply ? onStop : onSend,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: awaitingReply 
-                            ? Colors.red.withOpacity(0.1)
-                            : const Color(0xFF000000),
-                        borderRadius: BorderRadius.circular(12),
+                            ? const Color(0xFFFEE2E2) // Light red background
+                            : const Color(0xFF09090B), // Zinc-950
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: awaitingReply 
+                              ? const Color(0xFFEF4444) // Red border
+                              : const Color(0xFF09090B),
+                          width: 1,
+                        ),
                       ),
                       child: awaitingReply 
-                          ? const Icon(Icons.stop_circle, color: Colors.red, size: 18)
+                          ? const Icon(Icons.stop_rounded, color: Color(0xFFEF4444), size: 18)
                           : isGeneratingImage
                               ? const SizedBox(
                                   width: 18,
@@ -366,7 +380,7 @@ class InputBar extends StatelessWidget {
                                 )
                               : Icon(
                                   isImageGenerationMode 
-                                      ? FontAwesomeIcons.wandMagic 
+                                      ? Icons.auto_fix_high_rounded
                                       : Icons.arrow_upward_rounded,
                                   color: Colors.white,
                                   size: 18,

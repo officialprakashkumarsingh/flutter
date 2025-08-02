@@ -1053,40 +1053,53 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
       extendBody: true,
       drawer: _buildSidebar(),
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        shadowColor: Colors.transparent,
         title: GestureDetector(
           onTap: _showModelSelectionSheet,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_isTemporaryChatMode)
-                Text(
-                  'private',
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF000000),
-                  ),
-                ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF4F4F5),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_isTemporaryChatMode)
                   Text(
-                    'AhamAI',
-                    style: GoogleFonts.spaceMono(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF000000),
+                    'private',
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF71717A),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: Color(0xFFA3A3A3),
-                    size: 20,
-                  ),
-                ],
-              ),
-            ],
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'AhamAI',
+                      style: GoogleFonts.spaceMono(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF09090B),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Color(0xFF71717A),
+                      size: 18,
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
         centerTitle: true,
@@ -1101,10 +1114,15 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
               child: Container(
                 width: 36,
                 height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+                ),
                 child: const Center(
-                  child: FaIcon(
-                    FontAwesomeIcons.bars,
-                    color: Color(0xFF000000),
+                  child: Icon(
+                    Icons.menu_rounded,
+                    color: Color(0xFF09090B),
                     size: 20,
                   ),
                 ),
@@ -1119,11 +1137,12 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
             child: ScaleTransition(
               scale: _fabAnimation,
               child: Container(
-                width: 42,
-                height: 42,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(21),
+                  color: _isTemporaryChatMode ? const Color(0xFF09090B) : Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
                 ),
                 child: Material(
                   color: Colors.transparent,
@@ -1145,11 +1164,11 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                           : '💾 Normal chat mode enabled - conversations will be saved'
                       );
                     },
-                    borderRadius: BorderRadius.circular(21),
-                    child: FaIcon(
-                      FontAwesomeIcons.mask,
-                      color: _isTemporaryChatMode ? const Color(0xFF000000) : const Color(0xFFA3A3A3),
-                      size: 22,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Icon(
+                      Icons.visibility_off_outlined,
+                      color: _isTemporaryChatMode ? Colors.white : const Color(0xFF71717A),
+                      size: 20,
                     ),
                   ),
                 ),
@@ -1162,11 +1181,12 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
             child: ScaleTransition(
               scale: _fabAnimation,
               child: Container(
-                width: 42,
-                height: 42,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(21),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
                 ),
                 child: Material(
                   color: Colors.transparent,
@@ -1175,11 +1195,11 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                       HapticFeedback.mediumImpact();
                       _saveAndStartNewChat();
                     },
-                    borderRadius: BorderRadius.circular(21),
-                    child: const FaIcon(
-                      FontAwesomeIcons.commentDots,
-                      color: Color(0xFFA3A3A3),
-                      size: 22,
+                    borderRadius: BorderRadius.circular(8),
+                    child: const Icon(
+                      Icons.edit_outlined,
+                      color: Color(0xFF71717A),
+                      size: 20,
                     ),
                   ),
                 ),
