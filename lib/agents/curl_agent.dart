@@ -56,18 +56,18 @@ class CurlAgent {
     // Look for curl command in code blocks
     final codeBlockPattern = RegExp(r'```(?:bash|shell|curl)?\s*\n?(curl\s+[^\n`]+)', multiLine: true, caseSensitive: false);
     final codeMatch = codeBlockPattern.firstMatch(response);
-    if (codeMatch != null) {
-      return codeMatch.group(1)?.trim();
-    }
+          if (codeMatch != null) {
+        return codeMatch.group(1)?.trim();
+      }
     
     // Look for inline curl command
     final inlinePattern = RegExp(r'curl\s+[^\n]+', caseSensitive: false);
-    final inlineMatch = inlinePattern.firstMatch(response);
-    if (inlineMatch != null) {
-      return inlineMatch.group(0)?.trim();
-    }
-    
-    return null;
+          final inlineMatch = inlinePattern.firstMatch(response);
+      if (inlineMatch != null) {
+        return inlineMatch.group(0)?.trim();
+      }
+      
+      return null;
   }
   
   /// Parse curl command into HTTP parameters
@@ -254,26 +254,26 @@ class CurlAgent {
   static String? _extractBearerToken(String command) {
     // Look for bearer token in authorization header
     final bearerPattern = RegExp(r'Authorization:\s*Bearer\s+([^\s"]+)', caseSensitive: false);
-    final match = bearerPattern.firstMatch(command);
-    if (match != null) {
-      return match.group(1);
-    }
+          final match = bearerPattern.firstMatch(command);
+      if (match != null) {
+        return match.group(1);
+      }
     
     // Look for standalone bearer token mention
     final tokenPattern = RegExp(r'\bbearer[:\s]+([a-zA-Z0-9_\-\.]+)', caseSensitive: false);
-    final tokenMatch = tokenPattern.firstMatch(command);
-    if (tokenMatch != null) {
-      return tokenMatch.group(1);
-    }
-    
-    // Look for API key patterns
-    final apiKeyPattern = RegExp(r'\bapi[_\s]*key[:\s]+([a-zA-Z0-9_\-\.]+)', caseSensitive: false);
-    final apiMatch = apiKeyPattern.firstMatch(command);
-    if (apiMatch != null) {
-      return apiMatch.group(1);
-    }
-    
-    return null;
+          final tokenMatch = tokenPattern.firstMatch(command);
+      if (tokenMatch != null) {
+        return tokenMatch.group(1);
+      }
+      
+      // Look for API key patterns
+      final apiKeyPattern = RegExp(r'\bapi[_\s]*key[:\s]+([a-zA-Z0-9_\-\.]+)', caseSensitive: false);
+      final apiMatch = apiKeyPattern.firstMatch(command);
+      if (apiMatch != null) {
+        return apiMatch.group(1);
+      }
+      
+      return null;
   }
   
   /// Execute HTTP request based on parsed parameters
