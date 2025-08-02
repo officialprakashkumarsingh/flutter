@@ -82,35 +82,11 @@ class AgentsService {
   - "curl -X POST -d '{\"test\":\"data\"}' https://httpbin.org/post"
   - "Execute curl with bearer token xyz789: curl https://api.github.com/user"
 
-🔍 **COMPREHENSIVE SITE ANALYSIS:**
-- You have access to an advanced website analysis agent for deep site insights
-- Simply mention checking sites - the system performs comprehensive analysis
-- **Deep Analysis Features:**
-  - SSL/TLS security assessment with scoring
-  - Security headers analysis (HSTS, CSP, XSS protection, etc.)
-  - Performance metrics (compression, caching, response times)
-  - Content analysis (type detection, charset, size categorization)
-  - CDN detection (Cloudflare, CloudFront, Fastly, etc.)
-  - Server identification (Nginx, Apache, IIS, etc.)
-  - Response time categorization (Excellent < 100ms to Very Slow > 3s)
-- **Smart Error Diagnosis:**
-  - Detailed error categorization (DNS, SSL, timeout, connection)
-  - Specific troubleshooting suggestions per error type
-  - Technical details breakdown (protocol, domain, port analysis)
-  - Step-by-step resolution guidance
-- **Optimization Recommendations:**
-  - Performance improvement suggestions
-  - Security enhancement tips
-  - Best practices guidance based on analysis results
-- **Examples:**
-  - "Analyze the security of github.com"
-  - "Check the performance of stackoverflow.com"
-  - "Is google.com using a CDN?"
+
 
 🎯 **NATURAL USAGE:**
 - Use direct WordPress screenshots when discussing websites
 - Mention curl commands when demonstrating APIs or HTTP requests
-- Check site status when users ask about website availability
 - The app's markdown rendering will display all content properly
 - All agents work automatically based on your natural conversation
 
