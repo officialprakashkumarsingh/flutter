@@ -550,29 +550,139 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   }
 
 
-  // Build markdown content widget
+  // Build markdown content widget with enhanced styling and image support
   Widget _buildMarkdownContent(String text) {
     return Container(
       width: double.infinity,
       child: MarkdownBody(
         data: text,
+        selectable: true,
+        imageBuilder: (uri, title, alt) {
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              uri.toString(),
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.image_not_supported, color: Color(0xFF71717A)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          alt ?? 'Image could not be loaded',
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFF71717A),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF09090B)),
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
         styleSheet: MarkdownStyleSheet(
-          p: const TextStyle(color: Colors.black, fontSize: 16),
-          strong: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-          em: const TextStyle(color: Colors.black, fontStyle: FontStyle.italic),
-          code: TextStyle(
-            backgroundColor: Colors.grey[800],
-            color: Colors.white, // Match code panel styling
-            fontFamily: 'monospace',
+          // Text styles
+          p: GoogleFonts.inter(
+            color: const Color(0xFF09090B), 
+            fontSize: 16,
+            height: 1.5,
+          ),
+          strong: GoogleFonts.inter(
+            color: const Color(0xFF09090B), 
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+          em: GoogleFonts.inter(
+            color: const Color(0xFF09090B), 
+            fontStyle: FontStyle.italic,
+            fontSize: 16,
+          ),
+          
+          // Headers
+          h1: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            height: 1.3,
+          ),
+          h2: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            height: 1.3,
+          ),
+          h3: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            height: 1.3,
+          ),
+          
+          // Code styling
+          code: GoogleFonts.jetBrainsMono(
+            backgroundColor: const Color(0xFFF4F4F5),
+            color: const Color(0xFFEF4444),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
           ),
           codeblockDecoration: BoxDecoration(
-            color: Colors.grey[900],
+            color: const Color(0xFF09090B),
             borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: const Color(0xFF27272A), width: 1),
+          ),
+          codeblockPadding: const EdgeInsets.all(16),
+          
+          // Lists
+          listBullet: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 16,
+          ),
+          
+          // Blockquotes
+          blockquote: GoogleFonts.inter(
+            color: const Color(0xFF71717A),
+            fontSize: 16,
+            fontStyle: FontStyle.italic,
           ),
           blockquoteDecoration: BoxDecoration(
-            color: Colors.grey[800],
-            borderRadius: BorderRadius.circular(4),
-            border: Border(left: BorderSide(color: Colors.blue, width: 4)),
+            color: const Color(0xFFF8F9FA),
+            borderRadius: BorderRadius.circular(8),
+            border: const Border(
+              left: BorderSide(color: Color(0xFF3B82F6), width: 4),
+            ),
+          ),
+          blockquotePadding: const EdgeInsets.all(16),
+          
+          // Links
+          a: GoogleFonts.inter(
+            color: const Color(0xFF3B82F6),
+            fontSize: 16,
+            decoration: TextDecoration.underline,
           ),
         ),
       ),
@@ -584,13 +694,14 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
