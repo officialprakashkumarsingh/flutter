@@ -11,6 +11,7 @@ import 'dart:math' as math;
 
 import 'models.dart';
 import 'file_attachment_widget.dart';
+import 'agents/web_search_agent.dart';
 
 import 'chat_page.dart'; // For accessing ChatPageState
 
@@ -480,15 +481,47 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
       }
     }
     
+    // Check for web search data first (for completed messages)
+    final webSearchWidget = _buildWebSearchWidget(originalText);
+    if (webSearchWidget != null && !isStreaming) {
+      // Extract text before web search data
+      final webSearchStartIndex = originalText.indexOf('**WEB_SEARCH_DATA_START**');
+      if (webSearchStartIndex > 0) {
+        final textBeforeWebSearch = originalText.substring(0, webSearchStartIndex).trim();
+        final cleanText = _cleanText(textBeforeWebSearch);
+        if (cleanText.isNotEmpty) {
+          widgets.add(_buildMarkdownContent(cleanText));
+          widgets.add(const SizedBox(height: 16));
+        }
+      }
+      
+      // Add the web search widget
+      widgets.add(webSearchWidget);
+      widgets.add(const SizedBox(height: 16));
+      
+      // Extract text after web search data
+      final webSearchEndIndex = originalText.indexOf('**WEB_SEARCH_DATA_END**');
+      if (webSearchEndIndex != -1) {
+        final textAfterWebSearch = originalText.substring(webSearchEndIndex + '**WEB_SEARCH_DATA_END**'.length).trim();
+        final cleanText = _cleanText(textAfterWebSearch);
+        if (cleanText.isNotEmpty) {
+          widgets.add(_buildMarkdownContent(cleanText));
+        }
+      }
+    }
     // If no codes yet or still streaming, show original text or typing indicator
-    if (codes.isEmpty || isStreaming) {
+    else if (codes.isEmpty || isStreaming) {
       if (originalText.isNotEmpty) {
         // Stop typing animation immediately when text starts streaming
         if (_typingAnimationController.isAnimating) {
           _typingAnimationController.stop();
           _typingAnimationController.reset();
         }
+        // Remove web search data markers from display during streaming
         String displayContent = originalText;
+        if (displayContent.contains('**WEB_SEARCH_DATA_START**')) {
+          displayContent = displayContent.split('**WEB_SEARCH_DATA_START**')[0].trim();
+        }
         widgets.add(_buildMarkdownContent(displayContent));
       } else if (isStreaming) {
         // Show typing indicator when streaming but no text yet
@@ -560,6 +593,54 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   }
 
 
+
+  // Build web search widget from JSON data
+  Widget? _buildWebSearchWidget(String text) {
+    try {
+      final startIndex = text.indexOf('**WEB_SEARCH_DATA_START**');
+      final endIndex = text.indexOf('**WEB_SEARCH_DATA_END**');
+      
+      if (startIndex == -1 || endIndex == -1) {
+        return null;
+      }
+      
+      final jsonString = text.substring(
+        startIndex + '**WEB_SEARCH_DATA_START**'.length,
+        endIndex,
+      ).trim();
+      
+      final jsonData = jsonDecode(jsonString);
+      if (jsonData['type'] != 'web_search_results') {
+        return null;
+      }
+      
+      // Parse the search results
+      final webResults = (jsonData['web_results'] as List? ?? [])
+          .map((result) => WebSearchResult.fromJson(result))
+          .toList();
+      
+      final imageResults = (jsonData['image_results'] as List? ?? [])
+          .map((result) => WebImageResult.fromJson(result))
+          .toList();
+      
+      final videoResults = (jsonData['video_results'] as List? ?? [])
+          .map((result) => WebVideoResult.fromJson(result))
+          .toList();
+      
+      final searchResults = WebSearchResults(
+        webResults: webResults,
+        imageResults: imageResults,
+        videoResults: videoResults,
+        query: jsonData['query'] ?? '',
+        totalResults: jsonData['total_results'] ?? 0,
+      );
+      
+      return WebSearchResultsWidget(results: searchResults);
+    } catch (e) {
+      print('Error parsing web search data: $e');
+      return null;
+    }
+  }
 
   // Clean text by removing thinking tags
   String _cleanText(String text) {
