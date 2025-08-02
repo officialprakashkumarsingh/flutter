@@ -488,7 +488,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
           _typingAnimationController.stop();
           _typingAnimationController.reset();
         }
-        widgets.add(_buildContentWithImages(originalText));
+        widgets.add(_buildMarkdownContent(originalText));
       } else if (isStreaming) {
         // Show typing indicator when streaming but no text yet
         widgets.add(_buildTypingIndicator());
@@ -531,7 +531,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
           // Clean the text (remove thinking tags)
           final cleanText = _cleanText(textBefore);
           if (cleanText.isNotEmpty) {
-            widgets.add(_buildContentWithImages(cleanText));
+            widgets.add(_buildMarkdownContent(cleanText));
             widgets.add(const SizedBox(height: 12));
           }
         }
@@ -549,7 +549,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     if (remainingText.trim().isNotEmpty) {
       final cleanRemainingText = _cleanText(remainingText.trim());
       if (cleanRemainingText.isNotEmpty) {
-        widgets.add(_buildContentWithImages(cleanRemainingText));
+        widgets.add(_buildMarkdownContent(cleanRemainingText));
       }
     }
     
@@ -584,16 +584,13 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
 
   // Build markdown content widget with enhanced styling and image support
   Widget _buildMarkdownContent(String text) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(
-        maxWidth: double.infinity,
-      ),
-      child: MarkdownBody(
-        data: text,
-        selectable: true,
-        shrinkWrap: true,
-        fitContent: true,
-        imageBuilder: (uri, title, alt) {
+    return MarkdownBody(
+      data: text,
+      selectable: true,
+      shrinkWrap: true,
+      fitContent: true,
+      softLineBreak: true,
+      imageBuilder: (uri, title, alt) {
           return ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.network(
@@ -659,8 +656,8 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
               },
             ),
           );
-        },
-        styleSheet: MarkdownStyleSheet(
+      },
+      styleSheet: MarkdownStyleSheet(
           // Text styles
           p: GoogleFonts.inter(
             color: const Color(0xFF09090B), 
@@ -787,7 +784,6 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
           pPadding: const EdgeInsets.only(bottom: 8),
           listIndent: 16,
         ),
-      ),
     );
   }
 

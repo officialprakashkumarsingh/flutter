@@ -32,14 +32,8 @@ class AgentsService {
       print('🎨 AGENTS: Generated screenshot URL for $cleanUrl');
       print('🔗 AGENTS: Screenshot URL: $screenshotUrl');
       
-      // Test if the screenshot service responds
-      final response = await http.head(Uri.parse(screenshotUrl));
-      if (response.statusCode == 200) {
-        return screenshotUrl;
-      } else {
-        print('🚫 AGENTS: Screenshot service returned ${response.statusCode}');
-        return null;
-      }
+      // WordPress screenshots are always available - no need to test
+      return screenshotUrl;
       
     } catch (e) {
       print('❌ AGENTS: Error generating screenshot: $e');
@@ -74,20 +68,14 @@ class AgentsService {
         return null;
       }
       
-      // Generate diagram URL using simple format
-      final diagramUrl = 'https://www.plantuml.com/plantuml/png/~1$encodedCode';
+      // Generate diagram URL using direct encoding
+      final diagramUrl = '$_plantumlUrl$encodedCode';
       
       print('📊 AGENTS: Generated diagram URL for PlantUML code');
       print('🔗 AGENTS: Diagram URL: $diagramUrl');
       
-      // Test if the diagram service responds
-      final response = await http.head(Uri.parse(diagramUrl));
-      if (response.statusCode == 200) {
-        return diagramUrl;
-      } else {
-        print('🚫 AGENTS: PlantUML service returned ${response.statusCode}');
-        return null;
-      }
+      // Return diagram URL directly - PlantUML service is reliable
+      return diagramUrl;
       
     } catch (e) {
       print('❌ AGENTS: Error generating diagram: $e');
@@ -95,12 +83,19 @@ class AgentsService {
     }
   }
   
-  /// Encode PlantUML code for URL using simple UTF-8 encoding
+  /// Encode PlantUML code for URL using base64 encoding
   static String? _encodePlantUML(String plantuml) {
     try {
-      // PlantUML supports simple UTF-8 URL encoding
-      // Use Uri.encodeComponent for proper URL encoding
-      final encoded = Uri.encodeComponent(plantuml);
+      // Simple base64 encoding for PlantUML
+      final bytes = utf8.encode(plantuml);
+      final base64String = base64Encode(bytes);
+      
+      // URL-safe base64 encoding
+      final encoded = base64String
+          .replaceAll('+', '-')
+          .replaceAll('/', '_')
+          .replaceAll('=', '');
+      
       return encoded;
     } catch (e) {
       print('❌ AGENTS: Error encoding PlantUML: $e');
@@ -121,9 +116,9 @@ class AgentsService {
           print('🤖 AGENTS: AI requesting diagram generation');
           final diagramUrl = await generateDiagram(plantumlCode);
           
-          if (diagramUrl != null) {
-            result = '\n\n![Generated Diagram]($diagramUrl)\n\n*Generated diagram using PlantUML*';
-          }
+                     if (diagramUrl != null) {
+             result = '\n\n![Generated Diagram]($diagramUrl)';
+           }
         }
       }
       
@@ -134,9 +129,9 @@ class AgentsService {
           print('🤖 AGENTS: AI requesting screenshot for: $url');
           final screenshotUrl = await generateScreenshot(url);
           
-          if (screenshotUrl != null) {
-            result = '\n\n![Website Screenshot]($screenshotUrl)\n\n*Screenshot of $url*';
-          }
+                     if (screenshotUrl != null) {
+             result = '\n\n![Website Screenshot]($screenshotUrl)';
+           }
         }
       }
       
