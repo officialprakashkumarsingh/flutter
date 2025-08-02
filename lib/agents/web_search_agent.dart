@@ -431,8 +431,8 @@ class _WebSearchResultsWidgetState extends State<WebSearchResultsWidget> with Si
                   child: Text(
                     'Search results for "${widget.results.query}"',
                     style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                       color: Color(0xFF09090B),
                     ),
                   ),
