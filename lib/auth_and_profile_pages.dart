@@ -210,9 +210,9 @@ class _AuthAndProfilePagesState extends State<AuthAndProfilePages> {
                     // App Logo/Title
                     Text(
                       'AhamAI',
-                      style: TextStyle(
+                      style: GoogleFonts.spaceMono(
                         fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                         color: const Color(0xFF09090B),
                       ),
                       textAlign: TextAlign.center,

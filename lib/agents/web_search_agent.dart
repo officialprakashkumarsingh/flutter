@@ -121,18 +121,22 @@ class WebSearchAgent {
       print('🌐 WEB SEARCH: Starting search for: $query');
       
       // Perform all searches in parallel for better performance
+      print('🌐 WEB SEARCH: Starting parallel API calls...');
       final futures = await Future.wait([
         _searchWeb(query),
         _searchImages(query),
         _searchVideos(query),
       ]);
 
-      final webResults = futures[0] as List<WebSearchResult>? ?? [];
-      final imageResults = futures[1] as List<WebImageResult>? ?? [];
-      final videoResults = futures[2] as List<WebVideoResult>? ?? [];
+      final webResults = futures[0] as List<WebSearchResult>;
+      final imageResults = futures[1] as List<WebImageResult>;
+      final videoResults = futures[2] as List<WebVideoResult>;
 
       // Always return results even if some categories are empty
       print('🌐 SEARCH RESULTS: Web: ${webResults.length}, Images: ${imageResults.length}, Videos: ${videoResults.length}');
+      print('🌐 WEB SEARCH: Web results sample: ${webResults.take(2).map((e) => e.title).toList()}');
+      print('🌐 WEB SEARCH: Image results sample: ${imageResults.take(2).map((e) => e.title).toList()}');
+      print('🌐 WEB SEARCH: Video results sample: ${videoResults.take(2).map((e) => e.title).toList()}');
 
       final searchResults = WebSearchResults(
         webResults: webResults,
@@ -150,13 +154,13 @@ class WebSearchAgent {
         'type': 'web_search_results',
         'query': query,
         'total_results': searchResults.totalResults,
-        'web_results': webResults?.map((r) => {
+        'web_results': webResults.map((r) => {
           'title': r.title,
           'url': r.url,
           'description': r.description,
           'source': r.source,
-        }).toList() ?? [],
-        'image_results': imageResults?.map((r) => {
+        }).toList(),
+        'image_results': imageResults.map((r) => {
           'title': r.title,
           'url': r.url,
           'src': r.imageUrl,
@@ -164,8 +168,8 @@ class WebSearchAgent {
           'width': r.width,
           'height': r.height,
           'source': r.source,
-        }).toList() ?? [],
-        'video_results': videoResults?.map((r) => {
+        }).toList(),
+        'video_results': videoResults.map((r) => {
           'title': r.title,
           'url': r.url,
           'thumbnail': {'src': r.thumbnailUrl},
@@ -176,7 +180,7 @@ class WebSearchAgent {
           },
           'age': r.publishDate,
           'source': r.source,
-        }).toList() ?? [],
+        }).toList(),
       };
 
       return '\n\n**WEB_SEARCH_DATA_START**\n${jsonEncode(jsonData)}\n**WEB_SEARCH_DATA_END**\n\n$formattedResults';
@@ -189,8 +193,11 @@ class WebSearchAgent {
   /// Search web results
   static Future<List<WebSearchResult>?> _searchWeb(String query) async {
     try {
+      final url = '$_baseUrl/web/search?q=${Uri.encodeComponent(query)}&safesearch=strict&count=15&search_lang=en&country=us&spellcheck=1';
+      print('🌐 WEB API: Calling $url');
+      
       final response = await http.get(
-        Uri.parse('$_baseUrl/web/search?q=${Uri.encodeComponent(query)}&safesearch=strict&count=15&search_lang=en&country=us&spellcheck=1'),
+        Uri.parse(url),
         headers: {
           'X-Subscription-Token': _apiKey,
           'Accept': 'application/json',
@@ -198,26 +205,31 @@ class WebSearchAgent {
         },
       );
 
+      print('🌐 WEB API: Response status: ${response.statusCode}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final webResults = data['web']?['results'] as List? ?? [];
+        print('🌐 WEB API: Found ${webResults.length} web results');
         
         return webResults.map((result) => WebSearchResult.fromJson(result)).toList();
       } else {
-        print('❌ WEB SEARCH: Web search failed with status: ${response.statusCode}');
-        return null;
+        print('❌ WEB SEARCH: Web search failed with status: ${response.statusCode}, body: ${response.body}');
+        return [];
       }
     } catch (e) {
       print('❌ WEB SEARCH: Error in web search: $e');
-      return null;
+      return [];
     }
   }
 
   /// Search image results
   static Future<List<WebImageResult>?> _searchImages(String query) async {
     try {
+      final url = '$_baseUrl/images/search?q=${Uri.encodeComponent(query)}&safesearch=strict&count=15&search_lang=en&country=us&spellcheck=1';
+      print('🖼️ IMAGE API: Calling $url');
+      
       final response = await http.get(
-        Uri.parse('$_baseUrl/images/search?q=${Uri.encodeComponent(query)}&safesearch=strict&count=15&search_lang=en&country=us&spellcheck=1'),
+        Uri.parse(url),
         headers: {
           'X-Subscription-Token': _apiKey,
           'Accept': 'application/json',
@@ -225,26 +237,31 @@ class WebSearchAgent {
         },
       );
 
+      print('🖼️ IMAGE API: Response status: ${response.statusCode}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final imageResults = data['results'] as List? ?? [];
+        print('🖼️ IMAGE API: Found ${imageResults.length} image results');
         
         return imageResults.map((result) => WebImageResult.fromJson(result)).toList();
       } else {
-        print('❌ WEB SEARCH: Image search failed with status: ${response.statusCode}');
-        return null;
+        print('❌ WEB SEARCH: Image search failed with status: ${response.statusCode}, body: ${response.body}');
+        return [];
       }
     } catch (e) {
       print('❌ WEB SEARCH: Error in image search: $e');
-      return null;
+      return [];
     }
   }
 
   /// Search video results
   static Future<List<WebVideoResult>?> _searchVideos(String query) async {
     try {
+      final url = '$_baseUrl/videos/search?q=${Uri.encodeComponent(query)}&count=15&country=us&search_lang=en&spellcheck=1';
+      print('🎬 VIDEO API: Calling $url');
+      
       final response = await http.get(
-        Uri.parse('$_baseUrl/videos/search?q=${Uri.encodeComponent(query)}&count=15&country=us&search_lang=en&spellcheck=1'),
+        Uri.parse(url),
         headers: {
           'X-Subscription-Token': _apiKey,
           'Accept': 'application/json',
@@ -252,18 +269,20 @@ class WebSearchAgent {
         },
       );
 
+      print('🎬 VIDEO API: Response status: ${response.statusCode}');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final videoResults = data['results'] as List? ?? [];
+        print('🎬 VIDEO API: Found ${videoResults.length} video results');
         
         return videoResults.map((result) => WebVideoResult.fromJson(result)).toList();
       } else {
-        print('❌ WEB SEARCH: Video search failed with status: ${response.statusCode}');
-        return null;
+        print('❌ WEB SEARCH: Video search failed with status: ${response.statusCode}, body: ${response.body}');
+        return [];
       }
     } catch (e) {
       print('❌ WEB SEARCH: Error in video search: $e');
-      return null;
+      return [];
     }
   }
 
@@ -575,10 +594,10 @@ class _WebSearchResultsWidgetState extends State<WebSearchResultsWidget> with Si
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        childAspectRatio: 1,
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.9,
       ),
       itemCount: widget.results.imageResults.length,
       itemBuilder: (context, index) {

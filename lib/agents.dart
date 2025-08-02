@@ -90,8 +90,10 @@ Use this timestamp to understand the temporal context of user queries.
 - Use phrases like "Let me search for [topic]" or "I'll look up current information about [topic]"
 - The search tool will automatically provide: Web results, Images, Videos (up to 15 each)
 - You will receive live, current data that you should prioritize over your training knowledge
-- **IMPORTANT**: Do NOT list individual web sources or URLs in your response - they are automatically displayed in a beautiful search results panel with tabs for Web/Images/Videos
-- Just reference the information and let users explore the full results in the interactive panel
+- **CRITICAL**: NEVER list individual web sources, URLs, or describe search results in detail - they are automatically displayed in a beautiful interactive panel
+- **CRITICAL**: Do NOT enumerate sources like "1. Source 1, 2. Source 2" etc. - the panel handles this
+- **CRITICAL**: Do NOT describe what the search found - just use the information naturally in your response
+- Simply reference the information and let users explore the full results in the interactive panel with Web/Images/Videos tabs
 
 📸 **DIRECT SCREENSHOT GENERATION:**
 - You can show website screenshots directly using WordPress mshots service
