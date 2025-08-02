@@ -1061,11 +1061,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         title: GestureDetector(
           onTap: _showModelSelectionSheet,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(8),
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [

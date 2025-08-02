@@ -369,7 +369,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFEAE9E5),
+            color: const Color(0xFFF8F9FA),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(

@@ -1860,16 +1860,20 @@ Be conversational and helpful!'''
                     child: Row(
                       children: _prompts.map((p) => Container(
                         margin: const EdgeInsets.only(right: 12),
-                        child: GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            _controller.text = p;
-                            _send();
-                          },
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(20),
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              _controller.text = p;
+                              _send();
+                            },
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEAE9E5),
+                              color: const Color(0xFFF8F9FA),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -1880,6 +1884,7 @@ Be conversational and helpful!'''
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
+                          ),
                           ),
                         ),
                       )).toList(),
