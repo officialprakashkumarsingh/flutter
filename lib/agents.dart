@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'agents/curl_agent.dart';
-import 'agents/site_status_agent.dart';
 
 /// External Agents Service
 /// Coordinates all AI agents and capabilities
@@ -31,26 +30,7 @@ class AgentsService {
         }
       }
       
-      // Check for site status checking (if no curl result)
-      if (result == null && SiteStatusAgent.shouldCheckSiteStatus(aiResponse)) {
-        final urls = SiteStatusAgent.extractUrlsForStatusCheck(aiResponse);
-        if (urls.isNotEmpty) {
-          print('🤖 AGENTS: AI requesting site status check for ${urls.length} URLs');
-          final statusResults = <String>[];
-          
-          // Check each URL (limit to 3 to avoid overload)
-          for (final url in urls.take(3)) {
-            final statusResult = await SiteStatusAgent.checkSiteStatus(url);
-            if (statusResult != null) {
-              statusResults.add(statusResult);
-            }
-          }
-          
-          if (statusResults.isNotEmpty) {
-            result = '\n\n${statusResults.join('\n\n---\n\n')}';
-          }
-        }
-      }
+      // Site status agent removed as requested
       
       return result;
     } catch (e) {
