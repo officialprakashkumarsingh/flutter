@@ -1882,43 +1882,47 @@ Be conversational and helpful!'''
             ),
           ),
           if (emptyChat && _editingMessageId == null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Welcome message - React Native style
+                  // Welcome message - shadcn UI style
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           _getWelcomeMessage(),
+                          textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
                             color: const Color(0xFF09090B),
-                            height: 1.2,
-                            letterSpacing: -0.5,
+                            height: 1.3,
+                            letterSpacing: -0.25,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         Text(
                           "I'm here to help you with questions, tasks, and conversations.",
+                          textAlign: TextAlign.center,
                           style: GoogleFonts.inter(
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.w400,
                             color: const Color(0xFF71717A),
-                            height: 1.4,
+                            height: 1.5,
                           ),
                         ),
-                        const SizedBox(height: 24),
                       ],
                     ),
                   ),
-
-                  SingleChildScrollView(
+                  
+                  const SizedBox(height: 40),
+                  
+                  // Suggestions
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: _prompts.map((p) => Container(
@@ -1951,6 +1955,7 @@ Be conversational and helpful!'''
                           ),
                         ),
                       )).toList(),
+                    ),
                     ),
                   ),
                 ],

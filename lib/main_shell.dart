@@ -1115,7 +1115,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                 ),
                 child: const Center(
                   child: Icon(
-                    Icons.menu_rounded,
+                    Icons.menu_open_rounded,
                     color: Color(0xFF09090B),
                     size: 22,
                   ),
@@ -1189,9 +1189,9 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                     },
                     borderRadius: BorderRadius.circular(8),
                     child: const Icon(
-                      Icons.edit_outlined,
+                      Icons.add_rounded,
                       color: Color(0xFF71717A),
-                      size: 20,
+                      size: 22,
                     ),
                   ),
                 ),
