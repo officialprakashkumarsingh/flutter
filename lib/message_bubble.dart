@@ -4,6 +4,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/vs2015.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'dart:convert';
 import 'dart:math' as math;
@@ -578,49 +579,60 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     );
   }
 
-  // Thinking Panel Widget
+  // Thinking Panel Widget - Shadcn UI Style
   Widget _buildThinkingPanel() {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA), // Light background for thinking
+        color: const Color(0xFFF8F9FA),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
           // Header with toggle
-          GestureDetector(
-                         onTap: _toggleThinking,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  FaIcon(
-                    FontAwesomeIcons.brain,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'AI Thinking Process',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
-                      fontSize: 14,
+          Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: _toggleThinking,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.psychology_outlined,
+                      size: 18,
+                      color: const Color(0xFF71717A),
                     ),
-                  ),
-                  const Spacer(),
-                  AnimatedRotation(
-                    turns: _isThinkingExpanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 300),
-                    child: FaIcon(
-                      FontAwesomeIcons.chevronDown,
-                      size: 12,
-                      color: Colors.grey[600],
+                    const SizedBox(width: 12),
+                    Text(
+                      'AI Thinking Process',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF09090B),
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                ],
+                    const Spacer(),
+                    AnimatedRotation(
+                      turns: _isThinkingExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: const Color(0xFF71717A),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -636,18 +648,19 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
                         return Container(
                           width: double.infinity,
                           margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFE9ECEF), width: 1),
+                            border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
                           ),
                           child: Text(
                             thought.text,
-                            style: TextStyle(
-                              color: Colors.grey[800],
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFF52525B),
                               fontSize: 14,
-                              height: 1.4,
+                              fontWeight: FontWeight.w400,
+                              height: 1.5,
                             ),
                           ),
                         );
@@ -661,74 +674,92 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     );
   }
 
-  // Code Panel Widget with Clean Styling (independent, no web preview)
+  // Code Panel Widget - Shadcn UI Style
   Widget _buildCodePanel(CodeContent codeContent, int index) {
     final isExpanded = _codeExpandedStates[index] ?? false;
     
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.black, // Single AMOLED Black background
+        color: const Color(0xFF09090B), // Shadcn dark background
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[800]!, width: 1),
+        border: Border.all(color: const Color(0xFF27272A), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          // Header with language and copy button (no preview)
-          GestureDetector(
-            onTap: () => _toggleCode(index),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  // Language badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[600],
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      codeContent.language.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  
-                  // Copy button only
-                  GestureDetector(
-                    onTap: () => _copyCode(codeContent.code),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
+          // Header with language and copy button
+          Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _toggleCode(index),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    // Language badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.grey[800], // Subtle gray for contrast
+                        color: const Color(0xFF3B82F6),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const FaIcon(
-                        FontAwesomeIcons.copy,
-                        size: 16,
-                        color: Colors.white,
+                      child: Text(
+                        codeContent.language.toUpperCase(),
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
-                  ),
-                  
-                  const SizedBox(width: 8),
-                  
-                  // Expand/Collapse button
-                  AnimatedRotation(
-                    turns: isExpanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 300),
-                    child: const FaIcon(
-                      FontAwesomeIcons.chevronDown,
-                      size: 14,
-                      color: Colors.white,
+                    const Spacer(),
+                    
+                    // Copy button
+                    Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onTap: () => _copyCode(codeContent.code),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3F3F46),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Icon(
+                            Icons.copy_rounded,
+                            size: 16,
+                            color: Color(0xFFA1A1AA),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    
+                    const SizedBox(width: 8),
+                    
+                    // Expand/Collapse button
+                    AnimatedRotation(
+                      turns: isExpanded ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: Color(0xFFA1A1AA),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

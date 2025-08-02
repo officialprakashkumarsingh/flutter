@@ -1994,7 +1994,7 @@ Be conversational and helpful!'''
               TextSpan(
                 text: userName,
                 style: GoogleFonts.inter(
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: const Color(0xFF09090B),
                 ),

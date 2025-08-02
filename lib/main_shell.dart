@@ -905,12 +905,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                       },
                       child: Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8F9FA),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
                         child: const Icon(
-                          Icons.refresh_rounded,
+                          Icons.refresh_outlined,
                           size: 18,
                           color: Color(0xFF71717A),
                         ),
