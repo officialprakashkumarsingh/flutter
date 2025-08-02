@@ -488,7 +488,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
           _typingAnimationController.stop();
           _typingAnimationController.reset();
         }
-        widgets.add(_buildMarkdownContent(originalText));
+        widgets.add(_buildContentWithImages(originalText));
       } else if (isStreaming) {
         // Show typing indicator when streaming but no text yet
         widgets.add(_buildTypingIndicator());
@@ -531,7 +531,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
           // Clean the text (remove thinking tags)
           final cleanText = _cleanText(textBefore);
           if (cleanText.isNotEmpty) {
-            widgets.add(_buildMarkdownContent(cleanText));
+            widgets.add(_buildContentWithImages(cleanText));
             widgets.add(const SizedBox(height: 12));
           }
         }
@@ -549,7 +549,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     if (remainingText.trim().isNotEmpty) {
       final cleanRemainingText = _cleanText(remainingText.trim());
       if (cleanRemainingText.isNotEmpty) {
-        widgets.add(_buildMarkdownContent(cleanRemainingText));
+        widgets.add(_buildContentWithImages(cleanRemainingText));
       }
     }
     
@@ -569,7 +569,20 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   }
 
 
-    // Build markdown content widget with enhanced styling and image support
+      // Build simple text content widget (like user messages) - no internal scrolling
+  Widget _buildSimpleTextContent(String text) {
+    return SelectableText(
+      text,
+      style: GoogleFonts.inter(
+        color: const Color(0xFF09090B),
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        height: 1.5,
+      ),
+    );
+  }
+
+  // Build markdown content widget with enhanced styling and image support
   Widget _buildMarkdownContent(String text) {
     return ConstrainedBox(
       constraints: const BoxConstraints(
@@ -1043,6 +1056,142 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
           ),
         );
       },
+    );
+  }
+
+  // Parse and build content with images (for simple text content)
+  Widget _buildContentWithImages(String text) {
+    // Check if text contains image markdown
+    final imageRegex = RegExp(r'!\[([^\]]*)\]\(([^)]+)\)');
+    final matches = imageRegex.allMatches(text);
+    
+    if (matches.isEmpty) {
+      // No images, just return simple text
+      return _buildSimpleTextContent(text);
+    }
+    
+    // Build content with images
+    final widgets = <Widget>[];
+    int lastEnd = 0;
+    
+    for (final match in matches) {
+      // Add text before image
+      if (match.start > lastEnd) {
+        final textBefore = text.substring(lastEnd, match.start).trim();
+        if (textBefore.isNotEmpty) {
+          widgets.add(_buildSimpleTextContent(textBefore));
+          widgets.add(const SizedBox(height: 8));
+        }
+      }
+      
+      // Add image
+      final alt = match.group(1) ?? '';
+      final url = match.group(2) ?? '';
+      widgets.add(_buildImage(url, alt));
+      widgets.add(const SizedBox(height: 8));
+      
+      lastEnd = match.end;
+    }
+    
+    // Add remaining text after last image
+    if (lastEnd < text.length) {
+      final remainingText = text.substring(lastEnd).trim();
+      if (remainingText.isNotEmpty) {
+        widgets.add(_buildSimpleTextContent(remainingText));
+      }
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets,
+    );
+  }
+  
+  // Build image widget with error handling
+  Widget _buildImage(String url, String alt) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        url,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF71717A)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Loading image...',
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFF71717A),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildAnimatedSadEmoji(),
+                const SizedBox(height: 12),
+                Text(
+                  'Image could not be loaded',
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFF71717A),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (alt.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    alt,
+                    style: GoogleFonts.inter(
+                      color: const Color(0xFF9CA3AF),
+                      fontSize: 12,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 

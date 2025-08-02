@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 /// Provides AI with external tools and capabilities
 class AgentsService {
   static const String _wordpressPreviewUrl = 'https://s.wordpress.com/mshots/v1/';
+  static const String _plantumlUrl = 'https://www.plantuml.com/plantuml/png/';
   
   /// Screenshot generation agent using WordPress preview service
   /// Takes a URL and returns a screenshot image URL
@@ -46,25 +47,107 @@ class AgentsService {
     }
   }
   
+  /// Diagram generation agent using PlantUML service
+  /// Takes PlantUML code and returns a diagram image URL
+  static Future<String?> generateDiagram(String plantumlCode) async {
+    try {
+      // Validate PlantUML code
+      if (plantumlCode.trim().isEmpty) {
+        print('🚫 AGENTS: Empty PlantUML code provided');
+        return null;
+      }
+      
+      // Clean the PlantUML code
+      String cleanCode = plantumlCode.trim();
+      
+      // Add @startuml/@enduml if not present
+      if (!cleanCode.startsWith('@start')) {
+        if (!cleanCode.startsWith('@startuml')) {
+          cleanCode = '@startuml\n$cleanCode\n@enduml';
+        }
+      }
+      
+      // Encode PlantUML code using PlantUML encoding
+      final encodedCode = _encodePlantUML(cleanCode);
+      if (encodedCode == null) {
+        print('🚫 AGENTS: Failed to encode PlantUML code');
+        return null;
+      }
+      
+      // Generate diagram URL
+      final diagramUrl = '$_plantumlUrl$encodedCode';
+      
+      print('📊 AGENTS: Generated diagram URL for PlantUML code');
+      print('🔗 AGENTS: Diagram URL: $diagramUrl');
+      
+      // Test if the diagram service responds
+      final response = await http.head(Uri.parse(diagramUrl));
+      if (response.statusCode == 200) {
+        return diagramUrl;
+      } else {
+        print('🚫 AGENTS: PlantUML service returned ${response.statusCode}');
+        return null;
+      }
+      
+    } catch (e) {
+      print('❌ AGENTS: Error generating diagram: $e');
+      return null;
+    }
+  }
+  
+  /// Encode PlantUML code for URL
+  static String? _encodePlantUML(String plantuml) {
+    try {
+      // Simple base64 URL encoding for PlantUML
+      final bytes = utf8.encode(plantuml);
+      final base64String = base64Encode(bytes);
+      
+      // PlantUML uses a modified base64 encoding
+      final encoded = base64String
+          .replaceAll('+', '-')
+          .replaceAll('/', '_')
+          .replaceAll('=', '');
+      
+      return encoded;
+    } catch (e) {
+      print('❌ AGENTS: Error encoding PlantUML: $e');
+      return null;
+    }
+  }
+  
   /// Process agent requests from AI
   /// Analyzes the AI's message and determines if any agents should be triggered
   static Future<String?> processAgentRequest(String message, String aiResponse) async {
     try {
-      // Check if AI is trying to show a website or generate a screenshot
-      if (_shouldGenerateScreenshot(aiResponse)) {
+      String? result;
+      
+      // Check for diagram generation first
+      if (_shouldGenerateDiagram(aiResponse)) {
+        final plantumlCode = _extractPlantUMLFromResponse(aiResponse);
+        if (plantumlCode != null) {
+          print('🤖 AGENTS: AI requesting diagram generation');
+          final diagramUrl = await generateDiagram(plantumlCode);
+          
+          if (diagramUrl != null) {
+            result = '\n\n![Generated Diagram]($diagramUrl)\n\n*Generated diagram using PlantUML*';
+          }
+        }
+      }
+      
+      // Check for screenshot generation
+      if (result == null && _shouldGenerateScreenshot(aiResponse)) {
         final url = _extractUrlFromResponse(aiResponse);
         if (url != null) {
           print('🤖 AGENTS: AI requesting screenshot for: $url');
           final screenshotUrl = await generateScreenshot(url);
           
           if (screenshotUrl != null) {
-            // Return markdown image syntax for the screenshot
-            return '\n\n![Website Screenshot]($screenshotUrl)\n\n*Screenshot of $url*';
+            result = '\n\n![Website Screenshot]($screenshotUrl)\n\n*Screenshot of $url*';
           }
         }
       }
       
-      return null;
+      return result;
     } catch (e) {
       print('❌ AGENTS: Error processing agent request: $e');
       return null;
@@ -94,6 +177,82 @@ class AgentsService {
     
     return screenshotKeywords.any((keyword) => lowerResponse.contains(keyword)) &&
            urlPattern.hasMatch(response);
+  }
+  
+  /// Check if the AI response indicates a diagram should be generated
+  static bool _shouldGenerateDiagram(String response) {
+    final lowerResponse = response.toLowerCase();
+    
+    // Look for diagram indicators
+    final diagramKeywords = [
+      'diagram',
+      'flowchart',
+      'chart',
+      'graph',
+      'uml',
+      'sequence diagram',
+      'class diagram',
+      'activity diagram',
+      'use case',
+      'mind map',
+      'workflow',
+      'process flow',
+      'architecture',
+      'visual representation',
+      'plantuml'
+    ];
+    
+    return diagramKeywords.any((keyword) => lowerResponse.contains(keyword));
+  }
+  
+  /// Extract PlantUML code from AI response
+  static String? _extractPlantUMLFromResponse(String response) {
+    // Look for code blocks with plantuml, uml, or diagram
+    final codeBlockPatterns = [
+      RegExp(r'```(?:plantuml|uml|diagram)\s*\n(.*?)\n```', multiLine: true, dotAll: true),
+      RegExp(r'```\s*\n(@startuml.*?@enduml)\s*\n```', multiLine: true, dotAll: true),
+    ];
+    
+    for (final pattern in codeBlockPatterns) {
+      final match = pattern.firstMatch(response);
+      if (match != null) {
+        return match.group(1)?.trim();
+      }
+    }
+    
+    // Look for inline PlantUML syntax
+    final inlinePattern = RegExp(r'@startuml.*?@enduml', multiLine: true, dotAll: true);
+    final inlineMatch = inlinePattern.firstMatch(response);
+    if (inlineMatch != null) {
+      return inlineMatch.group(0);
+    }
+    
+    // If no explicit PlantUML found but diagram keywords present, generate simple flowchart
+    if (_shouldGenerateDiagram(response)) {
+      // Extract potential process steps or items for auto-diagram generation
+      final lines = response.split('\n')
+          .where((line) => line.trim().isNotEmpty)
+          .map((line) => line.trim())
+          .toList();
+      
+      if (lines.length > 1) {
+        // Create a simple flowchart from the response
+        final steps = <String>[];
+        for (int i = 0; i < lines.length && i < 5; i++) {
+          final line = lines[i];
+          if (line.length > 10 && !line.startsWith('```')) {
+            steps.add(line.replaceAll(RegExp(r'[^\w\s]'), '').trim());
+          }
+        }
+        
+        if (steps.length >= 2) {
+          final flowchart = steps.map((step) => 'rectangle "$step"').join('\n');
+          return '@startuml\n$flowchart\n@enduml';
+        }
+      }
+    }
+    
+    return null;
   }
   
   /// Extract URL from AI response
@@ -144,7 +303,7 @@ class AgentsService {
 🤖 **EXTERNAL AGENTS & TOOLS:**
 
 📸 **SCREENSHOT GENERATION:**
-- You have access to an intelligent screenshot generation agent
+- You have access to an intelligent screenshot generation agent using WordPress preview
 - When users ask about websites, want to see how sites look, or you mention specific URLs, the system can automatically generate screenshots
 - Simply mention websites naturally in your responses - the agent will detect and capture them automatically
 - Examples that trigger screenshots:
@@ -156,12 +315,31 @@ class AgentsService {
 - Screenshots will be embedded directly in your response as images
 - This works for any public website or domain
 
+📊 **DIAGRAM GENERATION:**
+- You have access to an intelligent PlantUML diagram generation agent
+- When discussing processes, workflows, architectures, or when users ask for visual representations, you can create diagrams automatically
+- Simply mention diagram-related concepts naturally - the system will detect and generate appropriate diagrams
+- Examples that trigger diagrams:
+  - "Here's a flowchart of the process"
+  - "Let me create a diagram to show this"
+  - "The workflow looks like this"
+  - "Here's the architecture diagram"
+- You can also include explicit PlantUML code in code blocks:
+  ```plantuml
+  @startuml
+  A --> B: Process
+  B --> C: Complete
+  @enduml
+  ```
+- Diagrams will be embedded directly in your response as images
+- Supports flowcharts, UML diagrams, sequence diagrams, class diagrams, and more
+
 🎯 **NATURAL USAGE:**
-- Don't announce the screenshot feature unless specifically asked
-- Use it naturally when discussing websites, tools, or online resources
-- The system automatically detects when screenshots would be helpful
+- Don't announce these features unless specifically asked
+- Use them naturally when discussing websites, processes, or visual concepts
+- The system automatically detects when screenshots or diagrams would be helpful
 - Focus on being helpful - the technical magic happens behind the scenes
 
-**Be natural and mention websites when they're relevant to help users!** 🌐✨''';
+**Be natural and mention websites or visual concepts when they're relevant to help users!** 🌐📊✨''';
   }
 }
