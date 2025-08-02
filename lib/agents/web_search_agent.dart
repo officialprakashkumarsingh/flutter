@@ -245,7 +245,7 @@ class WebSearchAgent {
   static Future<List<WebVideoResult>?> _searchVideos(String query) async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/videos/search?q=${Uri.encodeComponent(query)}&count=4&safesearch=strict&search_lang=en&country=us&spellcheck=1'),
+        Uri.parse('$_baseUrl/videos/search?q=${Uri.encodeComponent(query)}&count=4&country=us&search_lang=en&spellcheck=1'),
         headers: {
           'X-Subscription-Token': _apiKey,
           'Accept': 'application/json',
