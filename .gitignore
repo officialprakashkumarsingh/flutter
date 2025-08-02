@@ -56,6 +56,7 @@ commandlinetools-linux-*
 # Exception: Include the release APK in repository
 !aham-app-release.apk
 !aham-app-v6.1-latest-build.apk
+!aham-ai-*-agents-*.apk
 
 # Build outputs
 build/
