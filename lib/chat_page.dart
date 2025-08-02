@@ -109,6 +109,30 @@ class ChatPageState extends State<ChatPage> {
     }
   }
 
+  // Generate welcome message with user name and time-based greeting
+  String _getWelcomeMessage() {
+    final now = DateTime.now().toUtc().add(const Duration(hours: 5, minutes: 30)); // IST
+    final hour = now.hour;
+    final user = SupabaseAuthService.currentUser;
+    
+    String greeting;
+    if (hour >= 5 && hour < 12) {
+      greeting = "Good morning";
+    } else if (hour >= 12 && hour < 17) {
+      greeting = "Good afternoon";
+    } else if (hour >= 17 && hour < 21) {
+      greeting = "Good evening";
+    } else {
+      greeting = "Good night";
+    }
+    
+    String userName = SupabaseAuthService.userFullName ?? 
+                     user?.email?.split('@')[0] ?? 
+                     "there";
+    
+    return "$greeting, $userName! How can I help you today?";
+  }
+
   @override
   void initState() {
     debugPrint('🎬 CHATPAGE: initState() called - setting up ChatPage...');
@@ -1863,6 +1887,47 @@ Be conversational and helpful!'''
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Welcome message
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F9FA),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.02),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _getWelcomeMessage(),
+                          style: GoogleFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF09090B),
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "I'm here to help you with questions, tasks, and conversations. Try one of the suggestions below or ask me anything!",
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: const Color(0xFF71717A),
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,

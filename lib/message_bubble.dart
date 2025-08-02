@@ -122,6 +122,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     _actionsAnimationController.dispose();
     _userActionsAnimationController.dispose();
     _thinkingAnimationController.dispose();
+    _typingAnimationController.dispose();
     _disposeCodeControllers();
     super.dispose();
   }
@@ -462,23 +463,26 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     // If no codes yet or still streaming, show original text or typing indicator
     if (codes.isEmpty || isStreaming) {
       if (originalText.isNotEmpty) {
-        widgets.add(_buildMarkdownContent(originalText));
-        // Start typing animation when streaming
-        if (isStreaming && !_thinkingAnimationController.isAnimating) {
-          _thinkingAnimationController.repeat();
+        // Stop typing animation immediately when text starts streaming
+        if (_typingAnimationController.isAnimating) {
+          _typingAnimationController.stop();
+          _typingAnimationController.reset();
         }
+        widgets.add(_buildMarkdownContent(originalText));
       } else if (isStreaming) {
         // Show typing indicator when streaming but no text yet
         widgets.add(_buildTypingIndicator());
-        _thinkingAnimationController.repeat();
+        if (!_typingAnimationController.isAnimating) {
+          _typingAnimationController.repeat();
+        }
       }
     } else {
       // Streaming complete - build inline content with code panels at correct positions
       widgets.addAll(_buildInlineContentWithCodePanels(originalText, displayText, codes));
       // Stop typing animation when streaming is complete
-      if (_thinkingAnimationController.isAnimating) {
-        _thinkingAnimationController.stop();
-        _thinkingAnimationController.reset();
+      if (_typingAnimationController.isAnimating) {
+        _typingAnimationController.stop();
+        _typingAnimationController.reset();
       }
     }
     
@@ -795,9 +799,9 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
 
   Widget _buildDot(int index) {
     return AnimatedBuilder(
-      animation: _thinkingAnimationController,
+      animation: _typingAnimationController,
       builder: (context, child) {
-        final animationValue = _thinkingAnimationController.value * 3;
+        final animationValue = _typingAnimationController.value * 3;
         final dotValue = (animationValue - index).clamp(0.0, 1.0);
         final opacity = (math.sin(dotValue * math.pi) * 0.7 + 0.3).clamp(0.3, 1.0);
         final scale = (math.sin(dotValue * math.pi) * 0.3 + 0.7).clamp(0.7, 1.0);
