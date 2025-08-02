@@ -161,7 +161,7 @@ class ShadcnCard extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: padding ?? const EdgeInsets.all(32),
+        padding: padding ?? const EdgeInsets.all(24), // Reduced padding
         child: child,
       ),
     );
@@ -231,7 +231,7 @@ class _AuthAndProfilePagesState extends State<AuthAndProfilePages> {
         body: Center(
           child: SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 0.0), // Remove horizontal padding
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 400),
                 child: showLoginPage 

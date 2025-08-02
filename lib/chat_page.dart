@@ -22,6 +22,7 @@ import 'input_bar.dart';
 import 'chat_utils.dart';
 import 'supabase_chat_service.dart';
 import 'supabase_auth_service.dart';
+import 'agents.dart';
 
 
 
@@ -475,6 +476,8 @@ When users want to create images, photos, artwork, or illustrations, guide them 
 
 **Always use proper JSON format and explain what you're doing to help the user understand the process.**
 
+${AgentsService.getSystemPromptAddition()}
+
 **Be conversational, helpful, and make your responses visually appealing with proper formatting!** 🚀'''
       };
 
@@ -552,24 +555,34 @@ When users want to create images, photos, artwork, or illustrations, guide them 
         // Parse final content to preserve codes and thoughts
         final finalParseResult = _parseContentStreaming(textToUse);
         
+        // Process agents (screenshot generation, etc.)
+        String finalText = textToUse;
+        try {
+          final agentResult = await AgentsService.processAgentRequest(prompt, textToUse);
+          if (agentResult != null) {
+            finalText = textToUse + agentResult;
+            print('🤖 AGENTS: Added agent content to response');
+          }
+        } catch (e) {
+          print('❌ AGENTS: Error processing agents: $e');
+        }
+        
         setState(() {
           _messages[botMessageIndex] = Message(
             id: _messages[botMessageIndex].id,
             sender: Sender.bot,
-            text: textToUse,
+            text: finalText,
             isStreaming: false,
             timestamp: _messages[botMessageIndex].timestamp,
             thoughts: finalParseResult['thoughts'],
             codes: finalParseResult['codes'],
-            displayText: finalParseResult['displayText'],
+            displayText: finalText, // Use final text with agents content
             toolData: _messages[botMessageIndex].toolData,
           );
         });
 
-
-
         // FIXED: Use original text for memory, no cleaning of code blocks
-        _updateConversationMemory(prompt, accumulatedText);
+        _updateConversationMemory(prompt, finalText);
         
         // Save complete chat history to SharedPreferences
         await _saveChatHistory();

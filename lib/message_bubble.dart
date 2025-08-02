@@ -569,16 +569,17 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   }
 
 
-  // Build markdown content widget with enhanced styling and image support
+    // Build markdown content widget with enhanced styling and image support
   Widget _buildMarkdownContent(String text) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-                 MarkdownBody(
-           data: text,
-           selectable: true,
-           shrinkWrap: true,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        maxWidth: double.infinity,
+      ),
+      child: MarkdownBody(
+        data: text,
+        selectable: true,
+        shrinkWrap: true,
+        fitContent: true,
         imageBuilder: (uri, title, alt) {
           return ClipRRect(
             borderRadius: BorderRadius.circular(8),
@@ -773,8 +774,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
           pPadding: const EdgeInsets.only(bottom: 8),
           listIndent: 16,
         ),
-        ),
-      ],
+      ),
     );
   }
 
