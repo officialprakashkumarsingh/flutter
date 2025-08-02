@@ -56,6 +56,7 @@ class ChatPageState extends State<ChatPage> {
     // Bot greeting will be added when user sends first message
   ];
   bool _awaitingReply = false;
+  DateTime? _lastStreamUpdate;
   String? _editingMessageId;
 
 
@@ -478,27 +479,35 @@ Be conversational and helpful!'''
               if (content != null) {
                 accumulatedText += _fixServerEncoding(content);
                 
-                // Parse thinking content in real-time during streaming
-                final streamingParseResult = _parseContentStreaming(accumulatedText);
-                
-                // Use original display text from parsing without any processing
-                String displayText = streamingParseResult['displayText'];
+                // Throttle updates for smoother performance (every 50ms)
+                if (_lastStreamUpdate == null || 
+                    DateTime.now().difference(_lastStreamUpdate!).inMilliseconds > 50) {
+                  
+                  // Parse thinking content in real-time during streaming
+                  final streamingParseResult = _parseContentStreaming(accumulatedText);
+                  
+                  // Use original display text from parsing without any processing
+                  String displayText = streamingParseResult['displayText'];
 
-                setState(() {
-                  _messages[botMessageIndex] = Message(
-                    id: botMessage.id,
-                    sender: Sender.bot,
-                    text: accumulatedText,
-                    isStreaming: true,
-                    timestamp: botMessage.timestamp,
-                    thoughts: streamingParseResult['thoughts'],
-                    codes: streamingParseResult['codes'],
-                    displayText: displayText,
-                    toolData: botMessage.toolData,
-                  );
-                });
-                
-                _scrollToBottom();
+                  if (mounted) {
+                    setState(() {
+                      _messages[botMessageIndex] = Message(
+                        id: botMessage.id,
+                        sender: Sender.bot,
+                        text: accumulatedText,
+                        isStreaming: true,
+                        timestamp: botMessage.timestamp,
+                        thoughts: streamingParseResult['thoughts'],
+                        codes: streamingParseResult['codes'],
+                        displayText: displayText,
+                        toolData: botMessage.toolData,
+                      );
+                    });
+                    
+                    _scrollToBottom();
+                    _lastStreamUpdate = DateTime.now();
+                  }
+                }
               }
             } catch (e) {
               // Continue on JSON parsing errors

@@ -6,6 +6,7 @@ import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/vs2015.dart';
 
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'models.dart';
 import 'file_attachment_widget.dart';
@@ -444,14 +445,27 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
       }
     }
     
-    // If no codes yet or still streaming, show original text
+    // If no codes yet or still streaming, show original text or typing indicator
     if (codes.isEmpty || isStreaming) {
       if (originalText.isNotEmpty) {
         widgets.add(_buildMarkdownContent(originalText));
+        // Start typing animation when streaming
+        if (isStreaming && !_thinkingAnimationController.isAnimating) {
+          _thinkingAnimationController.repeat();
+        }
+      } else if (isStreaming) {
+        // Show typing indicator when streaming but no text yet
+        widgets.add(_buildTypingIndicator());
+        _thinkingAnimationController.repeat();
       }
     } else {
       // Streaming complete - build inline content with code panels at correct positions
       widgets.addAll(_buildInlineContentWithCodePanels(originalText, displayText, codes));
+      // Stop typing animation when streaming is complete
+      if (_thinkingAnimationController.isAnimating) {
+        _thinkingAnimationController.stop();
+        _thinkingAnimationController.reset();
+      }
     }
     
     return Column(
@@ -745,6 +759,47 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
         elevation: 4,
         duration: const Duration(seconds: 2),
       ),
+    );
+  }
+
+  // Build smooth typing indicator with three dots animation
+  Widget _buildTypingIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildDot(0),
+          const SizedBox(width: 4),
+          _buildDot(1),
+          const SizedBox(width: 4),
+          _buildDot(2),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDot(int index) {
+    return AnimatedBuilder(
+      animation: _thinkingAnimationController,
+      builder: (context, child) {
+        final animationValue = _thinkingAnimationController.value * 3;
+        final dotValue = (animationValue - index).clamp(0.0, 1.0);
+        final opacity = (math.sin(dotValue * math.pi) * 0.7 + 0.3).clamp(0.3, 1.0);
+        final scale = (math.sin(dotValue * math.pi) * 0.3 + 0.7).clamp(0.7, 1.0);
+        
+        return Transform.scale(
+          scale: scale,
+          child: Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: const Color(0xFF71717A).withOpacity(opacity),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        );
+      },
     );
   }
 
