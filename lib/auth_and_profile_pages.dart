@@ -195,34 +195,46 @@ class _AuthAndProfilePagesState extends State<AuthAndProfilePages> {
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: Colors.white, // Solid white background
+        backgroundColor: Colors.white,
         body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 60),
+                    
+                    // App Logo/Title
+                    Text(
+                      'AhamAI',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF09090B),
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: showLoginPage 
-                          ? LoginPage(onToggle: togglePage)
-                          : SignUpPage(onToggle: togglePage),
+                    const SizedBox(height: 8),
+                    Text(
+                      showLoginPage 
+                          ? 'Welcome back! Sign in to your account'
+                          : 'Create your account to get started',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF71717A),
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
+                    const SizedBox(height: 48),
+
+                    // Main Content - directly embedded, no borders or separate containers
+                    showLoginPage 
+                        ? LoginPage(onToggle: togglePage)
+                        : SignUpPage(onToggle: togglePage),
+                  ],
                 ),
               ),
             ),
