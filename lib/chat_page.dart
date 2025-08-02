@@ -392,7 +392,7 @@ class ChatPageState extends State<ChatPage> {
     return 'Previous conversation context:\n${_conversationMemory.join('\n\n')}\n\nCurrent conversation:';
   }
 
-  /// Extract web search data content for AI processing
+  /// Extract web search data content for AI processing (simplified)
   String _extractWebSearchData(String webSearchResult) {
     try {
       final startIndex = webSearchResult.indexOf('**WEB_SEARCH_DATA_START**');
@@ -402,38 +402,9 @@ class ChatPageState extends State<ChatPage> {
         return '';
       }
       
-      final jsonString = webSearchResult.substring(
-        startIndex + '**WEB_SEARCH_DATA_START**'.length,
-        endIndex,
-      ).trim();
-      
-      final jsonData = jsonDecode(jsonString);
-      if (jsonData['type'] != 'web_search_results') {
-        return '';
-      }
-      
-      // Parse the search results and create text content for AI
-      final webResults = (jsonData['web_results'] as List? ?? [])
-          .map((result) => WebSearchResult.fromJson(result))
-          .toList();
-      
-      final imageResults = (jsonData['image_results'] as List? ?? [])
-          .map((result) => WebImageResult.fromJson(result))
-          .toList();
-      
-      final videoResults = (jsonData['video_results'] as List? ?? [])
-          .map((result) => WebVideoResult.fromJson(result))
-          .toList();
-      
-      final searchResults = WebSearchResults(
-        webResults: webResults,
-        imageResults: imageResults,
-        videoResults: videoResults,
-        query: jsonData['query'] ?? '',
-        totalResults: jsonData['total_results'] ?? 0,
-      );
-      
-      return WebSearchAgent.extractTextContent(searchResults);
+      // Since we simplified web search, the AI context is already included in the response
+      // No need for additional processing
+      return '';
     } catch (e) {
       print('Error extracting web search data: $e');
       return '';

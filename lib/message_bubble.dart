@@ -594,7 +594,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
 
 
 
-  // Build web search widget from JSON data
+  // Build web search widget from JSON data (simplified for iOS-style favicons)
   Widget? _buildWebSearchWidget(String text) {
     try {
       final startIndex = text.indexOf('**WEB_SEARCH_DATA_START**');
@@ -614,28 +614,8 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
         return null;
       }
       
-      // Parse the search results
-      final webResults = (jsonData['web_results'] as List? ?? [])
-          .map((result) => WebSearchResult.fromJson(result))
-          .toList();
-      
-      final imageResults = (jsonData['image_results'] as List? ?? [])
-          .map((result) => WebImageResult.fromJson(result))
-          .toList();
-      
-      final videoResults = (jsonData['video_results'] as List? ?? [])
-          .map((result) => WebVideoResult.fromJson(result))
-          .toList();
-      
-      final searchResults = WebSearchResults(
-        webResults: webResults,
-        imageResults: imageResults,
-        videoResults: videoResults,
-        query: jsonData['query'] ?? '',
-        totalResults: jsonData['total_results'] ?? 0,
-      );
-      
-      return WebSearchResultsWidget(results: searchResults);
+      // Pass the raw JSON data directly to the simplified widget
+      return WebSearchResultsWidget(results: jsonData);
     } catch (e) {
       print('Error parsing web search data: $e');
       return null;
