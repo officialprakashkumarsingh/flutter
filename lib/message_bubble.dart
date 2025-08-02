@@ -552,11 +552,11 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
 
   // Build markdown content widget with enhanced styling and image support
   Widget _buildMarkdownContent(String text) {
-    return Container(
-      width: double.infinity,
-      child: MarkdownBody(
-        data: text,
-        selectable: true,
+    return MarkdownBody(
+      data: text,
+      selectable: true,
+      shrinkWrap: true,
+      fitContent: true,
         imageBuilder: (uri, title, alt) {
           return ClipRRect(
             borderRadius: BorderRadius.circular(8),
@@ -646,7 +646,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
           // Code styling
           code: GoogleFonts.jetBrainsMono(
             backgroundColor: const Color(0xFFF4F4F5),
-            color: const Color(0xFFEF4444),
+            color: const Color(0xFF1F2937),
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -684,8 +684,47 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
             fontSize: 16,
             decoration: TextDecoration.underline,
           ),
+          
+          // Tables
+          tableHead: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+          tableBody: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 14,
+          ),
+          tableBorder: TableBorder.all(
+            color: const Color(0xFFE4E4E7),
+            width: 1,
+          ),
+          tableHeadAlign: TextAlign.left,
+          tableColumnWidth: const FlexColumnWidth(),
+          
+          // Horizontal rule
+          horizontalRuleDecoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: const Color(0xFFE4E4E7),
+                width: 1,
+              ),
+            ),
+          ),
+          
+          // Checkbox styling
+          checkbox: GoogleFonts.inter(
+            color: const Color(0xFF09090B),
+            fontSize: 16,
+          ),
+          
+          // Additional spacing
+          h1Padding: const EdgeInsets.only(top: 16, bottom: 8),
+          h2Padding: const EdgeInsets.only(top: 12, bottom: 6),
+          h3Padding: const EdgeInsets.only(top: 8, bottom: 4),
+          pPadding: const EdgeInsets.only(bottom: 8),
+          listIndent: 16,
         ),
-      ),
     );
   }
 
@@ -718,12 +757,6 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.psychology_outlined,
-                      size: 18,
-                      color: const Color(0xFF71717A),
-                    ),
-                    const SizedBox(width: 12),
                     Text(
                       'AI Thinking Process',
                       style: GoogleFonts.inter(

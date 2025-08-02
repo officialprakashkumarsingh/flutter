@@ -440,14 +440,19 @@ class ChatPageState extends State<ChatPage> {
 
 🎨 **RESPONSE FORMATTING GUIDELINES:**
 - Use **bold** for important points and headings
-- Use *italics* for emphasis
+- Use *italics* for emphasis and subtle highlighting
 - Use emojis 🤗 to make responses friendly and engaging
-- Use `code formatting` for technical terms
-- Use > blockquotes for important notes
-- Use numbered lists (1. 2. 3.) or bullet points (- • *) for clear organization
+- Use `code formatting` for technical terms, commands, and file names
+- Use > blockquotes for important notes, tips, and warnings
+- Use numbered lists (1. 2. 3.) for step-by-step instructions
+- Use bullet points (- • *) for feature lists and options
 - Use ## Headers and ### Sub-headers to structure long responses
-- Include relevant emojis throughout your responses to make them more visually appealing
-- Make your responses **well-structured and readable** using proper markdown formatting
+- Use ~~strikethrough~~ for corrections or outdated information
+- Use --- horizontal rules to separate major sections
+- Use tables when presenting structured data or comparisons
+- Use - [ ] checkboxes for task lists and action items
+- Include relevant emojis throughout your responses 📝✨🚀
+- Make your responses **well-structured and readable** using rich markdown formatting
 
 🖼️ **IMAGE & MEDIA SUPPORT:**
 - You can reference images, GIFs, and media files when relevant
