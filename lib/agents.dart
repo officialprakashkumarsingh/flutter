@@ -20,7 +20,11 @@ class AgentsService {
       if (aiResponse.toLowerCase().contains('generate flashcards') ||
           aiResponse.toLowerCase().contains('create flashcards') ||
           aiResponse.toLowerCase().contains('flashcard') ||
-          (aiResponse.toLowerCase().contains('study') && aiResponse.toLowerCase().contains('cards'))) {
+          aiResponse.toLowerCase().contains('study cards') ||
+          message.toLowerCase().contains('flashcard') ||
+          message.toLowerCase().contains('study cards') ||
+          (message.toLowerCase().contains('create') && message.toLowerCase().contains('cards')) ||
+          (message.toLowerCase().contains('make') && message.toLowerCase().contains('cards'))) {
         
         // Extract topic from message or AI response
         String topic = _extractFlashcardTopic(message, aiResponse);
