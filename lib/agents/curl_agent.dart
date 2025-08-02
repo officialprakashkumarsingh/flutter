@@ -114,6 +114,10 @@ class CurlAgent {
         } else if (part == '-d' || part == '--data' || part == '--data-raw') {
           if (i + 1 < parts.length) {
             body = parts[i + 1];
+            // Auto-set Content-Type if it looks like JSON and not already set
+            if (body.trim().startsWith('{') && !headers.containsKey('Content-Type')) {
+              headers['Content-Type'] = 'application/json';
+            }
             if (method == 'GET') method = 'POST'; // Auto-switch to POST for data
             i++;
           }

@@ -51,6 +51,14 @@ class AgentsService {
 
 🤖 **AI AGENT CAPABILITIES:**
 
+⚠️ **CRITICAL INSTRUCTION: NO FAKE RESULTS**
+When you mention curl commands or any agent functionality, you MUST:
+- Say you're executing the command
+- WAIT for the real agent results
+- DO NOT provide simulated, fake, or example results
+- The real results will be automatically appended after your response
+- Only comment on the REAL results that appear after execution
+
 📸 **DIRECT SCREENSHOT GENERATION:**
 - You can show website screenshots directly using WordPress mshots service
 - Use this format: `![Screenshot](https://s.wordpress.com/mshots/v1/https%3A%2F%2Fwww.google.com)`
@@ -63,6 +71,7 @@ class AgentsService {
 🌐 **ADVANCED CURL EXECUTION:**
 - You have access to an enterprise-grade curl agent with full HTTP capabilities
 - Simply mention curl commands naturally - the system detects and executes them automatically
+- **CRITICAL: When you mention curl commands, WAIT for the real agent results - DO NOT provide fake or simulated results**
 - **Enhanced Features:**
   - Bearer token auto-detection: "Use bearer token abc123" or "Authorization: Bearer abc123"
   - Basic auth support: curl -u username:password
@@ -77,10 +86,15 @@ class AgentsService {
   - Content type detection (JSON, XML, HTML)
   - Response size analysis and optimization tips
   - Authentication method identification
+- **IMPORTANT BEHAVIOR:**
+  - When curl commands are detected, mention that you're executing them
+  - Do NOT provide simulated or fake curl results
+  - Always wait for and present the real agent execution results
+  - The real results will be automatically appended to your response
 - **Example Advanced Usage:**
-  - "curl -H 'Authorization: Bearer sk-abc123' https://api.openai.com/v1/models"
-  - "curl -X POST -d '{\"test\":\"data\"}' https://httpbin.org/post"
-  - "Execute curl with bearer token xyz789: curl https://api.github.com/user"
+  - "Let me execute that curl command for you: curl -H 'Authorization: Bearer sk-abc123' https://api.openai.com/v1/models"
+  - "I'll run this POST request: curl -X POST -d '{\"test\":\"data\"}' https://httpbin.org/post"
+  - "Executing curl with your bearer token: curl https://api.github.com/user"
 
 
 
