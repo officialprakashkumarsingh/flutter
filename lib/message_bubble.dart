@@ -437,17 +437,10 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // AI message content with inline code panels
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Flexible(
-              child: Container(
-                decoration: null, // Transparent background for AI messages
-                padding: const EdgeInsets.all(16),
-                child: _buildBotMessageWithInlinePanels(),
-              ),
-            ),
-          ],
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          child: _buildBotMessageWithInlinePanels(),
         ),
         // File attachments below the message (if any)
         if (widget.message.attachments.isNotEmpty) ...[
@@ -691,20 +684,20 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
             height: 1.3,
           ),
           
-          // Code styling - match code panel
+          // Code styling - white background for code blocks
           code: GoogleFonts.jetBrainsMono(
-            backgroundColor: const Color(0xFF3F3F46),
-            color: const Color(0xFFA1A1AA),
+            backgroundColor: const Color(0xFFF4F4F5),
+            color: const Color(0xFF1F2937),
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
           codeblockDecoration: BoxDecoration(
-            color: const Color(0xFF09090B),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF27272A), width: 1),
+            border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),

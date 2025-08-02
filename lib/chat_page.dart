@@ -58,6 +58,9 @@ class ChatPageState extends State<ChatPage> {
   bool _awaitingReply = false;
   DateTime? _lastStreamUpdate;
   String? _editingMessageId;
+  
+  // Scroll to bottom button
+  bool _showScrollToBottom = false;
 
 
 
