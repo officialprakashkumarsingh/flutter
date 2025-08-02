@@ -74,8 +74,8 @@ class AgentsService {
         return null;
       }
       
-      // Generate diagram URL
-      final diagramUrl = '$_plantumlUrl$encodedCode';
+      // Generate diagram URL using simple format
+      final diagramUrl = 'https://www.plantuml.com/plantuml/png/~1$encodedCode';
       
       print('📊 AGENTS: Generated diagram URL for PlantUML code');
       print('🔗 AGENTS: Diagram URL: $diagramUrl');
@@ -95,19 +95,12 @@ class AgentsService {
     }
   }
   
-  /// Encode PlantUML code for URL
+  /// Encode PlantUML code for URL using simple UTF-8 encoding
   static String? _encodePlantUML(String plantuml) {
     try {
-      // Simple base64 URL encoding for PlantUML
-      final bytes = utf8.encode(plantuml);
-      final base64String = base64Encode(bytes);
-      
-      // PlantUML uses a modified base64 encoding
-      final encoded = base64String
-          .replaceAll('+', '-')
-          .replaceAll('/', '_')
-          .replaceAll('=', '');
-      
+      // PlantUML supports simple UTF-8 URL encoding
+      // Use Uri.encodeComponent for proper URL encoding
+      final encoded = Uri.encodeComponent(plantuml);
       return encoded;
     } catch (e) {
       print('❌ AGENTS: Error encoding PlantUML: $e');
