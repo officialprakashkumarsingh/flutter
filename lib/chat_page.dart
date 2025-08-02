@@ -1887,44 +1887,33 @@ Be conversational and helpful!'''
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Welcome message
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 24),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FA),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.02),
-                          blurRadius: 4,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
+                  // Welcome message - React Native style
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           _getWelcomeMessage(),
                           style: GoogleFonts.inter(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
                             color: const Color(0xFF09090B),
+                            height: 1.2,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          "I'm here to help you with questions, tasks, and conversations.",
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            color: const Color(0xFF71717A),
                             height: 1.4,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "I'm here to help you with questions, tasks, and conversations. Try one of the suggestions below or ask me anything!",
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: const Color(0xFF71717A),
-                            height: 1.5,
-                          ),
-                        ),
+                        const SizedBox(height: 24),
                       ],
                     ),
                   ),
