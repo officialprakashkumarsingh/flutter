@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'supabase_auth_service.dart';
 
 // Custom rounded SnackBar utility
@@ -146,199 +146,200 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ShadCard(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Logo and Title
-          Column(
-            children: [
-              Text(
-                'AhamAI',
-                style: GoogleFonts.spaceMono(
-                  fontSize: 36,
-                  color: const Color(0xFF000000),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Sign in to continue',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  color: const Color(0xFF000000),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Welcome back to AhamAI',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: const Color(0xFF6B7280),
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 32),
-          
-          // Login Form
-          Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Logo and Title
+            Column(
               children: [
-                // Email Field
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Email',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF374151),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    ShadInput(
-                      controller: _emailController,
-                      placeholder: 'Enter your email',
-                      keyboardType: TextInputType.emailAddress,
-                      enabled: !_isLoading,
-                      prefix: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Icon(
-                          Icons.email_outlined,
-                          size: 18,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 20),
-                
-                // Password Field
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Password',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF374151),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    ShadInput(
-                      controller: _passwordController,
-                      placeholder: 'Enter your password',
-                      obscureText: _obscurePassword,
-                      enabled: !_isLoading,
-                      prefix: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Icon(
-                          Icons.lock_outlined,
-                          size: 18,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                      suffix: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                          child: Icon(
-                            _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            size: 18,
-                            color: const Color(0xFF6B7280),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 12),
-                
-                // Forgot Password
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ShadButton.ghost(
-                    onPressed: _isLoading ? null : _resetPassword,
-                    text: Text(
-                      'Forgot Password?',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                Text(
+                  'AhamAI',
+                  style: GoogleFonts.spaceMono(
+                    fontSize: 36,
+                    color: const Color(0xFF000000),
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                
-                const SizedBox(height: 24),
-                
-                // Sign In Button
-                ShadButton(
-                  onPressed: _isLoading ? null : _signIn,
-                  width: double.infinity,
-                  text: _isLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          'Sign In',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                const SizedBox(height: 8),
+                Text(
+                  'Sign in to continue',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    color: const Color(0xFF000000),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                
-                const SizedBox(height: 20),
-                
-                // Toggle to Sign Up
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Don't have an account? ",
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: const Color(0xFF6B7280),
-                      ),
-                    ),
-                    ShadButton.link(
-                      onPressed: widget.onToggle,
-                      text: Text(
-                        'Sign Up',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 4),
+                Text(
+                  'Welcome back to AhamAI',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFF6B7280),
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            
+            const SizedBox(height: 32),
+            
+            // Login Form
+            Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Email Field
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Email',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF374151),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Input(
+                        controller: _emailController,
+                        placeholder: 'Enter your email',
+                        keyboardType: TextInputType.emailAddress,
+                        enabled: !_isLoading,
+                        prefix: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Icon(
+                            Icons.email_outlined,
+                            size: 18,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Password Field
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Password',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF374151),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Input(
+                        controller: _passwordController,
+                        placeholder: 'Enter your password',
+                        obscureText: _obscurePassword,
+                        enabled: !_isLoading,
+                        prefix: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Icon(
+                            Icons.lock_outlined,
+                            size: 18,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                        suffix: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                            child: Icon(
+                              _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              size: 18,
+                              color: const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Forgot Password
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Button.ghost(
+                      onPressed: _isLoading ? null : _resetPassword,
+                      child: Text(
+                        'Forgot Password?',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Sign In Button
+                  Button(
+                    onPressed: _isLoading ? null : _signIn,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            'Sign In',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Toggle to Sign Up
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Don't have an account? ",
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                      Button.link(
+                        onPressed: widget.onToggle,
+                        child: Text(
+                          'Sign Up',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -403,260 +404,261 @@ class _SignUpPageState extends State<SignUpPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ShadCard(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Logo and Title
-          Column(
-            children: [
-              Text(
-                'AhamAI',
-                style: GoogleFonts.spaceMono(
-                  fontSize: 36,
-                  color: const Color(0xFF000000),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Create Account',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  color: const Color(0xFF000000),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Join AhamAI today',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: const Color(0xFF6B7280),
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 32),
-          
-          // Sign Up Form
-          Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Logo and Title
+            Column(
               children: [
-                // Full Name Field
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Full Name',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF374151),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    ShadInput(
-                      controller: _fullNameController,
-                      placeholder: 'Enter your full name',
-                      enabled: !_isLoading,
-                      prefix: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Icon(
-                          Icons.person_outlined,
-                          size: 18,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                    ),
-                  ],
+                Text(
+                  'AhamAI',
+                  style: GoogleFonts.spaceMono(
+                    fontSize: 36,
+                    color: const Color(0xFF000000),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                
-                const SizedBox(height: 20),
-                
-                // Email Field
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Email',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF374151),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    ShadInput(
-                      controller: _emailController,
-                      placeholder: 'Enter your email',
-                      keyboardType: TextInputType.emailAddress,
-                      enabled: !_isLoading,
-                      prefix: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Icon(
-                          Icons.email_outlined,
-                          size: 18,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 8),
+                Text(
+                  'Create Account',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    color: const Color(0xFF000000),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-                
-                const SizedBox(height: 20),
-                
-                // Password Field
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Password',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF374151),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    ShadInput(
-                      controller: _passwordController,
-                      placeholder: 'Enter your password',
-                      obscureText: _obscurePassword,
-                      enabled: !_isLoading,
-                      prefix: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Icon(
-                          Icons.lock_outlined,
-                          size: 18,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                      suffix: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                          child: Icon(
-                            _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            size: 18,
-                            color: const Color(0xFF6B7280),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 20),
-                
-                // Confirm Password Field
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Confirm Password',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF374151),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    ShadInput(
-                      controller: _confirmPasswordController,
-                      placeholder: 'Confirm your password',
-                      obscureText: _obscureConfirmPassword,
-                      enabled: !_isLoading,
-                      prefix: const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Icon(
-                          Icons.lock_outlined,
-                          size: 18,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
-                      suffix: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _obscureConfirmPassword = !_obscureConfirmPassword;
-                            });
-                          },
-                          child: Icon(
-                            _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                            size: 18,
-                            color: const Color(0xFF6B7280),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Sign Up Button
-                ShadButton(
-                  onPressed: _isLoading ? null : _signUp,
-                  width: double.infinity,
-                  text: _isLoading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          'Create Account',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
-                
-                const SizedBox(height: 20),
-                
-                // Toggle to Sign In
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Already have an account? ",
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: const Color(0xFF6B7280),
-                      ),
-                    ),
-                    ShadButton.link(
-                      onPressed: widget.onToggle,
-                      text: Text(
-                        'Sign In',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 4),
+                Text(
+                  'Join AhamAI today',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFF6B7280),
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            
+            const SizedBox(height: 32),
+            
+            // Sign Up Form
+            Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Full Name Field
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Full Name',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF374151),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Input(
+                        controller: _fullNameController,
+                        placeholder: 'Enter your full name',
+                        enabled: !_isLoading,
+                        prefix: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Icon(
+                            Icons.person_outlined,
+                            size: 18,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Email Field
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Email',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF374151),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Input(
+                        controller: _emailController,
+                        placeholder: 'Enter your email',
+                        keyboardType: TextInputType.emailAddress,
+                        enabled: !_isLoading,
+                        prefix: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Icon(
+                            Icons.email_outlined,
+                            size: 18,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Password Field
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Password',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF374151),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Input(
+                        controller: _passwordController,
+                        placeholder: 'Enter your password',
+                        obscureText: _obscurePassword,
+                        enabled: !_isLoading,
+                        prefix: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Icon(
+                            Icons.lock_outlined,
+                            size: 18,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                        suffix: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                            child: Icon(
+                              _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              size: 18,
+                              color: const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Confirm Password Field
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Confirm Password',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF374151),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Input(
+                        controller: _confirmPasswordController,
+                        placeholder: 'Confirm your password',
+                        obscureText: _obscureConfirmPassword,
+                        enabled: !_isLoading,
+                        prefix: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Icon(
+                            Icons.lock_outlined,
+                            size: 18,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                        suffix: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                              });
+                            },
+                            child: Icon(
+                              _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              size: 18,
+                              color: const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Sign Up Button
+                  Button(
+                    onPressed: _isLoading ? null : _signUp,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            'Create Account',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Toggle to Sign In
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Already have an account? ",
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                      Button.link(
+                        onPressed: widget.onToggle,
+                        child: Text(
+                          'Sign In',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -685,12 +687,15 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _isLoading = true);
     
     try {
-      final profile = await SupabaseAuthService.getUserProfile();
-      if (mounted && profile != null) {
-        setState(() {
-          _fullName = profile['full_name'];
-          _email = profile['email'];
-        });
+      final user = SupabaseAuthService.currentUser;
+      if (user != null) {
+        final profile = await SupabaseAuthService.getUserProfile(user.id);
+        if (mounted && profile != null) {
+          setState(() {
+            _fullName = profile['full_name'];
+            _email = profile['email'];
+          });
+        }
       }
     } catch (e) {
       if (mounted) {

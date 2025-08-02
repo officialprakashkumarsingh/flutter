@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
 import 'splash_screen.dart';
 import 'auth_gate.dart';
 import 'smooth_scroll_behavior.dart';
@@ -33,50 +32,101 @@ class AhamAIApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ShadApp(
+    return MaterialApp(
       title: 'AhamAI',
       debugShowCheckedModeBanner: false,
       scrollBehavior: const SmoothScrollBehavior(),
-      theme: ShadThemeData(
-        brightness: Brightness.light,
-        colorScheme: const ShadZincColorScheme.light(),
-      ),
-      materialThemeBuilder: (context, theme) {
-        return theme.copyWith(
-          useMaterial3: true,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFFF4F3F0),
-            foregroundColor: Colors.black,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF09090B), // zinc-950
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: const Color(0xFF09090B), // zinc-950  
+          onPrimary: const Color(0xFFFAFAFA), // zinc-50
+          surface: const Color(0xFFFFFFFF), // white
+          onSurface: const Color(0xFF09090B), // zinc-950
+          surfaceContainerHighest: const Color(0xFFF4F4F5), // zinc-100
+          outline: const Color(0xFFE4E4E7), // zinc-200
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFFFFFFFF),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFF09090B), width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          hintStyle: const TextStyle(color: Color(0xFF71717A)), // zinc-500
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF09090B),
+            foregroundColor: const Color(0xFFFAFAFA),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
             elevation: 0,
-            surfaceTintColor: Colors.transparent,
-            scrolledUnderElevation: 0,
             shadowColor: Colors.transparent,
           ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: const Color(0xFF09090B),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
             ),
           ),
-          inputDecorationTheme: InputDecorationTheme(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            filled: true,
-            fillColor: Colors.white,
+        ),
+        cardTheme: CardTheme(
+          color: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
           ),
-          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-            backgroundColor: Colors.white,
-            selectedItemColor: Colors.black,
-            unselectedItemColor: Colors.grey,
-          ),
-          pageTransitionsTheme: const PageTransitionsTheme(
-            builders: {
-              TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-            },
-          ),
-        );
-      },
+          margin: EdgeInsets.zero,
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF4F3F0),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFFF4F3F0),
+          foregroundColor: Color(0xFF09090B),
+          elevation: 0,
+          surfaceTintColor: Colors.transparent,
+          scrolledUnderElevation: 0,
+          shadowColor: Colors.transparent,
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Colors.white,
+          selectedItemColor: Color(0xFF09090B),
+          unselectedItemColor: Color(0xFF71717A),
+          elevation: 8,
+        ),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
+      ),
       home: const AppWrapper(),
     );
   }
