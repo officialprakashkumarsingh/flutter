@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.ahamai.flutter.app-mergeReleaseResources-41:/values-v24/values-v24.xml",
+            "map": [
+                {
+                    "source": "/home/ubuntu/.gradle/caches/8.10.2/transforms/dd3a09e6019d1231a55f0ee81e5b3508/transformed/appcompat-1.1.0/res/values-v24/values-v24.xml",
+                    "from": {
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,212",
+                        "endColumns": "156,134",
+                        "endOffsets": "207,342"
+                    }
+                }
+            ]
+        }
+    ]
+}
