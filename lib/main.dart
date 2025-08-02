@@ -20,7 +20,7 @@ void main() async {
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
     statusBarBrightness: Brightness.light,
-    systemNavigationBarColor: Color(0xFFF4F3F0),
+    systemNavigationBarColor: Colors.white, // Changed to white
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
   
@@ -62,7 +62,7 @@ class AhamAIApp extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFF09090B), width: 2),
+            borderSide: const BorderSide(color: Color(0xFFE4E4E7), width: 1), // Changed from black
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
@@ -105,9 +105,9 @@ class AhamAIApp extends StatelessWidget {
           ),
           margin: EdgeInsets.zero,
         ),
-        scaffoldBackgroundColor: const Color(0xFFF4F3F0),
+        scaffoldBackgroundColor: Colors.white, // Changed from cream to white
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF4F3F0),
+          backgroundColor: Colors.white, // Changed to white
           foregroundColor: Color(0xFF09090B),
           elevation: 0,
           surfaceTintColor: Colors.transparent,

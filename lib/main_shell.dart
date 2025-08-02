@@ -17,24 +17,24 @@ import 'supabase_character_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // Added for AuthState
 // REMOVED: External tools service import
 
-// Custom rounded SnackBar utility
+// Custom shadcn-inspired SnackBar utility
 void showRoundedSnackBar(BuildContext context, String message, {bool isError = false}) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(
         message,
         style: GoogleFonts.inter(
-          color: const Color(0xFF000000),
+          color: const Color(0xFF09090B),
           fontWeight: FontWeight.w500,
           fontSize: 13,
         ),
       ),
-      backgroundColor: isError ? const Color(0xFFFFE5E5) : const Color(0xFFE8F5E8),
+      backgroundColor: isError ? const Color(0xFFFEE2E2) : const Color(0xFFF0FDF4),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         side: BorderSide(
-          color: isError ? const Color(0xFFFF6B6B) : const Color(0xFF4CAF50),
+          color: isError ? const Color(0xFFFECACA) : const Color(0xFFBBF7D0),
           width: 1,
         ),
       ),
@@ -43,7 +43,8 @@ void showRoundedSnackBar(BuildContext context, String message, {bool isError = f
         left: 16,
         right: 16,
       ),
-      duration: const Duration(seconds: 2),
+      duration: const Duration(seconds: 3),
+      elevation: 0,
     ),
   );
 }
@@ -337,8 +338,13 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
       builder: (context) {
         return Container(
           decoration: const BoxDecoration(
-            color: Color(0xFFF4F3F0),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            border: Border(
+              top: BorderSide(color: Color(0xFFE4E4E7), width: 1),
+              left: BorderSide(color: Color(0xFFE4E4E7), width: 1),
+              right: BorderSide(color: Color(0xFFE4E4E7), width: 1),
+            ),
           ),
           child: SafeArea(
             child: Column(
@@ -349,7 +355,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                   height: 4,
                   margin: const EdgeInsets.only(top: 12, bottom: 20),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFC4C4C4),
+                    color: const Color(0xFFE4E4E7),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -359,15 +365,18 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                     children: [
                       Text(
                         'Select AI Model',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        style: GoogleFonts.inter(
+                          fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF000000),
+                          color: const Color(0xFF09090B),
                         ),
                       ),
                       const Spacer(),
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close_rounded, color: Color(0xFFA3A3A3)),
+                        icon: const Icon(Icons.close_rounded, color: Color(0xFF71717A)),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                       ),
                     ],
                   ),
@@ -379,7 +388,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                       ? const Center(
                           child: Padding(
                             padding: EdgeInsets.all(40),
-                            child: CircularProgressIndicator(color: Color(0xFF000000)),
+                            child: CircularProgressIndicator(color: Color(0xFF09090B)),
                           ),
                         )
                       : ListView.builder(
@@ -392,21 +401,24 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                             return Container(
                               margin: const EdgeInsets.only(bottom: 8),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFFEAE9E5) : const Color(0xFFF4F3F0),
-                                borderRadius: BorderRadius.circular(12),
-                                // Tick icon already shows selection; border removed for cleaner look
-                                border: null,
+                                color: isSelected ? const Color(0xFFF4F4F5) : Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isSelected ? const Color(0xFF09090B) : const Color(0xFFE4E4E7),
+                                  width: 1,
+                                ),
                               ),
                               child: ListTile(
                                 title: Text(
                                   model,
-                                  style: TextStyle(
-                                    color: isSelected ? const Color(0xFF000000) : const Color(0xFF000000),
+                                  style: GoogleFonts.inter(
+                                    color: const Color(0xFF09090B),
                                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                    fontSize: 14,
                                   ),
                                 ),
                                 trailing: isSelected 
-                                    ? const Icon(Icons.check_circle_rounded, color: Color(0xFF000000))
+                                    ? const Icon(Icons.check_circle_rounded, color: Color(0xFF09090B), size: 20)
                                     : null,
                                 onTap: () {
                                   HapticFeedback.selectionClick();
@@ -550,45 +562,71 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   void _showChatOptions(ChatSession session) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFFF4F3F0),
+      backgroundColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
       ),
       builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFC4C4C4),
-                  borderRadius: BorderRadius.circular(2),
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            border: Border(
+              top: BorderSide(color: Color(0xFFE4E4E7), width: 1),
+              left: BorderSide(color: Color(0xFFE4E4E7), width: 1),
+              right: BorderSide(color: Color(0xFFE4E4E7), width: 1),
+            ),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(top: 12, bottom: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE4E4E7),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              ListTile(
-                leading: Icon(
-                  session.isPinned ? Icons.push_pin : Icons.push_pin_outlined, 
-                  color: session.isPinned ? const Color(0xFF4CAF50) : const Color(0xFF000000)
+                ListTile(
+                  leading: Icon(
+                    session.isPinned ? Icons.push_pin : Icons.push_pin_outlined, 
+                    color: session.isPinned ? const Color(0xFF22C55E) : const Color(0xFF09090B),
+                    size: 20,
+                  ),
+                  title: Text(
+                    session.isPinned ? 'Unpin Chat' : 'Pin Chat',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF09090B),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pinChat(session);
+                  },
                 ),
-                title: Text(session.isPinned ? 'Unpin Chat' : 'Pin Chat'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pinChat(session);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.delete_outline, color: Colors.red),
-                title: const Text('Delete Chat', style: TextStyle(color: Colors.red)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _deleteChat(session);
-                },
-              ),
-              const SizedBox(height: 20),
-            ],
+                ListTile(
+                  leading: const Icon(Icons.delete_outline, color: Color(0xFFEF4444), size: 20),
+                  title: Text(
+                    'Delete Chat',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFFEF4444),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _deleteChat(session);
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         );
       },
@@ -597,7 +635,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
 
   Widget _buildSidebar() {
     return Drawer(
-      backgroundColor: const Color(0xFFF4F3F0),
+      backgroundColor: Colors.white,
       child: SafeArea(
         child: Column(
           children: [
@@ -669,16 +707,17 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                           final shouldLogout = await showDialog<bool>(
                             context: context,
                             builder: (context) => AlertDialog(
-                              backgroundColor: const Color(0xFFF4F3F0),
+                              backgroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(12),
+                                side: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
                               ),
                               title: Text(
                                 'Sign Out',
                                 style: GoogleFonts.inter(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFF000000),
+                                  color: const Color(0xFF09090B),
                                 ),
                               ),
                               content: Text(
@@ -686,7 +725,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                                 style: GoogleFonts.inter(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w400,
-                                  color: const Color(0xFF666666),
+                                  color: const Color(0xFF71717A),
                                 ),
                               ),
                               actions: [
@@ -696,6 +735,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
+                                      side: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
                                     ),
                                   ),
                                   child: Text(
@@ -703,40 +743,27 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                                     style: GoogleFonts.inter(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
-                                      color: const Color(0xFF666666),
+                                      color: const Color(0xFF09090B),
                                     ),
                                   ),
                                 ),
-                                Container(
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFF6B6B),
-                                    borderRadius: BorderRadius.circular(8),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFFFF6B6B).withOpacity(0.3),
-                                        offset: const Offset(0, 2),
-                                        blurRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                                  child: TextButton(
-                                    onPressed: () => Navigator.pop(context, true),
-                                    style: TextButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      backgroundColor: Colors.transparent,
-                                      elevation: 0,
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFEF4444),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: Text(
-                                      'Sign Out',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                        color: const Color(0xFFFFFFFF),
-                                      ),
+                                    elevation: 0,
+                                  ),
+                                  child: Text(
+                                    'Sign Out',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
@@ -890,20 +917,29 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
               child: Container(
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE0DED9),
-                  borderRadius: BorderRadius.circular(24), // fully rounded like main chat input
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
                 ),
                 child: TextField(
                   onChanged: (value) => setState(() => _chatSearchQuery = value),
-                  style: const TextStyle(color: Color(0xFF000000), fontSize: 14),
-                  decoration: const InputDecoration(
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFF09090B),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  decoration: InputDecoration(
                     hintText: 'Search chats...',
-                    hintStyle: TextStyle(color: Color(0xFFA3A3A3), fontSize: 14),
-                    prefixIcon: Icon(Icons.search_rounded, color: Color(0xFFA3A3A3), size: 18),
+                    hintStyle: GoogleFonts.inter(
+                      color: const Color(0xFF71717A),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF71717A), size: 18),
                     border: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     enabledBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
                 ),
               ),

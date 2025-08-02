@@ -61,7 +61,7 @@ class ShadcnInput extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF09090B), width: 2),
+          borderSide: const BorderSide(color: Color(0xFFE4E4E7), width: 1), // Changed from black to same gray
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -227,11 +227,11 @@ class _AuthAndProfilePagesState extends State<AuthAndProfilePages> {
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.dark,
         statusBarBrightness: Brightness.light,
-        systemNavigationBarColor: Color(0xFFF4F3F0),
+        systemNavigationBarColor: Colors.white, // Changed to white
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF4F3F0),
+        backgroundColor: Colors.white, // Changed from cream to white
         body: Center(
           child: SingleChildScrollView(
             child: Padding(
