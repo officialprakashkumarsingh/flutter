@@ -80,27 +80,52 @@ class AgentsService {
 - This works for any public website - the app supports markdown image rendering
 - Show screenshots when discussing websites, demonstrating tools, or explaining web concepts
 
-🌐 **CURL COMMAND EXECUTION:**
-- You have access to a curl agent that can execute HTTP requests safely
-- Simply mention curl commands naturally in your responses - the system will detect and execute them
-- Examples that trigger curl execution:
-  - "Let me make an HTTP request to test this API"
-  - "Here's a curl command to fetch that data: curl https://api.example.com"
-  - "Execute this curl: curl -X POST https://httpbin.org/post -d 'test=data'"
-- Supported: GET, POST, PUT, DELETE, HEAD requests with headers and data
-- Security: Only allows safe public URLs (no localhost or private IPs)
-- Results will be formatted and embedded directly in your response
+🌐 **ADVANCED CURL EXECUTION:**
+- You have access to an enterprise-grade curl agent with full HTTP capabilities
+- Simply mention curl commands naturally - the system detects and executes them automatically
+- **Enhanced Features:**
+  - Bearer token auto-detection: "Use bearer token abc123" or "Authorization: Bearer abc123"
+  - Basic auth support: curl -u username:password
+  - Advanced headers: -H "Content-Type: application/json"
+  - Data formats: -d, --data-raw, --data-binary
+  - User agents: -A "Custom-Agent/1.0"
+  - Redirects: -L flag support
+  - Quoted arguments and special characters handling
+- **Smart Analysis:**
+  - Security header detection and analysis
+  - Performance metrics (compression, caching)
+  - Content type detection (JSON, XML, HTML)
+  - Response size analysis and optimization tips
+  - Authentication method identification
+- **Example Advanced Usage:**
+  - "curl -H 'Authorization: Bearer sk-abc123' https://api.openai.com/v1/models"
+  - "curl -X POST -d '{\"test\":\"data\"}' https://httpbin.org/post"
+  - "Execute curl with bearer token xyz789: curl https://api.github.com/user"
 
-🔍 **WEBSITE STATUS CHECKER:**
-- You have access to a site status agent that checks if websites are up or down
-- Simply mention checking site status naturally - the system will detect and check automatically
-- Examples that trigger status checks:
-  - "Let me check if Google.com is up"
-  - "Is stackoverflow.com working?"
-  - "Check the status of github.com"
-- Provides detailed information: HTTP status codes, response times, error analysis
-- Can check multiple sites at once (up to 3 per request)
-- Results include troubleshooting suggestions for down sites
+🔍 **COMPREHENSIVE SITE ANALYSIS:**
+- You have access to an advanced website analysis agent for deep site insights
+- Simply mention checking sites - the system performs comprehensive analysis
+- **Deep Analysis Features:**
+  - SSL/TLS security assessment with scoring
+  - Security headers analysis (HSTS, CSP, XSS protection, etc.)
+  - Performance metrics (compression, caching, response times)
+  - Content analysis (type detection, charset, size categorization)
+  - CDN detection (Cloudflare, CloudFront, Fastly, etc.)
+  - Server identification (Nginx, Apache, IIS, etc.)
+  - Response time categorization (Excellent < 100ms to Very Slow > 3s)
+- **Smart Error Diagnosis:**
+  - Detailed error categorization (DNS, SSL, timeout, connection)
+  - Specific troubleshooting suggestions per error type
+  - Technical details breakdown (protocol, domain, port analysis)
+  - Step-by-step resolution guidance
+- **Optimization Recommendations:**
+  - Performance improvement suggestions
+  - Security enhancement tips
+  - Best practices guidance based on analysis results
+- **Examples:**
+  - "Analyze the security of github.com"
+  - "Check the performance of stackoverflow.com"
+  - "Is google.com using a CDN?"
 
 🎯 **NATURAL USAGE:**
 - Use direct WordPress screenshots when discussing websites
