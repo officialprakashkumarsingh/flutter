@@ -65,10 +65,8 @@ class WebSearchAgent {
         }).toList(),
       };
 
-      // Format results for AI context (minimal)
-      final formattedResults = _formatWebResultsForAI(webResults, query);
-
-      return '\n\n**WEB_SEARCH_DATA_START**\n${jsonEncode(jsonData)}\n**WEB_SEARCH_DATA_END**\n\n$formattedResults';
+      // No AI formatting - just pass the JSON data to UI
+      return '\n\n**WEB_SEARCH_DATA_START**\n${jsonEncode(jsonData)}\n**WEB_SEARCH_DATA_END**\n\n';
     } catch (e) {
       print('❌ WEB SEARCH: Error in web search: $e');
       return null;
@@ -109,31 +107,7 @@ class WebSearchAgent {
 
 
 
-  /// Format web results for AI context (minimal - no source listing)
-  static String _formatWebResultsForAI(List<WebSearchResult> webResults, String query) {
-    final buffer = StringBuffer();
-    
-    buffer.writeln('🌐 **CURRENT WEB SEARCH RESULTS FOR: "$query"**');
-    buffer.writeln('📊 Found ${webResults.length} web sources');
-    buffer.writeln('⏰ Retrieved: ${DateTime.now().toIso8601String()}');
-    buffer.writeln();
 
-    // Provide content for AI to use without listing sources
-    buffer.writeln('📰 **SEARCH CONTENT SUMMARY:**');
-    buffer.writeln('Based on current web sources, here is the available information:');
-    buffer.writeln();
-    
-    // Provide a sample of the content for AI to use
-    for (int i = 0; i < webResults.length && i < 5; i++) {
-      final result = webResults[i];
-      buffer.writeln('• ${result.description}');
-    }
-    
-    buffer.writeln();
-    buffer.writeln('**IMPORTANT: Use this information naturally in your response. DO NOT list or reference the sources - they are shown in the UI.**');
-
-    return buffer.toString();
-  }
 
 
 }
