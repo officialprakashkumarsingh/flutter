@@ -354,13 +354,8 @@ class _WebSearchResultsWidgetState extends State<WebSearchResultsWidget> with Si
   void initState() {
     super.initState();
     
-    // Count available tabs
-    int tabCount = 0;
-    if (widget.results.webResults.isNotEmpty) tabCount++;
-    if (widget.results.imageResults.isNotEmpty) tabCount++;
-    if (widget.results.videoResults.isNotEmpty) tabCount++;
-    
-    _tabController = TabController(length: tabCount, vsync: this);
+    // Always use 3 tabs (Web, Images, Videos)
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       setState(() {
         _currentTabIndex = _tabController.index;
@@ -376,74 +371,59 @@ class _WebSearchResultsWidgetState extends State<WebSearchResultsWidget> with Si
 
   @override
   Widget build(BuildContext context) {
-    final availableTabs = <Widget>[];
-    final tabViews = <Widget>[];
-
-    // Add Web tab
-    if (widget.results.webResults.isNotEmpty) {
-      availableTabs.add(
-        Tab(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.language, size: 16),
-              const SizedBox(width: 4),
-              Text('Web (${widget.results.webResults.length})'),
-            ],
-          ),
+    // Always show all 3 tabs regardless of results
+    final availableTabs = <Widget>[
+      // Web tab
+      Tab(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.language, size: 16),
+            const SizedBox(width: 4),
+            Text('Web (${widget.results.webResults.length})'),
+          ],
         ),
-      );
-      tabViews.add(_buildWebResults());
-    }
-
-    // Add Images tab
-    if (widget.results.imageResults.isNotEmpty) {
-      availableTabs.add(
-        Tab(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.image, size: 16),
-              const SizedBox(width: 4),
-              Text('Images (${widget.results.imageResults.length})'),
-            ],
-          ),
+      ),
+      // Images tab
+      Tab(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.image, size: 16),
+            const SizedBox(width: 4),
+            Text('Images (${widget.results.imageResults.length})'),
+          ],
         ),
-      );
-      tabViews.add(_buildImageResults());
-    }
-
-    // Add Videos tab
-    if (widget.results.videoResults.isNotEmpty) {
-      availableTabs.add(
-        Tab(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.play_circle, size: 16),
-              const SizedBox(width: 4),
-              Text('Videos (${widget.results.videoResults.length})'),
-            ],
-          ),
+      ),
+      // Videos tab
+      Tab(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.play_circle, size: 16),
+            const SizedBox(width: 4),
+            Text('Videos (${widget.results.videoResults.length})'),
+          ],
         ),
-      );
-      tabViews.add(_buildVideoResults());
-    }
+      ),
+    ];
+
+    // Always show all 3 tab views
+    final tabViews = <Widget>[
+      _buildWebResults(),
+      _buildImageResults(),
+      _buildVideoResults(),
+    ];
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // Header - removed borders
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                bottom: BorderSide(color: Color(0xFFE4E4E7), width: 1),
-              ),
-            ),
+            color: Colors.white,
             child: Row(
               children: [
                 const Icon(Icons.search, color: Color(0xFF09090B), size: 20),
@@ -469,7 +449,7 @@ class _WebSearchResultsWidgetState extends State<WebSearchResultsWidget> with Si
             ),
           ),
           
-          // Tab Bar
+          // Tab Bar - removed all borders
           Container(
             color: Colors.white,
             child: TabBar(
@@ -487,6 +467,7 @@ class _WebSearchResultsWidgetState extends State<WebSearchResultsWidget> with Si
                 fontSize: 14,
                 fontWeight: FontWeight.w400,
               ),
+              dividerColor: Colors.transparent, // Remove divider line
             ),
           ),
           
@@ -505,6 +486,21 @@ class _WebSearchResultsWidgetState extends State<WebSearchResultsWidget> with Si
   }
 
   Widget _buildWebResults() {
+    if (widget.results.webResults.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Text(
+            'No web results found',
+            style: TextStyle(
+              fontSize: 16,
+              color: Color(0xFF71717A),
+            ),
+          ),
+        ),
+      );
+    }
+    
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: widget.results.webResults.length,
@@ -562,6 +558,21 @@ class _WebSearchResultsWidgetState extends State<WebSearchResultsWidget> with Si
   }
 
   Widget _buildImageResults() {
+    if (widget.results.imageResults.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Text(
+            'No image results found',
+            style: TextStyle(
+              fontSize: 16,
+              color: Color(0xFF71717A),
+            ),
+          ),
+        ),
+      );
+    }
+    
     return GridView.builder(
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
