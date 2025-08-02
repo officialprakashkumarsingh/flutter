@@ -49,6 +49,10 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   late AnimationController _thinkingAnimationController;
   late Animation<double> _thinkingAnimation;
   
+  // Typing indicator state
+  late AnimationController _typingAnimationController;
+  late Animation<double> _typingAnimation;
+  
   // Code panel state
   Map<int, bool> _codeExpandedStates = {};
   Map<int, AnimationController> _codeAnimationControllers = {};
@@ -81,6 +85,16 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     );
     _thinkingAnimation = CurvedAnimation(
       parent: _thinkingAnimationController,
+      curve: Curves.easeInOut,
+    );
+    
+    // Typing indicator animation
+    _typingAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    _typingAnimation = CurvedAnimation(
+      parent: _typingAnimationController,
       curve: Curves.easeInOut,
     );
     
