@@ -51,10 +51,10 @@ class AhamAIApp extends StatelessWidget {
           scrolledUnderElevation: 0,
           shadowColor: Colors.transparent,
         ),
-        cardTheme: CardThemeData(
+        cardTheme: const CardTheme(
           color: Colors.white,
           elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
