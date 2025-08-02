@@ -189,10 +189,11 @@ class WebSearchAgent {
   static Future<List<WebSearchResult>?> _searchWeb(String query) async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/web/search?q=${Uri.encodeComponent(query)}&count=8'),
+        Uri.parse('$_baseUrl/web/search?q=${Uri.encodeComponent(query)}&count=8&safesearch=strict&search_lang=en&country=us&spellcheck=1'),
         headers: {
           'X-Subscription-Token': _apiKey,
           'Accept': 'application/json',
+          'Accept-Encoding': 'gzip',
         },
       );
 
@@ -203,6 +204,7 @@ class WebSearchAgent {
         return webResults.map((result) => WebSearchResult.fromJson(result)).toList();
       } else {
         print('❌ WEB SEARCH: Web search failed with status: ${response.statusCode}');
+        print('❌ WEB SEARCH: Response body: ${response.body}');
         return null;
       }
     } catch (e) {
@@ -215,10 +217,11 @@ class WebSearchAgent {
   static Future<List<WebImageResult>?> _searchImages(String query) async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/images/search?q=${Uri.encodeComponent(query)}&count=6'),
+        Uri.parse('$_baseUrl/images/search?q=${Uri.encodeComponent(query)}&safesearch=strict&count=6&search_lang=en&country=us&spellcheck=1'),
         headers: {
           'X-Subscription-Token': _apiKey,
           'Accept': 'application/json',
+          'Accept-Encoding': 'gzip',
         },
       );
 
@@ -229,6 +232,7 @@ class WebSearchAgent {
         return imageResults.map((result) => WebImageResult.fromJson(result)).toList();
       } else {
         print('❌ WEB SEARCH: Image search failed with status: ${response.statusCode}');
+        print('❌ WEB SEARCH: Response body: ${response.body}');
         return null;
       }
     } catch (e) {
@@ -241,10 +245,11 @@ class WebSearchAgent {
   static Future<List<WebVideoResult>?> _searchVideos(String query) async {
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/videos/search?q=${Uri.encodeComponent(query)}&count=4'),
+        Uri.parse('$_baseUrl/videos/search?q=${Uri.encodeComponent(query)}&count=4&safesearch=strict&search_lang=en&country=us&spellcheck=1'),
         headers: {
           'X-Subscription-Token': _apiKey,
           'Accept': 'application/json',
+          'Accept-Encoding': 'gzip',
         },
       );
 
@@ -255,6 +260,7 @@ class WebSearchAgent {
         return videoResults.map((result) => WebVideoResult.fromJson(result)).toList();
       } else {
         print('❌ WEB SEARCH: Video search failed with status: ${response.statusCode}');
+        print('❌ WEB SEARCH: Response body: ${response.body}');
         return null;
       }
     } catch (e) {
