@@ -123,61 +123,472 @@ class SiteStatusAgent {
     }
   }
   
-  /// Perform the actual status check
+  /// Perform the actual status check with advanced analysis
   static Future<String> _performStatusCheck(String url) async {
     final stopwatch = Stopwatch()..start();
+    final results = <String, dynamic>{};
     
     try {
-      // Try HEAD request first (faster)
-      final headResponse = await http.head(
-        Uri.parse(url),
-        headers: {
-          'User-Agent': 'AhamAI-StatusChecker/1.0',
-        },
-      ).timeout(const Duration(seconds: 10));
+      // Enhanced user agent
+      final headers = {
+        'User-Agent': 'AhamAI-StatusChecker/2.0 (Advanced Analysis Bot)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate',
+        'Connection': 'keep-alive',
+        'Cache-Control': 'no-cache',
+      };
       
-      stopwatch.stop();
+      // Step 1: Try HEAD request first (fastest)
+      http.Response? response;
+      String method = 'HEAD';
       
-      return _formatStatusResponse(url, headResponse.statusCode, stopwatch.elapsedMilliseconds, 'HEAD');
+      try {
+        response = await http.head(
+          Uri.parse(url),
+          headers: headers,
+        ).timeout(const Duration(seconds: 8));
+        stopwatch.stop();
+        results['method'] = 'HEAD';
+        results['responseTime'] = stopwatch.elapsedMilliseconds;
+      } catch (e) {
+        // Step 2: If HEAD fails, try GET request
+        try {
+          stopwatch.reset();
+          stopwatch.start();
+          method = 'GET';
+          
+          response = await http.get(
+            Uri.parse(url),
+            headers: headers,
+          ).timeout(const Duration(seconds: 12));
+          
+          stopwatch.stop();
+          results['method'] = 'GET';
+          results['responseTime'] = stopwatch.elapsedMilliseconds;
+        } catch (e2) {
+          stopwatch.stop();
+          return _formatAdvancedErrorResponse(url, e2, stopwatch.elapsedMilliseconds);
+        }
+      }
+      
+      if (response != null) {
+        // Advanced analysis
+        results['statusCode'] = response.statusCode;
+        results['headers'] = response.headers;
+        results['bodySize'] = response.body.length;
+        results['url'] = url;
+        
+        // Performance analysis
+        results.addAll(await _performAdvancedAnalysis(url, response));
+        
+        return _formatAdvancedStatusResponse(results);
+      }
+      
+      return _formatErrorResponse(url, 'No response received', stopwatch.elapsedMilliseconds);
       
     } catch (e) {
-      // If HEAD fails, try GET request
-      try {
-        stopwatch.reset();
-        stopwatch.start();
-        
-        final getResponse = await http.get(
-          Uri.parse(url),
-          headers: {
-            'User-Agent': 'AhamAI-StatusChecker/1.0',
-          },
-        ).timeout(const Duration(seconds: 15));
-        
-        stopwatch.stop();
-        
-        return _formatStatusResponse(url, getResponse.statusCode, stopwatch.elapsedMilliseconds, 'GET');
-        
-      } catch (e2) {
-        stopwatch.stop();
-        
-        // Determine error type
-        String errorType = 'Unknown error';
-        if (e2.toString().contains('TimeoutException')) {
-          errorType = 'Connection timeout';
-        } else if (e2.toString().contains('SocketException')) {
-          errorType = 'DNS resolution failed or connection refused';
-        } else if (e2.toString().contains('HandshakeException')) {
-          errorType = 'SSL/TLS handshake failed';
-        } else if (e2.toString().contains('HttpException')) {
-          errorType = 'HTTP protocol error';
-        }
-        
-        return _formatErrorResponse(url, errorType, stopwatch.elapsedMilliseconds);
-      }
+      stopwatch.stop();
+      return _formatAdvancedErrorResponse(url, e, stopwatch.elapsedMilliseconds);
     }
   }
   
-  /// Format successful status response
+  /// Perform advanced website analysis
+  static Future<Map<String, dynamic>> _performAdvancedAnalysis(String url, http.Response response) async {
+    final analysis = <String, dynamic>{};
+    
+    // SSL/TLS Analysis
+    final uri = Uri.parse(url);
+    if (uri.scheme == 'https') {
+      analysis['ssl'] = 'Enabled (HTTPS)';
+      analysis['sslScore'] = 100;
+    } else {
+      analysis['ssl'] = 'Not Enabled (HTTP)';
+      analysis['sslScore'] = 0;
+    }
+    
+    // Security Headers Analysis
+    analysis['security'] = _analyzeSecurityHeaders(response.headers);
+    
+    // Performance Analysis
+    analysis['performance'] = _analyzePerformance(response);
+    
+    // Content Analysis
+    analysis['content'] = _analyzeContent(response);
+    
+    // CDN Detection
+    analysis['cdn'] = _detectCDN(response.headers);
+    
+    // Server Analysis
+    analysis['server'] = _analyzeServer(response.headers);
+    
+    return analysis;
+  }
+  
+  /// Analyze security headers
+  static Map<String, dynamic> _analyzeSecurityHeaders(Map<String, String> headers) {
+    final security = <String, dynamic>{};
+    final securityHeaders = {
+      'strict-transport-security': 'HSTS',
+      'x-frame-options': 'Clickjacking Protection',
+      'x-content-type-options': 'MIME Sniffing Protection',
+      'x-xss-protection': 'XSS Protection',
+      'content-security-policy': 'Content Security Policy',
+      'referrer-policy': 'Referrer Policy',
+      'permissions-policy': 'Permissions Policy',
+    };
+    
+    final found = <String>[];
+    final missing = <String>[];
+    
+    for (final entry in securityHeaders.entries) {
+      if (headers.containsKey(entry.key)) {
+        found.add(entry.value);
+      } else {
+        missing.add(entry.value);
+      }
+    }
+    
+    security['found'] = found;
+    security['missing'] = missing;
+    security['score'] = ((found.length / securityHeaders.length) * 100).round();
+    
+    return security;
+  }
+  
+  /// Analyze performance metrics
+  static Map<String, dynamic> _analyzePerformance(http.Response response) {
+    final performance = <String, dynamic>{};
+    
+    // Compression
+    final encoding = response.headers['content-encoding'];
+    performance['compression'] = encoding ?? 'None';
+    
+    // Caching
+    final cacheControl = response.headers['cache-control'];
+    final expires = response.headers['expires'];
+    final etag = response.headers['etag'];
+    
+    performance['caching'] = {
+      'cache-control': cacheControl ?? 'Not set',
+      'expires': expires ?? 'Not set',
+      'etag': etag != null ? 'Present' : 'Not set',
+    };
+    
+    // Content size
+    performance['contentSize'] = response.body.length;
+    performance['sizeCategory'] = _categorizeSizeValue(response.body.length);
+    
+    return performance;
+  }
+  
+  /// Analyze content type and structure
+  static Map<String, dynamic> _analyzeContent(http.Response response) {
+    final content = <String, dynamic>{};
+    
+    final contentType = response.headers['content-type'] ?? 'Unknown';
+    content['type'] = contentType;
+    
+    if (contentType.contains('html')) {
+      content['category'] = 'Web Page';
+      content['charset'] = _extractCharset(contentType);
+    } else if (contentType.contains('json')) {
+      content['category'] = 'API Response';
+    } else if (contentType.contains('xml')) {
+      content['category'] = 'XML Document';
+    } else if (contentType.contains('image')) {
+      content['category'] = 'Image';
+    } else {
+      content['category'] = 'Other';
+    }
+    
+    return content;
+  }
+  
+  /// Detect CDN usage
+  static String _detectCDN(Map<String, String> headers) {
+    final cdnIndicators = {
+      'cloudflare': ['cf-ray', 'cf-cache-status', 'server'],
+      'cloudfront': ['x-amz-cf-id', 'x-cache'],
+      'fastly': ['fastly-debug-digest', 'x-served-by'],
+      'maxcdn': ['x-cache'],
+      'keycdn': ['x-edge-location'],
+      'bunnycdn': ['bunnycdn-cache-status'],
+    };
+    
+    for (final entry in cdnIndicators.entries) {
+      for (final indicator in entry.value) {
+        final headerValue = headers[indicator]?.toLowerCase() ?? '';
+        if (headerValue.contains(entry.key) || 
+            (entry.key == 'cloudflare' && headers.containsKey('cf-ray'))) {
+          return entry.key.toUpperCase();
+        }
+      }
+    }
+    
+    return 'None detected';
+  }
+  
+  /// Analyze server information
+  static Map<String, dynamic> _analyzeServer(Map<String, String> headers) {
+    final server = <String, dynamic>{};
+    
+    final serverHeader = headers['server'] ?? 'Unknown';
+    server['software'] = serverHeader;
+    
+    if (serverHeader.toLowerCase().contains('nginx')) {
+      server['type'] = 'Nginx';
+    } else if (serverHeader.toLowerCase().contains('apache')) {
+      server['type'] = 'Apache';
+    } else if (serverHeader.toLowerCase().contains('cloudflare')) {
+      server['type'] = 'Cloudflare';
+    } else if (serverHeader.toLowerCase().contains('microsoft')) {
+      server['type'] = 'IIS';
+    } else {
+      server['type'] = 'Other/Unknown';
+    }
+    
+    return server;
+  }
+  
+  /// Extract charset from content-type
+  static String _extractCharset(String contentType) {
+    final charsetMatch = RegExp(r'charset=([^;]+)').firstMatch(contentType);
+    return charsetMatch?.group(1) ?? 'Not specified';
+  }
+  
+  /// Categorize content size
+  static String _categorizeSizeValue(int size) {
+    if (size < 1024) return 'Very Small (${size} bytes)';
+    if (size < 10240) return 'Small (${(size / 1024).toStringAsFixed(1)} KB)';
+    if (size < 102400) return 'Medium (${(size / 1024).toStringAsFixed(1)} KB)';
+    if (size < 1048576) return 'Large (${(size / 1024).toStringAsFixed(1)} KB)';
+    return 'Very Large (${(size / 1048576).toStringAsFixed(1)} MB)';
+  }
+  
+  /// Format advanced status response
+  static String _formatAdvancedStatusResponse(Map<String, dynamic> results) {
+    final buffer = StringBuffer();
+    
+    final statusCode = results['statusCode'] as int;
+    final responseTime = results['responseTime'] as int;
+    final method = results['method'] as String;
+    final url = results['url'] as String;
+    
+    // Determine status
+    final isUp = statusCode >= 200 && statusCode < 400;
+    final statusIcon = isUp ? '✅' : '❌';
+    final statusText = isUp ? 'UP' : 'DOWN';
+    
+    // Main status
+    buffer.writeln('🌐 **Advanced Site Analysis**');
+    buffer.writeln('🔗 **URL**: $url');
+    buffer.writeln('$statusIcon **Status**: $statusText');
+    buffer.writeln('📊 **HTTP Code**: $statusCode ${_getStatusCodeMeaning(statusCode)}');
+    buffer.writeln('⏱️ **Response Time**: ${_categorizeResponseTime(responseTime)}');
+    buffer.writeln('🔧 **Method**: $method');
+    buffer.writeln();
+    
+    // SSL/TLS Analysis
+    if (results.containsKey('ssl')) {
+      final sslScore = results['sslScore'] as int;
+      final sslIcon = sslScore == 100 ? '🔒' : '⚠️';
+      buffer.writeln('$sslIcon **SSL/TLS**: ${results['ssl']} (Score: $sslScore/100)');
+    }
+    
+    // Security Analysis
+    if (results.containsKey('security')) {
+      final security = results['security'] as Map<String, dynamic>;
+      final score = security['score'] as int;
+      final found = security['found'] as List;
+      final securityIcon = score >= 70 ? '🛡️' : score >= 40 ? '⚠️' : '🚨';
+      
+      buffer.writeln('$securityIcon **Security Score**: $score/100');
+      if (found.isNotEmpty) {
+        buffer.writeln('  ✅ **Found**: ${found.join(', ')}');
+      }
+      final missing = security['missing'] as List;
+      if (missing.isNotEmpty && missing.length <= 3) {
+        buffer.writeln('  ❌ **Missing**: ${missing.join(', ')}');
+      }
+    }
+    
+    // Performance Analysis
+    if (results.containsKey('performance')) {
+      final performance = results['performance'] as Map<String, dynamic>;
+      final compression = performance['compression'] as String;
+      final sizeCategory = performance['sizeCategory'] as String;
+      
+      buffer.writeln('⚡ **Performance**:');
+      buffer.writeln('  📦 **Compression**: $compression');
+      buffer.writeln('  📏 **Content Size**: $sizeCategory');
+      
+      final caching = performance['caching'] as Map<String, dynamic>;
+      final cacheControl = caching['cache-control'] as String;
+      if (cacheControl != 'Not set') {
+        buffer.writeln('  💾 **Caching**: Configured');
+      }
+    }
+    
+    // Content Analysis
+    if (results.containsKey('content')) {
+      final content = results['content'] as Map<String, dynamic>;
+      buffer.writeln('📄 **Content**: ${content['category']} (${content['type']})');
+    }
+    
+    // CDN Detection
+    if (results.containsKey('cdn')) {
+      final cdn = results['cdn'] as String;
+      final cdnIcon = cdn != 'None detected' ? '🌐' : 'ℹ️';
+      buffer.writeln('$cdnIcon **CDN**: $cdn');
+    }
+    
+    // Server Analysis
+    if (results.containsKey('server')) {
+      final server = results['server'] as Map<String, dynamic>;
+      buffer.writeln('🖥️ **Server**: ${server['type']}');
+    }
+    
+    buffer.writeln();
+    
+    // Overall assessment
+    if (isUp) {
+      buffer.writeln('✅ **Overall**: Website is fully operational and accessible');
+      
+      // Performance recommendations
+      if (results.containsKey('performance')) {
+        final performance = results['performance'] as Map<String, dynamic>;
+        final recommendations = <String>[];
+        
+        if (performance['compression'] == 'None') {
+          recommendations.add('Enable compression (gzip/brotli)');
+        }
+        
+        final caching = performance['caching'] as Map<String, dynamic>;
+        if (caching['cache-control'] == 'Not set') {
+          recommendations.add('Configure caching headers');
+        }
+        
+        if (results.containsKey('security')) {
+          final security = results['security'] as Map<String, dynamic>;
+          final score = security['score'] as int;
+          if (score < 70) {
+            recommendations.add('Improve security headers');
+          }
+        }
+        
+        if (recommendations.isNotEmpty) {
+          buffer.writeln('💡 **Optimization Tips**: ${recommendations.join(', ')}');
+        }
+      }
+    } else {
+      buffer.writeln('❌ **Issue Detected**: ${_getStatusCodeSuggestion(statusCode)}');
+    }
+    
+    return buffer.toString();
+  }
+  
+  /// Format advanced error response
+  static String _formatAdvancedErrorResponse(String url, dynamic error, int elapsedTime) {
+    final buffer = StringBuffer();
+    
+    // Determine detailed error type
+    String errorType = 'Unknown error';
+    String errorCategory = '🚫';
+    final suggestions = <String>[];
+    
+    final errorString = error.toString().toLowerCase();
+    
+    if (errorString.contains('timeoutexception')) {
+      errorType = 'Connection timeout';
+      errorCategory = '⏰';
+      suggestions.addAll([
+        'Server may be overloaded or very slow',
+        'Check your internet connection',
+        'Try again in a few minutes',
+      ]);
+    } else if (errorString.contains('socketexception')) {
+      if (errorString.contains('failed host lookup')) {
+        errorType = 'DNS resolution failed';
+        errorCategory = '🔍';
+        suggestions.addAll([
+          'Domain name might not exist',
+          'Check for typos in the URL',
+          'DNS server issues',
+        ]);
+      } else {
+        errorType = 'Connection refused';
+        errorCategory = '🚪';
+        suggestions.addAll([
+          'Server is not accepting connections',
+          'Firewall blocking the request',
+          'Server may be down',
+        ]);
+      }
+    } else if (errorString.contains('handshakeexception')) {
+      errorType = 'SSL/TLS handshake failed';
+      errorCategory = '🔐';
+      suggestions.addAll([
+        'SSL certificate issues',
+        'Outdated security protocols',
+        'Try HTTP instead of HTTPS',
+      ]);
+    } else if (errorString.contains('httpexception')) {
+      errorType = 'HTTP protocol error';
+      errorCategory = '📡';
+      suggestions.addAll([
+        'Invalid HTTP response from server',
+        'Server configuration issues',
+        'Protocol version mismatch',
+      ]);
+    }
+    
+    buffer.writeln('🌐 **Advanced Site Analysis**');
+    buffer.writeln('🔗 **URL**: $url');
+    buffer.writeln('❌ **Status**: DOWN');
+    buffer.writeln('$errorCategory **Error**: $errorType');
+    buffer.writeln('⏱️ **Time Elapsed**: ${elapsedTime}ms');
+    buffer.writeln();
+    
+    // Detailed analysis
+    final uri = Uri.tryParse(url);
+    if (uri != null) {
+      buffer.writeln('🔍 **Technical Details**:');
+      buffer.writeln('• **Protocol**: ${uri.scheme.toUpperCase()}');
+      buffer.writeln('• **Domain**: ${uri.host}');
+      if (uri.hasPort) {
+        buffer.writeln('• **Port**: ${uri.port}');
+      }
+      buffer.writeln();
+    }
+    
+    // Quick diagnostics
+    buffer.writeln('🔧 **Quick Diagnostics**:');
+    suggestions.forEach((suggestion) {
+      buffer.writeln('• $suggestion');
+    });
+    
+    // Additional troubleshooting
+    buffer.writeln();
+    buffer.writeln('💡 **Troubleshooting Steps**:');
+    buffer.writeln('1. Verify the URL is correct');
+    buffer.writeln('2. Check your internet connection');
+    buffer.writeln('3. Try accessing from a different network');
+    buffer.writeln('4. Contact the website administrator if issues persist');
+    
+    return buffer.toString();
+  }
+  
+  /// Categorize response time
+  static String _categorizeResponseTime(int ms) {
+    if (ms < 100) return '${ms}ms (Excellent)';
+    if (ms < 300) return '${ms}ms (Good)';
+    if (ms < 1000) return '${ms}ms (Fair)';
+    if (ms < 3000) return '${ms}ms (Slow)';
+    return '${ms}ms (Very Slow)';
+  }
+  
+  /// Format successful status response (legacy - kept for compatibility)
   static String _formatStatusResponse(String url, int statusCode, int responseTime, String method) {
     final buffer = StringBuffer();
     
