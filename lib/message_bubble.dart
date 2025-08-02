@@ -378,6 +378,32 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     }
   }
 
+  // Animated sad emoji widget for image errors
+  Widget _buildAnimatedSadEmoji() {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 1000),
+      tween: Tween(begin: 0.8, end: 1.0),
+      curve: Curves.easeInOut,
+      builder: (context, scale, child) {
+        return Transform.scale(
+          scale: scale,
+          child: const Text(
+            '😢',
+            style: TextStyle(fontSize: 24),
+          ),
+        );
+      },
+      onEnd: () {
+        // Restart animation after a brief pause
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            setState(() {});
+          }
+        });
+      },
+    );
+  }
+
   Widget _buildUserMessage() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -552,11 +578,14 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
 
   // Build markdown content widget with enhanced styling and image support
   Widget _buildMarkdownContent(String text) {
-    return MarkdownBody(
-      data: text,
-      selectable: true,
-      shrinkWrap: true,
-      fitContent: true,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+                 MarkdownBody(
+           data: text,
+           selectable: true,
+           shrinkWrap: true,
         imageBuilder: (uri, title, alt) {
           return ClipRRect(
             borderRadius: BorderRadius.circular(8),
@@ -564,25 +593,44 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
               uri.toString(),
               errorBuilder: (context, error, stackTrace) {
                 return Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8F9FA),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.image_not_supported, color: Color(0xFF71717A)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          alt ?? 'Image could not be loaded',
-                          style: GoogleFonts.inter(
-                            color: const Color(0xFF71717A),
-                            fontSize: 14,
-                          ),
-                        ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
                       ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildAnimatedSadEmoji(),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Image could not be loaded',
+                        style: GoogleFonts.inter(
+                          color: const Color(0xFF71717A),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      if (alt != null && alt!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          alt!,
+                          style: GoogleFonts.inter(
+                            color: const Color(0xFF9CA3AF),
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ],
                   ),
                 );
@@ -643,17 +691,24 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
             height: 1.3,
           ),
           
-          // Code styling
+          // Code styling - match code panel
           code: GoogleFonts.jetBrainsMono(
-            backgroundColor: const Color(0xFFF4F4F5),
-            color: const Color(0xFF1F2937),
-            fontSize: 14,
+            backgroundColor: const Color(0xFF3F3F46),
+            color: const Color(0xFFA1A1AA),
+            fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
           codeblockDecoration: BoxDecoration(
             color: const Color(0xFF09090B),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFF27272A), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           codeblockPadding: const EdgeInsets.all(16),
           
@@ -725,6 +780,8 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
           pPadding: const EdgeInsets.only(bottom: 8),
           listIndent: 16,
         ),
+        ),
+      ],
     );
   }
 
