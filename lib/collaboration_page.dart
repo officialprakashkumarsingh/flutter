@@ -144,7 +144,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
             ],
           ),
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
           
           // Title Section
           Row(
@@ -153,21 +153,20 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Collaborate',
-                    style: GoogleFonts.inter(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF09090B),
-                      letterSpacing: -1.2,
-                      height: 1.0,
+                    'Messages',
+                    style: TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w700,
+                      color: CupertinoColors.label.resolveFrom(context),
+                      letterSpacing: -0.4,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     'Connect with your team',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      color: const Color(0xFF71717A),
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
                       fontWeight: FontWeight.w400,
                     ),
                   ),
@@ -176,105 +175,78 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
             ],
           ),
           
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           
-          // Minimal Tab Selector
+          // iOS-style Segmented Control
           Container(
-            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: CupertinoColors.systemGray6.resolveFrom(context),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      _tabController.animateTo(0);
-                      setState(() {});
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
+            child: CupertinoSlidingSegmentedControl<int>(
+              backgroundColor: CupertinoColors.systemGray6.resolveFrom(context),
+              thumbColor: CupertinoColors.systemBackground.resolveFrom(context),
+              padding: const EdgeInsets.all(4),
+              groupValue: _tabController.index,
+              onValueChanged: (value) {
+                HapticFeedback.selectionClick();
+                _tabController.animateTo(value!);
+                setState(() {});
+              },
+              children: {
+                0: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        CupertinoIcons.person_2_fill,
+                        size: 16,
                         color: _tabController.index == 0 
-                            ? const Color(0xFF09090B) 
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
+                            ? CupertinoColors.systemBlue.resolveFrom(context)
+                            : CupertinoColors.secondaryLabel.resolveFrom(context),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          FaIcon(
-                            FontAwesomeIcons.users,
-                            size: 16,
-                            color: _tabController.index == 0 
-                                ? Colors.white 
-                                : const Color(0xFF71717A),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'My Rooms',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: _tabController.index == 0 
-                                  ? Colors.white 
-                                  : const Color(0xFF71717A),
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 6),
+                      Text(
+                        'My Rooms',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: _tabController.index == 0 
+                              ? CupertinoColors.systemBlue.resolveFrom(context)
+                              : CupertinoColors.secondaryLabel.resolveFrom(context),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      _tabController.animateTo(1);
-                      setState(() {});
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
+                1: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        CupertinoIcons.arrow_right_circle_fill,
+                        size: 16,
                         color: _tabController.index == 1 
-                            ? const Color(0xFF09090B) 
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
+                            ? CupertinoColors.systemBlue.resolveFrom(context)
+                            : CupertinoColors.secondaryLabel.resolveFrom(context),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          FaIcon(
-                            FontAwesomeIcons.rightToBracket,
-                            size: 16,
-                            color: _tabController.index == 1 
-                                ? Colors.white 
-                                : const Color(0xFF71717A),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Join Room',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: _tabController.index == 1 
-                                  ? Colors.white 
-                                  : const Color(0xFF71717A),
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 6),
+                      Text(
+                        'Join Room',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: _tabController.index == 1 
+                              ? CupertinoColors.systemBlue.resolveFrom(context)
+                              : CupertinoColors.secondaryLabel.resolveFrom(context),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-              ],
+              },
             ),
           ),
         ],
@@ -335,7 +307,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
 
   Widget _buildMainContent() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: TabBarView(
         controller: _tabController,
         children: [
@@ -396,79 +368,63 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                color: CupertinoColors.systemGray6.resolveFrom(context),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: const Center(
-                child: FaIcon(
-                  FontAwesomeIcons.users,
-                  size: 32,
-                  color: Color(0xFF71717A),
-                ),
+              child: Icon(
+                CupertinoIcons.person_2_fill,
+                size: 32,
+                color: CupertinoColors.tertiaryLabel.resolveFrom(context),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Text(
-              'No rooms yet',
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF09090B),
-                letterSpacing: -0.3,
+              'No Conversations',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w600,
+                color: CupertinoColors.label.resolveFrom(context),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Create your first room to start\ncollaborating with your team',
-              style: GoogleFonts.inter(
-                fontSize: 15,
-                color: const Color(0xFF71717A),
-                height: 1.5,
+              style: TextStyle(
+                fontSize: 16,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                height: 1.4,
                 fontWeight: FontWeight.w400,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 32),
-            GestureDetector(
-              onTap: () {
+            const SizedBox(height: 24),
+            CupertinoButton.filled(
+              onPressed: () {
                 HapticFeedback.lightImpact();
                 _showCreateRoomDialog();
               },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF09090B),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const FaIcon(
-                      FontAwesomeIcons.plus,
-                      size: 16,
-                      color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    CupertinoIcons.add,
+                    size: 18,
+                    color: CupertinoColors.white,
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Create Room',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: CupertinoColors.white,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Create Room',
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -490,45 +446,47 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
 
   Widget _buildRoomCard(CollaborationRoom room) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: CupertinoColors.systemBackground.resolveFrom(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: CupertinoColors.separator.resolveFrom(context).withOpacity(0.2),
+          width: 0.5,
+        ),
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: () => _joinRoom(room),
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                // Room Avatar
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF09090B),
-                    borderRadius: BorderRadius.circular(14),
+      child: CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          _joinRoom(room);
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // Room Avatar - iOS style
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      CupertinoColors.systemBlue.resolveFrom(context),
+                      CupertinoColors.systemBlue.resolveFrom(context).withOpacity(0.8),
+                    ],
                   ),
-                  child: const Center(
-                    child: FaIcon(
-                      FontAwesomeIcons.users,
-                      size: 20,
-                      color: Colors.white,
-                    ),
-                  ),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 16),
+                child: const Icon(
+                  CupertinoIcons.person_2_fill,
+                  size: 20,
+                  color: CupertinoColors.white,
+                ),
+              ),
+              const SizedBox(width: 12),
                 
                 // Room Info
                 Expanded(
@@ -537,50 +495,47 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                     children: [
                       Text(
                         room.name,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF09090B),
-                          letterSpacing: -0.3,
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: CupertinoColors.label.resolveFrom(context),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(8),
+                              color: CupertinoColors.systemGray6.resolveFrom(context),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               room.inviteCode,
-                              style: GoogleFonts.robotoMono(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF71717A),
-                                letterSpacing: 1,
+                                color: CupertinoColors.systemBlue.resolveFrom(context),
+                                fontFamily: 'Monaco',
+                                letterSpacing: 0.5,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Container(
-                            width: 4,
-                            height: 4,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFE4E4E7),
-                              shape: BoxShape.circle,
-                            ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            CupertinoIcons.circle_fill,
+                            size: 4,
+                            color: CupertinoColors.separator.resolveFrom(context),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 8),
                           Text(
                             '${room.memberCount} members',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF71717A),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w400,
+                              color: CupertinoColors.secondaryLabel.resolveFrom(context),
                             ),
                           ),
                         ],
@@ -589,21 +544,11 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                   ),
                 ),
                 
-                // Arrow
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FA),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Center(
-                    child: FaIcon(
-                      FontAwesomeIcons.chevronRight,
-                      size: 14,
-                      color: Color(0xFF71717A),
-                    ),
-                  ),
+                // iOS Arrow
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  size: 16,
+                  color: CupertinoColors.tertiaryLabel.resolveFrom(context),
                 ),
               ],
             ),
