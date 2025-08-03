@@ -344,7 +344,7 @@ class ChatPageState extends State<ChatPage> {
   void _showUserMessageOptions(BuildContext context, Message message) {
     showModalBottomSheet(
       context: context,
-                  backgroundColor: Colors.white,
+                  backgroundColor: const Color(0xFFF9F7F4), // Consistent cream
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return Wrap(
@@ -1384,7 +1384,7 @@ ${AgentsService.getSystemPromptAddition()}
             fontWeight: FontWeight.w500,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF9F7F4), // Consistent cream
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
@@ -1881,7 +1881,7 @@ ${AgentsService.getSystemPromptAddition()}
   Widget build(BuildContext context) {
     final emptyChat = _messages.length <= 1;
     return Container(
-              color: Colors.white,
+              color: const Color(0xFFF9F7F4), // Consistent cream background
       child: Column(
         children: [
           Expanded(
