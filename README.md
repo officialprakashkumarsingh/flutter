@@ -21,9 +21,11 @@ DROP TABLE IF EXISTS public.profiles;
 
 **Step 2: Run this complete setup command:**
 
+⚠️ **IMPORTANT**: If you get "relation already exists" errors, this means some tables already exist. The `IF NOT EXISTS` clauses below will safely skip existing tables.
+
 ```sql
--- Create profiles table for user data
-CREATE TABLE public.profiles (
+-- Create profiles table for user data (safe creation)
+CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
@@ -32,8 +34,8 @@ CREATE TABLE public.profiles (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Create characters table
-CREATE TABLE public.characters (
+-- Create characters table (safe creation)
+CREATE TABLE IF NOT EXISTS public.characters (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     name TEXT NOT NULL,
@@ -49,8 +51,8 @@ CREATE TABLE public.characters (
     UNIQUE(user_id, name) -- Prevent duplicate character names per user
 );
 
--- Create chat conversations table with pin functionality
-CREATE TABLE public.chat_conversations (
+-- Create chat conversations table with pin functionality (safe creation)
+CREATE TABLE IF NOT EXISTS public.chat_conversations (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     title TEXT DEFAULT 'New Chat',
