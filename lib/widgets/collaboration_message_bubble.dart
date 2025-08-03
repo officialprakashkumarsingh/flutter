@@ -30,6 +30,12 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   // Slide to reply variables
   double _slideOffset = 0.0;
   bool _isSliding = false;
+  
+  // Heart animation variables
+  late AnimationController _heartAnimationController;
+  late Animation<double> _heartScaleAnimation;
+  late Animation<double> _heartOpacityAnimation;
+  bool _showHeart = false;
 
   @override
   void initState() {
@@ -42,11 +48,32 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
       parent: _actionsAnimationController,
       curve: Curves.easeInOut,
     );
+    
+    // Heart animation setup
+    _heartAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _heartScaleAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.2,
+    ).animate(CurvedAnimation(
+      parent: _heartAnimationController,
+      curve: Curves.elasticOut,
+    ));
+    _heartOpacityAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(
+      parent: _heartAnimationController,
+      curve: const Interval(0.6, 1.0, curve: Curves.easeOut),
+    ));
   }
 
   @override
   void dispose() {
     _actionsAnimationController.dispose();
+    _heartAnimationController.dispose();
     super.dispose();
   }
 
@@ -100,6 +127,9 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
             _actionsAnimationController.reverse();
           }
         });
+      },
+      onDoubleTap: () {
+        _showHeartAnimation();
       },
       onHorizontalDragStart: widget.onReply != null && widget.message.messageType != 'system' 
           ? (_) {
@@ -182,24 +212,51 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
                 ),
               ),
             
-            // Message content
-            Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.75,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: widget.isOwnMessage ? [
-                  _buildMessageBubble(),
-                  const SizedBox(width: 8),
-                  _buildAvatar(),
-                ] : [
-                  _buildAvatar(),
-                  const SizedBox(width: 8),
-                  _buildMessageBubble(),
-                ],
-              ),
+            // Message content with heart overlay
+            Stack(
+              children: [
+                Container(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width * 0.75,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: widget.isOwnMessage ? [
+                      _buildMessageBubble(),
+                      const SizedBox(width: 8),
+                      _buildAvatar(),
+                    ] : [
+                      _buildAvatar(),
+                      const SizedBox(width: 8),
+                      _buildMessageBubble(),
+                    ],
+                  ),
+                ),
+                
+                // Heart animation overlay
+                if (_showHeart)
+                  Positioned.fill(
+                    child: Center(
+                      child: AnimatedBuilder(
+                        animation: _heartAnimationController,
+                        builder: (context, child) {
+                          return Transform.scale(
+                            scale: _heartScaleAnimation.value,
+                            child: Opacity(
+                              opacity: _heartOpacityAnimation.value,
+                              child: const FaIcon(
+                                FontAwesomeIcons.solidHeart,
+                                color: Colors.red,
+                                size: 40,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ],
         ),
@@ -314,9 +371,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   Widget _buildMessageContent() {
     return Padding(
       padding: const EdgeInsets.only(top: 2),
-      child: widget.message.messageType == 'ai' 
-          ? _buildMarkdownContent()
-          : _buildTextContent(),
+      child: _buildMarkdownContent(), // Use markdown for all messages
     );
   }
 
@@ -518,5 +573,21 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
         duration: const Duration(seconds: 2),
       ),
     );
+  }
+
+  void _showHeartAnimation() {
+    setState(() {
+      _showHeart = true;
+    });
+    
+    _heartAnimationController.reset();
+    _heartAnimationController.forward().then((_) {
+      setState(() {
+        _showHeart = false;
+      });
+    });
+    
+    // Add haptic feedback for better UX
+    HapticFeedback.lightImpact();
   }
 }

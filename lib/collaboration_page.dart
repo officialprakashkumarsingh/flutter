@@ -1188,3 +1188,33 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
     );
   }
 }
+
+class CollabsPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Fill with white background
+    final paint = Paint()..color = Colors.white;
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
+    
+    // Create subtle dot pattern for Collabs page
+    final dotPaint = Paint()
+      ..color = Colors.grey.withOpacity(0.06)
+      ..style = PaintingStyle.fill;
+    
+    const dotSize = 1.0;
+    const spacing = 25.0;
+    
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), dotSize, dotPaint);
+        // Add variation for more texture
+        if ((x / spacing) % 3 == 0 && (y / spacing) % 3 == 0) {
+          canvas.drawCircle(Offset(x + spacing/3, y + spacing/3), dotSize * 0.6, dotPaint);
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
