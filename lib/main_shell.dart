@@ -9,6 +9,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import 'chat_page.dart';
 import 'characters_page.dart';
+import 'collaboration_page.dart';
 import 'saved_page.dart';
 import 'models.dart';
 import 'supabase_auth_service.dart';
@@ -876,6 +877,60 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
               ),
             ),
 
+            // Collaborate option
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              child: Material(
+                color: const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            const CollaborationPage(),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          return SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(1.0, 0.0),
+                              end: Offset.zero,
+                            ).animate(CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOutCubic,
+                            )),
+                            child: child,
+                          );
+                        },
+                        transitionDuration: const Duration(milliseconds: 300),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.group_outlined, color: Color(0xFF09090B), size: 22),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Text(
+                            'Collaborate',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF000000),
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFFA3A3A3), size: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
             
             const SizedBox(height: 16),
             
