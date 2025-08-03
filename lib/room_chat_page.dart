@@ -280,11 +280,28 @@ class _RoomChatPageState extends State<RoomChatPage> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final message = _messages[index];
-        // Alternate message sides: odd index (1,3,5...) = left, even index (0,2,4...) = right
-        final bool forceLeft = (index + 1) % 2 == 1; // 1st, 3rd, 5th message go left
+        
+        // Group messages by user - same user stays on same side until different user
+        bool isOwnMessage;
+        if (index == 0) {
+          // First message - user goes right, AI goes left
+          isOwnMessage = message.messageType != 'ai';
+        } else {
+          final previousMessage = _messages[index - 1];
+          if (message.userName == previousMessage.userName && 
+              message.messageType == previousMessage.messageType) {
+            // Same user as previous - keep same side
+            final previousBubble = context.findAncestorWidgetOfExactType<CollaborationMessageBubble>();
+            isOwnMessage = message.messageType != 'ai'; // Consistent: user=right, AI=left
+          } else {
+            // Different user - determine side based on type
+            isOwnMessage = message.messageType != 'ai'; // user=right, AI=left
+          }
+        }
+        
         return CollaborationMessageBubble(
           message: message,
-          isOwnMessage: !forceLeft, // Right side when not forced left
+          isOwnMessage: isOwnMessage,
           onReply: _handleReply,
         );
       },
@@ -572,8 +589,8 @@ class _RoomChatPageState extends State<RoomChatPage> {
       // Send user message
       await _collaborationService.sendMessage(widget.room.id, content);
 
-      // Check if message mentions AI or asks a question
-      final shouldTrigger = _shouldTriggerAI(content);
+      // AI is always awake - analyze ALL messages for relevance
+      final shouldTrigger = await _shouldTriggerAI(content);
       print('Message: "$content" | Should trigger AI: $shouldTrigger');
       
       if (shouldTrigger) {
@@ -612,10 +629,10 @@ class _RoomChatPageState extends State<RoomChatPage> {
     }
   }
 
-  bool _shouldTriggerAI(String message) {
+  Future<bool> _shouldTriggerAI(String message) async {
     final lowercaseMessage = message.toLowerCase();
     
-    // Explicit AI mentions
+    // Always trigger for explicit AI mentions
     if (lowercaseMessage.contains('ahamai') || 
         lowercaseMessage.contains('@ai') ||
         lowercaseMessage.contains('hey ai') ||
@@ -623,7 +640,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
       return true;
     }
     
-    // Question patterns
+    // Always trigger for direct questions
     if (lowercaseMessage.contains('?') ||
         lowercaseMessage.startsWith('what') ||
         lowercaseMessage.startsWith('how') ||
@@ -637,7 +654,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
       return true;
     }
     
-    // Help requests
+    // Always trigger for help requests
     if (lowercaseMessage.contains('help') ||
         lowercaseMessage.contains('explain') ||
         lowercaseMessage.contains('clarify') ||
@@ -646,17 +663,85 @@ class _RoomChatPageState extends State<RoomChatPage> {
       return true;
     }
     
-    // Conversational triggers (only for longer messages to avoid spam)
-    if (message.length > 20 && (
-        lowercaseMessage.contains('think') ||
-        lowercaseMessage.contains('opinion') ||
-        lowercaseMessage.contains('suggest') ||
-        lowercaseMessage.contains('recommend') ||
-        lowercaseMessage.contains('advice'))) {
-      return true;
+    // For other messages, use AI to intelligently determine relevance
+    try {
+      final relevanceCheck = await _checkMessageRelevance(message);
+      return relevanceCheck;
+    } catch (e) {
+      print('Relevance check failed: $e');
+      // Fallback to conservative triggers for conversational content
+      if (message.length > 15 && (
+          lowercaseMessage.contains('think') ||
+          lowercaseMessage.contains('opinion') ||
+          lowercaseMessage.contains('suggest') ||
+          lowercaseMessage.contains('recommend') ||
+          lowercaseMessage.contains('advice') ||
+          lowercaseMessage.contains('should') ||
+          lowercaseMessage.contains('better') ||
+          lowercaseMessage.contains('good') ||
+          lowercaseMessage.contains('bad'))) {
+        return true;
+      }
+      return false;
     }
-    
-    return false;
+  }
+
+  Future<bool> _checkMessageRelevance(String message) async {
+    try {
+      final request = http.Request('POST', Uri.parse('https://ahamai-api.officialprakashkrsingh.workers.dev/v1/chat/completions'));
+      request.headers.addAll({
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ahamaibyprakash25',
+      });
+
+      // Use AI to determine if the message needs a response
+      final relevancePrompt = '''Analyze this message and determine if an AI assistant should respond.
+
+Message: "$message"
+
+Context: This is from a collaborative chat room where people discuss various topics.
+
+Respond with ONLY "true" or "false" based on these criteria:
+- true: If the message asks for information, seeks advice, mentions a problem, discusses ideas, asks opinions, or would benefit from AI insight
+- true: If the message is educational, technical, or informational in nature
+- true: If the message seems to be seeking help or clarification
+- false: If it's just casual chit-chat, greetings, or simple statements
+- false: If it's personal conversation between specific users
+- false: If it's very short (under 10 characters) unless it's a clear question
+
+Be intelligent and helpful - err on the side of being responsive rather than silent.''';
+
+      request.body = jsonEncode({
+        'model': widget.selectedModel,
+        'messages': [
+          {
+            'role': 'system',
+            'content': 'You are a relevance classifier. Respond with only "true" or "false".'
+          },
+          {
+            'role': 'user',
+            'content': relevancePrompt
+          }
+        ],
+        'max_tokens': 10,
+        'temperature': 0.1,
+      });
+
+      final response = await request.send();
+      final responseBody = await response.stream.bytesToString();
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(responseBody);
+        final relevanceResult = data['choices'][0]['message']['content'].toLowerCase().trim();
+        return relevanceResult.contains('true');
+      } else {
+        print('Relevance check API error: ${response.statusCode}');
+        return false; // Conservative fallback
+      }
+    } catch (e) {
+      print('Relevance check error: $e');
+      return false; // Conservative fallback
+    }
   }
 
   Future<String> _generateAIResponse(String prompt, List<RoomMessage> recentMessages, List<RoomMember> roomMembers) async {

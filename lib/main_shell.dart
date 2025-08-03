@@ -912,7 +912,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     child: Row(
                       children: [
-                        const Icon(Icons.chat_bubble_outline, color: Color(0xFF09090B), size: 22),
+                        const Icon(Icons.groups_rounded, color: Color(0xFF09090B), size: 22),
                         const SizedBox(width: 16),
                         const Expanded(
                           child: Text(
