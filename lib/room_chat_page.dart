@@ -31,11 +31,23 @@ class _RoomChatPageState extends State<RoomChatPage> {
   bool _isSendingMessage = false;
   // Removed _showMembers - no longer needed since count is shown in room list
   RoomMessage? _replyingTo;
+  bool _showScrollToBottom = false;
 
   @override
   void initState() {
     super.initState();
     _initializeRoom();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  void _scrollListener() {
+    final bool showButton = _scrollController.hasClients && 
+        _scrollController.offset < _scrollController.position.maxScrollExtent - 100;
+    if (showButton != _showScrollToBottom) {
+      setState(() {
+        _showScrollToBottom = showButton;
+      });
+    }
   }
 
   @override
@@ -123,14 +135,15 @@ class _RoomChatPageState extends State<RoomChatPage> {
 
   PreferredSizeWidget _buildShadcnAppBar() {
     return PreferredSize(
-      preferredSize: const Size.fromHeight(kToolbarHeight),
+      preferredSize: Size.fromHeight(kToolbarHeight + MediaQuery.of(context).padding.top),
       child: CustomPaint(
         painter: WhatsAppPatternPainter(),
-        child: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          shadowColor: Colors.transparent,
-          surfaceTintColor: Colors.transparent,
+        child: SafeArea(
+          child: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            shadowColor: Colors.transparent,
+            surfaceTintColor: Colors.transparent,
       bottom: const PreferredSize(
         preferredSize: Size.fromHeight(0),
         child: SizedBox.shrink(),
@@ -190,6 +203,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
           ),
         ),
       ],
+          ),
         ),
       ),
     );
@@ -206,23 +220,30 @@ class _RoomChatPageState extends State<RoomChatPage> {
   Widget _buildChatInterface() {
     return CustomPaint(
       painter: WhatsAppPatternPainter(),
-      child: Column(
+      child: Stack(
         children: [
-          // Room info banner
-          if (widget.room.description != null) _buildRoomInfoBanner(),
-          
-          // Messages
-          Expanded(child: _buildMessagesList()),
-          
-          // Reply preview bar
-          if (_replyingTo != null) _buildReplyPreview(),
-          
-          // Input area
-          CollaborationInputBar(
-            controller: _messageController,
-            onSend: _sendMessage,
-            isSending: _isSendingMessage,
+          Column(
+            children: [
+              // Room info banner
+              if (widget.room.description != null) _buildRoomInfoBanner(),
+              
+              // Messages
+              Expanded(child: _buildMessagesList()),
+              
+              // Reply preview bar
+              if (_replyingTo != null) _buildReplyPreview(),
+              
+              // Input area
+              CollaborationInputBar(
+                controller: _messageController,
+                onSend: _sendMessage,
+                isSending: _isSendingMessage,
+              ),
+            ],
           ),
+          
+          // Scroll to bottom button
+          _buildScrollToBottomButton(),
         ],
       ),
     );
@@ -281,22 +302,22 @@ class _RoomChatPageState extends State<RoomChatPage> {
       itemBuilder: (context, index) {
         final message = _messages[index];
         
-        // Group messages by user - same user stays on same side until different user
-        bool isOwnMessage;
-        if (index == 0) {
-          // First message - user goes right, AI goes left
-          isOwnMessage = message.messageType != 'ai';
-        } else {
-          final previousMessage = _messages[index - 1];
-          if (message.userName == previousMessage.userName && 
-              message.messageType == previousMessage.messageType) {
-            // Same user as previous - keep same side
-            final previousBubble = context.findAncestorWidgetOfExactType<CollaborationMessageBubble>();
-            isOwnMessage = message.messageType != 'ai'; // Consistent: user=right, AI=left
-          } else {
-            // Different user - determine side based on type
-            isOwnMessage = message.messageType != 'ai'; // user=right, AI=left
+        // Alternate messages: 1st user left, 2nd AI right, 3rd user left, 4th AI right
+        // Count only user and AI messages for alternation
+        int userAiMessageIndex = 0;
+        for (int i = 0; i <= index; i++) {
+          if (_messages[i].messageType == 'user' || _messages[i].messageType == 'ai') {
+            if (i == index) break;
+            userAiMessageIndex++;
           }
+        }
+        
+        bool isOwnMessage;
+        if (message.messageType == 'system') {
+          isOwnMessage = false; // System messages always center
+        } else {
+          // Alternate: odd index (1st, 3rd, 5th...) = left, even index (2nd, 4th, 6th...) = right
+          isOwnMessage = userAiMessageIndex % 2 == 1; // 0-based: 0=left, 1=right, 2=left, 3=right
         }
         
         return CollaborationMessageBubble(
@@ -448,6 +469,44 @@ class _RoomChatPageState extends State<RoomChatPage> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildScrollToBottomButton() {
+    if (!_showScrollToBottom) return const SizedBox.shrink();
+    
+    return Positioned(
+      right: 16,
+      bottom: 100, // Above input area
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: const Color(0xFF09090B), // Black background
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: _scrollToBottom,
+            child: const Center(
+              child: FaIcon(
+                FontAwesomeIcons.chevronDown,
+                color: Colors.white,
+                size: 14,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

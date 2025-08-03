@@ -62,6 +62,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   int _selectedIndex = 0;
+  int _bottomNavIndex = 0; // 0: Home, 1: Characters, 2: Collabs
   final GlobalKey<ChatPageState> _chatPageKey = GlobalKey<ChatPageState>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
