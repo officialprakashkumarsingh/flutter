@@ -601,15 +601,29 @@ class _RoomChatPageState extends State<RoomChatPage> {
       await _collaborationService.sendMessage(widget.room.id, content);
 
       // Check if message mentions AI or asks a question
-      if (_shouldTriggerAI(content)) {
-        // Get recent chat history for context
-        final recentMessages = await _collaborationService.getRoomMessages(widget.room.id, limit: 10);
-        
-        // Get AI response with context
-        final aiResponse = await _generateAIResponse(content, recentMessages);
-        if (aiResponse.isNotEmpty) {
-          // Send AI response to room
-          await _collaborationService.sendAIResponse(widget.room.id, aiResponse);
+      final shouldTrigger = _shouldTriggerAI(content);
+      print('Message: "$content" | Should trigger AI: $shouldTrigger');
+      
+      if (shouldTrigger) {
+        try {
+          // Get recent chat history for context
+          final recentMessages = await _collaborationService.getRoomMessages(widget.room.id, limit: 10);
+          print('Got ${recentMessages.length} recent messages for context');
+          
+          // Get AI response with context
+          final aiResponse = await _generateAIResponse(content, recentMessages);
+          print('AI Response length: ${aiResponse.length}');
+          
+          if (aiResponse.isNotEmpty) {
+            // Send AI response to room
+            await _collaborationService.sendAIResponse(widget.room.id, aiResponse);
+            print('AI response sent successfully');
+          } else {
+            print('AI response was empty');
+          }
+        } catch (aiError) {
+          print('AI Error: $aiError');
+          _showSnackBar('AI response failed: ${aiError.toString()}', isError: true);
         }
       }
     } catch (e) {
@@ -728,9 +742,11 @@ Guidelines:
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
+      print('AI API Response: ${response.statusCode}');
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
         final content = jsonResponse['choices']?[0]?['message']?['content'] ?? '';
+        print('AI API Success: Content length ${content.length}');
         return content.toString().trim();
       } else {
         print('AI API Error: ${response.statusCode} - ${response.body}');
