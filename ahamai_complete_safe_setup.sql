@@ -427,10 +427,30 @@ BEGIN
     END;
 END $$;
 
--- Add collaboration tables to realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.collaboration_rooms;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.room_members;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.room_messages;
+-- Add collaboration tables to realtime (safely, only if not already added)
+DO $$ 
+BEGIN
+    -- Try to add collaboration_rooms to publication
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.collaboration_rooms;
+    EXCEPTION WHEN others THEN
+        -- Table already in publication, continue
+    END;
+    
+    -- Try to add room_members to publication
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.room_members;
+    EXCEPTION WHEN others THEN
+        -- Table already in publication, continue
+    END;
+    
+    -- Try to add room_messages to publication
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.room_messages;
+    EXCEPTION WHEN others THEN
+        -- Table already in publication, continue
+    END;
+END $$;
 
 -- ==========================================
 -- STEP 11: CLEANUP DUPLICATE DATA (SAFE)

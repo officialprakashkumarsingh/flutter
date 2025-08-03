@@ -412,9 +412,30 @@ CREATE UNIQUE INDEX uniq_characters_user_name
 -- ==========================================
 
 -- Enable realtime for collaboration tables only (not for user-to-user direct chats)
-ALTER PUBLICATION supabase_realtime ADD TABLE public.collaboration_rooms;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.room_members;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.room_messages;
+-- Safe addition - only add if not already in publication
+DO $$ 
+BEGIN
+    -- Try to add collaboration_rooms to publication
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.collaboration_rooms;
+    EXCEPTION WHEN others THEN
+        -- Table already in publication, continue
+    END;
+    
+    -- Try to add room_members to publication
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.room_members;
+    EXCEPTION WHEN others THEN
+        -- Table already in publication, continue
+    END;
+    
+    -- Try to add room_messages to publication
+    BEGIN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.room_messages;
+    EXCEPTION WHEN others THEN
+        -- Table already in publication, continue
+    END;
+END $$;
 
 -- ==========================================
 -- STEP 10: GRANT PERMISSIONS
