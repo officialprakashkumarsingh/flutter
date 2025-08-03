@@ -232,48 +232,49 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
   Widget _buildEmptyRoomsState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 72,
-              height: 72,
+              width: 64,
+              height: 64,
               decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE4E4E7)),
+                color: const Color(0xFF09090B),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: const FaIcon(
-                FontAwesomeIcons.userGroup,
-                size: 32,
-                color: Color(0xFF71717A),
+              child: const Center(
+                child: FaIcon(
+                  FontAwesomeIcons.users,
+                  size: 24,
+                  color: Colors.white,
+                ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             Text(
               'No rooms yet',
               style: GoogleFonts.inter(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF09090B),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
-              'Create your first collaboration room\nto start working together with others',
+              'Create your first room to start\ncollaborating with your team',
               style: GoogleFonts.inter(
-                fontSize: 14,
+                fontSize: 13,
                 color: const Color(0xFF71717A),
-                height: 1.5,
+                height: 1.4,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             _buildSmallButton(
               onPressed: _showCreateRoomDialog,
               icon: FontAwesomeIcons.plus,
-              text: 'Create First Room',
+              text: 'Create Room',
             ),
           ],
         ),
@@ -294,42 +295,42 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
 
   Widget _buildRoomCard(CollaborationRoom room) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE4E4E7)),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         child: InkWell(
           onTap: () => _joinRoom(room),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                // Room Avatar
+                // Room Avatar - Fixed positioning
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FA),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE4E4E7)),
+                    color: const Color(0xFF09090B),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const FaIcon(
-                    FontAwesomeIcons.users,
-                    size: 18,
-                    color: Color(0xFF71717A),
+                  child: const Center(
+                    child: FaIcon(
+                      FontAwesomeIcons.users,
+                      size: 16,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -342,41 +343,36 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                       Text(
                         room.name,
                         style: GoogleFonts.inter(
-                          fontSize: 15,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF09090B),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Row(
                         children: [
-                          FaIcon(
-                            FontAwesomeIcons.ticket,
-                            size: 12,
-                            color: const Color(0xFF71717A),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            room.inviteCode,
-                            style: GoogleFonts.robotoMono(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF71717A),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              room.inviteCode,
+                              style: GoogleFonts.robotoMono(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF71717A),
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          FaIcon(
-                            FontAwesomeIcons.userGroup,
-                            size: 12,
-                            color: const Color(0xFF71717A),
-                          ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 8),
                           Text(
                             '${room.memberCount} members',
                             style: GoogleFonts.inter(
-                              fontSize: 12,
+                              fontSize: 11,
                               color: const Color(0xFF71717A),
                             ),
                           ),
@@ -389,7 +385,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                 // Arrow
                 const FaIcon(
                   FontAwesomeIcons.chevronRight,
-                  size: 14,
+                  size: 12,
                   color: Color(0xFF71717A),
                 ),
               ],
@@ -405,8 +401,8 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
       children: [
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F9FA),
-            borderRadius: BorderRadius.circular(12),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(color: const Color(0xFFE4E4E7)),
           ),
           child: TextField(
@@ -414,33 +410,24 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
             textCapitalization: TextCapitalization.characters,
             maxLength: 6,
             style: GoogleFonts.robotoMono(
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF09090B),
-              letterSpacing: 2,
+              letterSpacing: 1,
             ),
             decoration: InputDecoration(
-              hintText: 'ABC123',
-              hintStyle: GoogleFonts.robotoMono(
-                fontSize: 16,
+              hintText: 'Enter invite code',
+              hintStyle: GoogleFonts.inter(
+                fontSize: 14,
                 color: const Color(0xFF71717A),
-                letterSpacing: 2,
               ),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16),
+              contentPadding: const EdgeInsets.all(12),
               counterText: '',
-              prefixIcon: const Padding(
-                padding: EdgeInsets.all(16),
-                child: FaIcon(
-                  FontAwesomeIcons.ticket,
-                  size: 18,
-                  color: Color(0xFF71717A),
-                ),
-              ),
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         
         SizedBox(
           width: double.infinity,
@@ -465,29 +452,29 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
     
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: () {
           HapticFeedback.lightImpact();
           onPressed();
         },
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: isPrimary ? const Color(0xFF09090B) : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: isPrimary ? null : Border.all(color: const Color(0xFFE4E4E7)),
+            color: isPrimary ? const Color(0xFF09090B) : Colors.white,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: isPrimary ? Colors.transparent : const Color(0xFFE4E4E7)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               FaIcon(
                 icon,
-                size: 14,
-                color: isPrimary ? Colors.white : const Color(0xFF09090B),
+                size: 12,
+                color: isPrimary ? Colors.white : const Color(0xFF71717A),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
               Text(
                 text,
                 style: GoogleFonts.inter(
