@@ -35,19 +35,38 @@ class _ChatsPageState extends State<ChatsPage> {
   List<CollaborationRoom> _rooms = [];
   List<CollaborationRoom> _filteredRooms = [];
   bool _isLoading = true;
+  bool _isInitializing = true;
   String _searchText = '';
   final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadRooms();
+    _initializeService();
     _searchController.addListener(() {
       setState(() {
         _searchText = _searchController.text;
         _filterRooms();
       });
     });
+  }
+
+  Future<void> _initializeService() async {
+    try {
+      setState(() => _isInitializing = true);
+      await _collaborationService.initialize();
+      setState(() => _isInitializing = false);
+      _loadRooms();
+    } catch (e) {
+      setState(() => _isInitializing = false);
+      print('Error initializing collaboration service: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to initialize: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -68,6 +87,12 @@ class _ChatsPageState extends State<ChatsPage> {
     } catch (e) {
       setState(() => _isLoading = false);
       print('Error loading rooms: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load rooms: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -82,192 +107,179 @@ class _ChatsPageState extends State<ChatsPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isInitializing) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF09090B)),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header Section - Fixed positioning
+            _buildHeader(),
+            
+            // Content Area
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF09090B)),
+                      ),
+                    )
+                  : _filteredRooms.isEmpty
+                      ? _buildEmptyState()
+                      : _buildRoomsList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: Color(0xFFE4E4E7),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Section
-          Container(
-            padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                bottom: BorderSide(
-                  color: Color(0xFFE4E4E7),
-                  width: 1,
+          // Title and Description - Stacked vertically
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Collabs',
+                style: GoogleFonts.inter(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF09090B),
+                  letterSpacing: -0.5,
                 ),
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title and Action Buttons Row
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Collabs',
-                            style: GoogleFonts.inter(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF09090B),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Create or join collaboration rooms to work together',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              color: const Color(0xFF71717A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    // Action Buttons
-                    Row(
-                      children: [
-                        _buildActionButton(
-                          'Join Room',
-                          Icons.group_add_rounded,
-                          () => _showJoinRoomDialog(),
-                        ),
-                        const SizedBox(width: 12),
-                        _buildActionButton(
-                          'Create Room',
-                          Icons.add_circle_outline_rounded,
-                          () => _showCreateRoomDialog(),
-                          isPrimary: true,
-                        ),
-                      ],
-                    ),
-                  ],
+              const SizedBox(height: 8),
+              Text(
+                'Create or join collaboration rooms to work together with your team',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  color: const Color(0xFF71717A),
+                  height: 1.5,
                 ),
-                
-                const SizedBox(height: 24),
-                
-                // Search Bar - Prominently positioned
-                Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FA),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFFE4E4E7),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF09090B).withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      color: const Color(0xFF09090B),
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Search collaboration rooms...',
-                      hintStyle: GoogleFonts.inter(
-                        fontSize: 15,
-                        color: const Color(0xFF71717A),
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.search_rounded,
-                        color: Color(0xFF71717A),
-                        size: 22,
-                      ),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() {
-                                  _searchText = '';
-                                  _filterRooms();
-                                });
-                              },
-                              icon: const Icon(
-                                Icons.clear_rounded,
-                                color: Color(0xFF71717A),
-                                size: 20,
-                              ),
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
           
-          // Content Area
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF09090B)),
-                    ),
-                  )
-                : _filteredRooms.isEmpty
-                    ? _buildEmptyState()
-                    : Column(
-                        children: [
-                          // Room Count Header
-                          Container(
-                            padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                            child: Row(
-                              children: [
-                                Text(
-                                  '${_filteredRooms.length} ${_filteredRooms.length == 1 ? 'Room' : 'Rooms'}${_searchText.isNotEmpty ? ' found' : ''}',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF09090B),
-                                  ),
-                                ),
-                                if (_searchText.isNotEmpty) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF8F9FA),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: const Color(0xFFE4E4E7),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'for "$_searchText"',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: const Color(0xFF71717A),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          // Rooms List
-                          Expanded(child: _buildRoomsList()),
-                        ],
-                      ),
+          const SizedBox(height: 24),
+          
+          // Action Buttons Row
+          Row(
+            children: [
+              Expanded(
+                child: _buildActionButton(
+                  'Join Room',
+                  Icons.group_add_rounded,
+                  () => _showJoinRoomDialog(),
+                  isPrimary: false,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildActionButton(
+                  'Create Room',
+                  Icons.add_circle_outline_rounded,
+                  () => _showCreateRoomDialog(),
+                  isPrimary: true,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Search Bar - Prominently positioned at top
+          _buildSearchBar(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _searchController.text.isNotEmpty 
+              ? const Color(0xFF09090B) 
+              : const Color(0xFFE4E4E7),
+          width: _searchController.text.isNotEmpty ? 2 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF09090B).withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        style: GoogleFonts.inter(
+          fontSize: 16,
+          color: const Color(0xFF09090B),
+          fontWeight: FontWeight.w500,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Search collaboration rooms...',
+          hintStyle: GoogleFonts.inter(
+            fontSize: 16,
+            color: const Color(0xFF71717A),
+          ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: _searchController.text.isNotEmpty 
+                ? const Color(0xFF09090B) 
+                : const Color(0xFF71717A),
+            size: 24,
+          ),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchText = '';
+                      _filterRooms();
+                    });
+                  },
+                  icon: const Icon(
+                    Icons.clear_rounded,
+                    color: Color(0xFF71717A),
+                    size: 22,
+                  ),
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
+        ),
       ),
     );
   }
@@ -425,14 +437,58 @@ class _ChatsPageState extends State<ChatsPage> {
   }
 
   Widget _buildRoomsList() {
-    return RefreshIndicator(
-      onRefresh: _loadRooms,
-      color: const Color(0xFF09090B),
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-        itemCount: _filteredRooms.length,
-        itemBuilder: (context, index) => _buildRoomCard(_filteredRooms[index]),
-      ),
+    return Column(
+      children: [
+        // Room Count Header
+        Container(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+          child: Row(
+            children: [
+              Text(
+                '${_filteredRooms.length} ${_filteredRooms.length == 1 ? 'Room' : 'Rooms'}${_searchText.isNotEmpty ? ' found' : ''}',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF09090B),
+                ),
+              ),
+              if (_searchText.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFE4E4E7),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    'for "$_searchText"',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: const Color(0xFF71717A),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        // Rooms List
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadRooms,
+            color: const Color(0xFF09090B),
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              itemCount: _filteredRooms.length,
+              itemBuilder: (context, index) => _buildRoomCard(_filteredRooms[index]),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -454,11 +510,11 @@ class _ChatsPageState extends State<ChatsPage> {
           ),
         ],
       ),
-              child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => _joinRoomChat(room),
-            borderRadius: BorderRadius.circular(16),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _joinRoomChat(room),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -525,14 +581,14 @@ class _ChatsPageState extends State<ChatsPage> {
                           width: 1,
                         ),
                       ),
-                                             child: Text(
-                         room.inviteCode,
-                         style: GoogleFonts.spaceMono(
-                           fontSize: 12,
-                           fontWeight: FontWeight.w600,
-                           color: const Color(0xFF09090B),
-                         ),
-                       ),
+                      child: Text(
+                        room.inviteCode,
+                        style: GoogleFonts.spaceMono(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF09090B),
+                        ),
+                      ),
                     ),
                   ],
                 ),
