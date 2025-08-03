@@ -6,6 +6,25 @@ A modern Flutter application with Supabase authentication and admin panel for AI
 
 ### Supabase Database Setup
 
+⚡ **EASY ONE-CLICK SETUP**: Use the comprehensive SQL file for hassle-free setup!
+
+**Option 1: Use the Complete Safe Setup File (RECOMMENDED)**
+
+📁 **File**: `ahamai_complete_safe_setup.sql`
+
+This single file handles ALL scenarios safely:
+- ✅ Fresh databases
+- ✅ Existing databases  
+- ✅ Partial setups
+- ✅ No "relation already exists" errors
+- ✅ Complete feature set (AI chat + collaboration)
+
+**Just copy and paste the entire file content into your Supabase SQL Editor and run it!**
+
+---
+
+**Option 2: Manual Step-by-Step Setup**
+
 **Step 1: Clean up any existing setup (run this first if you've tried before):**
 
 ```sql
@@ -20,8 +39,6 @@ DROP TABLE IF EXISTS public.profiles;
 ```
 
 **Step 2: Run this complete setup command:**
-
-⚠️ **IMPORTANT**: If you get "relation already exists" errors, this means some tables already exist. The `IF NOT EXISTS` clauses below will safely skip existing tables.
 
 ```sql
 -- Create profiles table for user data (safe creation)
