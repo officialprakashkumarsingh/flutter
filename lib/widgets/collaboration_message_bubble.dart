@@ -102,8 +102,8 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
     switch (widget.message.messageType) {
       case 'ai':
         avatarIcon = FontAwesomeIcons.robot;
-        avatarColor = const Color(0xFF25D366); // WhatsApp green
-        backgroundColor = const Color(0xFFF0F9FF);
+        avatarColor = Colors.white;
+        backgroundColor = const Color(0xFF09090B); // Your app's dark color
         break;
       default:
         // Generate color based on username for consistency
@@ -178,8 +178,10 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
                fontSize: 12,
                fontWeight: FontWeight.w600,
                color: widget.message.messageType == 'ai'
-                   ? const Color(0xFF25D366) // Green for AI
-                   : const Color(0xFF1F2937), // Dark gray for users
+                   ? const Color(0xFF09090B) // Your app's dark color for AI
+                   : widget.isOwnMessage 
+                       ? Colors.white.withOpacity(0.9) // White for own messages
+                       : const Color(0xFF09090B), // Dark for others
              ),
            ),
            const SizedBox(width: 6),
@@ -187,7 +189,9 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
              _formatTime(widget.message.createdAt),
              style: GoogleFonts.inter(
                fontSize: 11,
-               color: const Color(0xFF6B7280), // Gray for timestamp
+               color: widget.isOwnMessage 
+                   ? Colors.white.withOpacity(0.7) // White for own messages
+                   : const Color(0xFF71717A), // Gray for others
              ),
            ),
         ],
@@ -316,12 +320,12 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   Color _getBubbleColor() {
     switch (widget.message.messageType) {
       case 'ai':
-        return const Color(0xFFF0F9FF); // Light blue for AI
+        return const Color(0xFFF8F9FA); // Light gray for AI
       case 'system':
-        return const Color(0xFFFEF3C7); // Light yellow for system
+        return const Color(0xFFF1F5F9); // Very light gray for system
       default:
         return widget.isOwnMessage 
-            ? const Color(0xFFDCF8C6) // WhatsApp green for own messages
+            ? const Color(0xFF09090B) // Your app's dark color for own messages
             : Colors.white; // White for others
     }
   }
@@ -352,11 +356,13 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   Color _getTextColor() {
     switch (widget.message.messageType) {
       case 'ai':
-        return const Color(0xFF1F2937); // Dark gray for AI
+        return const Color(0xFF09090B); // Your app's dark color for AI
       case 'system':
-        return const Color(0xFF92400E); // Amber dark for system
+        return const Color(0xFF71717A); // Subtle gray for system
       default:
-        return const Color(0xFF1F2937); // Dark gray for all messages
+        return widget.isOwnMessage 
+            ? Colors.white // White text for dark bubbles
+            : const Color(0xFF09090B); // Dark text for light bubbles
     }
   }
 

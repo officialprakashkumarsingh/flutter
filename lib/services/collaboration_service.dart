@@ -329,23 +329,21 @@ class CollaborationService {
 
   /// Get room members
   Future<List<RoomMember>> getRoomMembers(String roomId) async {
-    final response = await _supabase
-        .from('room_members')
-        .select('''
-          *,
-          profiles!inner(full_name, avatar_url)
-        ''')
-        .eq('room_id', roomId)
-        .eq('is_active', true)
-        .order('joined_at');
+    try {
+      final response = await _supabase
+          .from('room_members')
+          .select('*')
+          .eq('room_id', roomId)
+          .eq('is_active', true)
+          .order('joined_at');
 
-    return response.map((json) {
-      final profile = json['profiles'] as Map<String, dynamic>?;
-      return RoomMember.fromJson(json).copyWith(
-        userName: profile?['full_name'] as String?,
-        avatarUrl: profile?['avatar_url'] as String?,
-      );
-    }).toList();
+      print('Members response: ${response.length} members found for room $roomId');
+      
+      return response.map((json) => RoomMember.fromJson(json)).toList();
+    } catch (e) {
+      print('Error getting room members: $e');
+      return [];
+    }
   }
 
   /// Leave a room

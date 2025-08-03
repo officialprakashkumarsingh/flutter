@@ -612,12 +612,13 @@ class _RoomChatPageState extends State<RoomChatPage> {
       
       if (shouldTrigger) {
         try {
-          // Get recent chat history for context
+          // Get recent chat history and members for context
           final recentMessages = await _collaborationService.getRoomMessages(widget.room.id, limit: 10);
-          print('Got ${recentMessages.length} recent messages for context');
+          final roomMembers = await _collaborationService.getRoomMembers(widget.room.id);
+          print('Got ${recentMessages.length} recent messages and ${roomMembers.length} members for context');
           
-          // Get AI response with context
-          final aiResponse = await _generateAIResponse(content, recentMessages);
+          // Get AI response with full context
+          final aiResponse = await _generateAIResponse(content, recentMessages, roomMembers);
           print('AI Response length: ${aiResponse.length}');
           
           if (aiResponse.isNotEmpty) {
@@ -686,7 +687,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
     return false;
   }
 
-  Future<String> _generateAIResponse(String prompt, List<RoomMessage> recentMessages) async {
+  Future<String> _generateAIResponse(String prompt, List<RoomMessage> recentMessages, List<RoomMember> roomMembers) async {
     try {
       final request = http.Request('POST', Uri.parse('https://ahamai-api.officialprakashkrsingh.workers.dev/v1/chat/completions'));
       request.headers.addAll({
@@ -694,19 +695,28 @@ class _RoomChatPageState extends State<RoomChatPage> {
         'Authorization': 'Bearer ahamaibyprakash25',
       });
 
-      // Build conversation context from recent messages
+      // Build conversation context from recent messages and room info
       List<Map<String, String>> messages = [
         {
           'role': 'system',
-          'content': '''You are AhamAI, an intelligent assistant participating in a collaborative chat room. 
+          'content': '''You are AhamAI, an intelligent assistant participating in a collaborative chat room.
+
+Room Context:
+- Room Name: "${widget.room.name}"
+- Room ID: "${widget.room.id}"
+- Room Description: "${widget.room.description ?? 'No description'}"
+- Total Members: ${roomMembers.length}
+- Active Members: ${roomMembers.map((m) => m.userName).join(', ')}
 
 Guidelines:
 - Provide helpful, accurate, and concise responses
 - Engage naturally in conversations with multiple users
-- Reference previous messages when relevant for context
+- Reference previous messages and participants by name when relevant
 - Keep responses conversational but informative
 - If users are discussing a topic, contribute meaningfully to that discussion
-- Be friendly and approachable while maintaining professionalism'''
+- Be friendly and approachable while maintaining professionalism
+- You can mention specific users by name when appropriate
+- Be aware of the room context and ongoing conversations'''
         }
       ];
 
