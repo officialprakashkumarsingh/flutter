@@ -1,43 +1,30 @@
-# 📱 Download Latest AhamAI APK & SQL Files
+# 📱 Ahamai Collabs App - Download & Setup
 
-## 🚀 Quick Download Links
+## 🚀 Latest Release - Shadcn UI Edition
 
-### 📱 **Latest APK (All Fixes Applied)**
-**File**: `ahamai-collabs-fixed-latest.apk` (28.1MB)
-**Direct Download**: [Download APK](https://github.com/officialprakashkumarsingh/flutter/raw/fresh-main/ahamai-collabs-fixed-latest.apk)
+### 📱 Android APK Download
+**Latest APK:** [ahamai-collabs-shadcn-ui.apk](https://github.com/your-repo/your-project/raw/fresh-main/ahamai-collabs-shadcn-ui.apk)
 
-### 🗄️ **Database Setup SQL Files**
+#### Recent Updates (Latest Version):
+- ✨ **Beautiful Shadcn UI Design**: Clean, modern interface throughout
+- 🎨 **Improved Collabs Page**: Smaller buttons, better layout, updated messaging
+- 🔄 **Enhanced Chat Rooms**: Converted from iOS-style to shadcn UI
+- 🛠️ **Fixed Member Count**: Now shows accurate member counts
+- 📱 **Better Mobile Experience**: Optimized spacing and typography
 
-#### **🔧 Option 1: Fixed App Errors Setup (RECOMMENDED)**
-**File**: `ahamai_fixed_app_errors_setup.sql`
-**Download**: [Download Error-Fixed SQL](https://github.com/officialprakashkumarsingh/flutter/raw/fresh-main/ahamai_fixed_app_errors_setup.sql)
-- ⚠️ **WARNING: DELETES ALL EXISTING DATA**
-- 🔧 **FIXES YOUR SPECIFIC ERRORS**: Solves .single() PostgresException failures
-- ✅ Failed to initialize: Profile will ALWAYS exist for .single() queries
-- ✅ Failed to join room: Room lookup optimized for invite codes
-- 📱 Tables match CollaborationRoom model exactly
-- 🛡️ Robust error handling with retroactive profile creation
+### 🗄️ Database Setup
 
-#### **Option 2: Simple No-Recursion Setup (SAFE UPGRADE)**
-**File**: `ahamai_simple_no_recursion_setup.sql`
-**Download**: [Download Simple SQL](https://github.com/officialprakashkumarsingh/flutter/raw/fresh-main/ahamai_simple_no_recursion_setup.sql)
-- ✅ FIXES infinite recursion errors completely
-- ✅ Preserves existing data
-- ✅ Simple, safe policies with no circular dependencies
-- ✅ Perfect for existing setups
+#### 🎯 Recommended (Latest & Best):
+**[ahamai_fixed_app_errors_setup.sql](https://github.com/your-repo/your-project/raw/fresh-main/ahamai_fixed_app_errors_setup.sql)**
+- ✅ Fixes all `.single()` query issues
+- ✅ Robust profile creation with conflict handling
+- ✅ Optimized indexes for app performance
+- ✅ Non-recursive RLS policies
+- ✅ Complete database setup in one file
 
-#### **Option 3: Advanced Recursion-Fixed Setup**
-**File**: `ahamai_recursion_fixed_setup.sql`
-**Download**: [Download Advanced SQL](https://github.com/officialprakashkumarsingh/flutter/raw/fresh-main/ahamai_recursion_fixed_setup.sql)
-- ✅ Fixes recursion with helper functions
-- ✅ More granular security policies
-- ✅ Service role bypasses for complex operations
-
-#### **Option 4: Original Complete Setup**
-**File**: `ahamai_complete_safe_setup.sql`
-**Download**: [Download Complete SQL](https://github.com/officialprakashkumarsingh/flutter/raw/fresh-main/ahamai_complete_safe_setup.sql)
-- ⚠️ May have recursion issues with some setups
-- ✅ Works on any database state (fresh, existing, partial)
+#### Alternative Options:
+- **[ahamai_simple_no_recursion_setup.sql](https://github.com/your-repo/your-project/raw/fresh-main/ahamai_simple_no_recursion_setup.sql)** - Simpler policies
+- **[ahamai_complete_safe_setup.sql](https://github.com/your-repo/your-project/raw/fresh-main/ahamai_complete_safe_setup.sql)** - Safe incremental setup
 
 ---
 
