@@ -7,7 +7,9 @@ import 'services/collaboration_service.dart';
 import 'room_chat_page.dart';
 
 class CollaborationPage extends StatefulWidget {
-  const CollaborationPage({super.key});
+  final String selectedModel;
+  
+  const CollaborationPage({super.key, required this.selectedModel});
 
   @override
   State<CollaborationPage> createState() => _CollaborationPageState();
@@ -20,6 +22,8 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
   List<CollaborationRoom> _rooms = [];
   bool _isLoading = true;
   String? _error;
+  
+  final TextEditingController _inviteCodeController = TextEditingController();
 
   @override
   void initState() {
@@ -31,25 +35,19 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
   @override
   void dispose() {
     _tabController.dispose();
+    _inviteCodeController.dispose();
     super.dispose();
   }
 
   Future<void> _initializeCollaboration() async {
     try {
-      await _collaborationService.initialize();
-      _collaborationService.subscribeToRooms();
-      
-      // Listen to rooms stream
-      _collaborationService.roomsStream.listen((rooms) {
-        if (mounted) {
-          setState(() {
-            _rooms = rooms;
-            _isLoading = false;
-          });
-        }
+      setState(() {
+        _isLoading = true;
+        _error = null;
       });
 
-      // Initial load
+      await _collaborationService.initialize();
+
       final rooms = await _collaborationService.getUserRooms();
       setState(() {
         _rooms = rooms;
@@ -83,7 +81,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
       scrolledUnderElevation: 0,
       leading: IconButton(
         onPressed: () => Navigator.pop(context),
-        icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF09090B), size: 20),
+        icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Color(0xFF09090B), size: 18),
       ),
       title: Text(
         'Collaborate',
@@ -93,6 +91,18 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
           color: const Color(0xFF09090B),
         ),
       ),
+      actions: [
+        // Add create room button in header (only one place)
+        if (_tabController.index == 0)
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: _buildSmallButton(
+              onPressed: _showCreateRoomDialog,
+              icon: FontAwesomeIcons.plus,
+              text: 'Create',
+            ),
+          ),
+      ],
       bottom: TabBar(
         controller: _tabController,
         indicatorColor: const Color(0xFF09090B),
@@ -107,9 +117,10 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
           fontSize: 14,
           fontWeight: FontWeight.w400,
         ),
+        onTap: (index) => setState(() {}), // Rebuild to show/hide create button
         tabs: const [
-          Tab(text: 'My Rooms'),
-          Tab(text: 'Join Room'),
+          Tab(icon: FaIcon(FontAwesomeIcons.users, size: 16), text: 'My Rooms'),
+          Tab(icon: FaIcon(FontAwesomeIcons.rightToBracket, size: 16), text: 'Join Room'),
         ],
       ),
     );
@@ -125,39 +136,43 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
 
   Widget _buildErrorState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.error_outline_rounded,
-            size: 64,
-            color: Color(0xFFEF4444),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Something went wrong',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF09090B),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const FaIcon(
+              FontAwesomeIcons.triangleExclamation,
+              size: 48,
+              color: Color(0xFFEF4444),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _error ?? 'Unknown error',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: Color(0xFF71717A),
+            const SizedBox(height: 16),
+            Text(
+              'Something went wrong',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF09090B),
+              ),
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          _buildButton(
-            onPressed: _initializeCollaboration,
-            text: 'Try Again',
-            variant: ButtonVariant.secondary,
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              _error ?? 'Unknown error',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: const Color(0xFF71717A),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            _buildSmallButton(
+              onPressed: _initializeCollaboration,
+              icon: FontAwesomeIcons.arrowRotateRight,
+              text: 'Try Again',
+              variant: ButtonVariant.secondary,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -173,83 +188,41 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
   }
 
   Widget _buildMyRoomsTab() {
-    return Column(
-      children: [
-        // Header with Create Room button
-        Container(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Your Collaboration Rooms',
-                      style: GoogleFonts.inter(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF09090B),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _rooms.isEmpty 
-                          ? 'Create your first room to start collaborating'
-                          : '${_rooms.length} room${_rooms.length == 1 ? '' : 's'}',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: const Color(0xFF71717A),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _buildButton(
-                onPressed: _showCreateRoomDialog,
-                text: 'Create Room',
-                icon: Icons.add_rounded,
-              ),
-            ],
-          ),
-        ),
-        
-        // Rooms List
-        Expanded(
-          child: _rooms.isEmpty 
-              ? _buildEmptyRoomsState()
-              : _buildRoomsList(),
-        ),
-      ],
-    );
+    return _rooms.isEmpty 
+        ? _buildEmptyRoomsState()
+        : _buildRoomsList();
   }
 
   Widget _buildJoinRoomTab() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Text(
-            'Join a Room',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF09090B),
-            ),
+          Row(
+            children: [
+              const FaIcon(FontAwesomeIcons.ticket, color: Color(0xFF09090B), size: 20),
+              const SizedBox(width: 12),
+              Text(
+                'Join with Invite Code',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF09090B),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Text(
-            'Enter an invite code to join an existing collaboration room',
+            'Enter the 6-character invite code shared by your friend',
             style: GoogleFonts.inter(
               fontSize: 14,
               color: const Color(0xFF71717A),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           
-          // Join Room Form
           _buildJoinRoomForm(),
         ],
       ),
@@ -258,56 +231,59 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
 
   Widget _buildEmptyRoomsState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFFE4E4E7)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE4E4E7)),
+              ),
+              child: const FaIcon(
+                FontAwesomeIcons.userGroup,
+                size: 32,
+                color: Color(0xFF71717A),
+              ),
             ),
-            child: const Icon(
-              Icons.group_add_rounded,
-              size: 40,
-              color: Color(0xFF71717A),
+            const SizedBox(height: 20),
+            Text(
+              'No rooms yet',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF09090B),
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'No rooms yet',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF09090B),
+            const SizedBox(height: 8),
+            Text(
+              'Create your first collaboration room\nto start working together with others',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: const Color(0xFF71717A),
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Create your first collaboration room\nto start working together with others',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: const Color(0xFF71717A),
-              height: 1.5,
+            const SizedBox(height: 24),
+            _buildSmallButton(
+              onPressed: _showCreateRoomDialog,
+              icon: FontAwesomeIcons.plus,
+              text: 'Create First Room',
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          _buildButton(
-            onPressed: _showCreateRoomDialog,
-            text: 'Create Your First Room',
-            icon: Icons.add_rounded,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildRoomsList() {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
       itemCount: _rooms.length,
       itemBuilder: (context, index) {
         final room = _rooms[index];
@@ -343,84 +319,65 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
               children: [
                 // Room Avatar
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8F9FA),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: const Color(0xFFE4E4E7)),
                   ),
-                  child: const Icon(
-                    Icons.group_rounded,
-                    color: Color(0xFF09090B),
-                    size: 24,
+                  child: const FaIcon(
+                    FontAwesomeIcons.users,
+                    size: 18,
+                    color: Color(0xFF71717A),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 
                 // Room Info
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              room.name,
-                              style: GoogleFonts.inter(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF09090B),
-                              ),
-                            ),
-                          ),
-                          if (room.hasUnreadMessages)
-                            Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF22C55E),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                        ],
-                      ),
-                      if (room.description != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          room.description!,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: const Color(0xFF71717A),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      Text(
+                        room.name,
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF09090B),
                         ),
-                      ],
-                      const SizedBox(height: 8),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(
-                            Icons.people_outline_rounded,
-                            size: 14,
+                          FaIcon(
+                            FontAwesomeIcons.ticket,
+                            size: 12,
                             color: const Color(0xFF71717A),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: 6),
                           Text(
-                            '${room.memberCount} member${room.memberCount == 1 ? '' : 's'}',
-                            style: GoogleFonts.inter(
+                            room.inviteCode,
+                            style: GoogleFonts.mono(
                               fontSize: 12,
+                              fontWeight: FontWeight.w500,
                               color: const Color(0xFF71717A),
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 12),
+                          FaIcon(
+                            FontAwesomeIcons.userGroup,
+                            size: 12,
+                            color: const Color(0xFF71717A),
+                          ),
+                          const SizedBox(width: 6),
                           Text(
-                            'Code: ${room.inviteCode}',
+                            '${room.memberCount} members',
                             style: GoogleFonts.inter(
                               fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: const Color(0xFF09090B),
+                              color: const Color(0xFF71717A),
                             ),
                           ),
                         ],
@@ -430,10 +387,10 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                 ),
                 
                 // Arrow
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 16,
-                  color: Color(0xFFA3A3A3),
+                const FaIcon(
+                  FontAwesomeIcons.chevronRight,
+                  size: 14,
+                  color: Color(0xFF71717A),
                 ),
               ],
             ),
@@ -444,94 +401,104 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
   }
 
   Widget _buildJoinRoomForm() {
-    final controller = TextEditingController();
-    
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Invite Code',
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: const Color(0xFF09090B),
-          ),
-        ),
-        const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            color: const Color(0xFFF8F9FA),
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFFE4E4E7)),
           ),
           child: TextField(
-            controller: controller,
-            style: GoogleFonts.inter(
-              fontSize: 14,
+            controller: _inviteCodeController,
+            textCapitalization: TextCapitalization.characters,
+            maxLength: 6,
+            style: GoogleFonts.mono(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
               color: const Color(0xFF09090B),
+              letterSpacing: 2,
             ),
             decoration: InputDecoration(
-              hintText: 'Enter 6-character code (e.g., ABC123)',
-              hintStyle: GoogleFonts.inter(
-                fontSize: 14,
+              hintText: 'ABC123',
+              hintStyle: GoogleFonts.mono(
+                fontSize: 16,
                 color: const Color(0xFF71717A),
+                letterSpacing: 2,
               ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(16),
+              counterText: '',
+              prefixIcon: const Padding(
+                padding: EdgeInsets.all(16),
+                child: FaIcon(
+                  FontAwesomeIcons.ticket,
+                  size: 18,
+                  color: Color(0xFF71717A),
+                ),
+              ),
             ),
-            textCapitalization: TextCapitalization.characters,
-            inputFormatters: [
-              LengthLimitingTextInputFormatter(6),
-              FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9]')),
-            ],
           ),
         ),
         const SizedBox(height: 16),
+        
         SizedBox(
           width: double.infinity,
-          child: _buildButton(
-            onPressed: () => _joinRoomWithCode(controller.text),
+          child: _buildSmallButton(
+            onPressed: _joinRoomWithCode,
+            icon: FontAwesomeIcons.rightToBracket,
             text: 'Join Room',
-            icon: Icons.login_rounded,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildButton({
+  // Small button widget
+  Widget _buildSmallButton({
     required VoidCallback onPressed,
+    required IconData icon,
     required String text,
-    IconData? icon,
     ButtonVariant variant = ButtonVariant.primary,
   }) {
     final isPrimary = variant == ButtonVariant.primary;
     
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isPrimary ? const Color(0xFF09090B) : Colors.white,
-        foregroundColor: isPrimary ? Colors.white : const Color(0xFF09090B),
-        elevation: 0,
-        shadowColor: Colors.transparent,
-        side: isPrimary ? null : const BorderSide(color: Color(0xFFE4E4E7)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 16),
-            const SizedBox(width: 8),
-          ],
-          Text(
-            text,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onPressed();
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isPrimary ? const Color(0xFF09090B) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: isPrimary ? null : Border.all(color: const Color(0xFFE4E4E7)),
           ),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FaIcon(
+                icon,
+                size: 14,
+                color: isPrimary ? Colors.white : const Color(0xFF09090B),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                text,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: isPrimary ? Colors.white : const Color(0xFF09090B),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -541,36 +508,25 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
       context: context,
       builder: (context) => CreateRoomDialog(
         onRoomCreated: (room) {
-          _joinRoom(room);
-        },
-      ),
-    );
-  }
-
-  void _joinRoom(CollaborationRoom room) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            RoomChatPage(room: room),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1.0, 0.0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
-            child: child,
+          setState(() {
+            _rooms.insert(0, room);
+          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RoomChatPage(
+                room: room, 
+                selectedModel: widget.selectedModel,
+              ),
+            ),
           );
         },
-        transitionDuration: const Duration(milliseconds: 300),
       ),
     );
   }
 
-  Future<void> _joinRoomWithCode(String code) async {
+  Future<void> _joinRoomWithCode() async {
+    final code = _inviteCodeController.text.trim().toUpperCase();
     if (code.length != 6) {
       _showSnackBar('Please enter a valid 6-character invite code', isError: true);
       return;
@@ -578,20 +534,45 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
 
     try {
       final room = await _collaborationService.joinRoom(code);
-      _showSnackBar('Successfully joined "${room.name}"!');
-      _joinRoom(room);
+      _inviteCodeController.clear();
+      
+      // Add to rooms list if not already there
+      if (!_rooms.any((r) => r.id == room.id)) {
+        setState(() {
+          _rooms.insert(0, room);
+        });
+      }
+      
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RoomChatPage(
+            room: room, 
+            selectedModel: widget.selectedModel,
+          ),
+        ),
+      );
     } catch (e) {
       _showSnackBar('Failed to join room: ${e.toString()}', isError: true);
     }
   }
 
+  void _joinRoom(CollaborationRoom room) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RoomChatPage(
+          room: room, 
+          selectedModel: widget.selectedModel,
+        ),
+      ),
+    );
+  }
+
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: GoogleFonts.inter(color: Colors.white),
-        ),
+        content: Text(message),
         backgroundColor: isError ? const Color(0xFFEF4444) : const Color(0xFF22C55E),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -613,156 +594,184 @@ class CreateRoomDialog extends StatefulWidget {
 }
 
 class _CreateRoomDialogState extends State<CreateRoomDialog> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _collaborationService = CollaborationService();
   bool _isCreating = false;
 
   @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Dialog(
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        constraints: const BoxConstraints(maxWidth: 400),
+      child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Create New Room',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF09090B),
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            // Room Name
-            _buildInputField(
-              label: 'Room Name',
-              controller: _nameController,
-              placeholder: 'Enter room name',
-            ),
-            const SizedBox(height: 16),
-            
-            // Description
-            _buildInputField(
-              label: 'Description (Optional)',
-              controller: _descriptionController,
-              placeholder: 'What will you collaborate on?',
-              maxLines: 3,
-            ),
-            const SizedBox(height: 24),
-            
-            // Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: _isCreating ? null : () => Navigator.pop(context),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const FaIcon(FontAwesomeIcons.plus, color: Color(0xFF09090B), size: 20),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Create Room',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF09090B),
                     ),
-                    child: Text(
-                      'Cancel',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF71717A),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              
+              // Room Name
+              Text(
+                'Room Name',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF09090B),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  hintText: 'e.g., Project Planning',
+                  hintStyle: GoogleFonts.inter(color: const Color(0xFF71717A)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFE4E4E7)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFE4E4E7)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF09090B)),
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter a room name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // Description
+              Text(
+                'Description (Optional)',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF09090B),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'What will you be working on together?',
+                  hintStyle: GoogleFonts.inter(color: const Color(0xFF71717A)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFE4E4E7)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFFE4E4E7)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: Color(0xFF09090B)),
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: _isCreating ? null : () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: const BorderSide(color: Color(0xFFE4E4E7)),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF09090B),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isCreating ? null : _createRoom,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF09090B),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isCreating ? null : _createRoom,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF09090B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: _isCreating
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          : Text(
+                              'Create',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                     ),
-                    child: _isCreating
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : Text(
-                            'Create Room',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildInputField({
-    required String label,
-    required TextEditingController controller,
-    required String placeholder,
-    int maxLines = 1,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: const Color(0xFF09090B),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE4E4E7)),
-          ),
-          child: TextField(
-            controller: controller,
-            maxLines: maxLines,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: const Color(0xFF09090B),
-            ),
-            decoration: InputDecoration(
-              hintText: placeholder,
-              hintStyle: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF71717A),
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Future<void> _createRoom() async {
-    if (_nameController.text.trim().isEmpty) {
-      _showError('Please enter a room name');
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isCreating = true);
 
@@ -775,28 +784,19 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
       );
 
       final room = await _collaborationService.createRoom(request);
-      
-      if (mounted) {
-        Navigator.pop(context);
-        widget.onRoomCreated(room);
-      }
+      Navigator.pop(context);
+      widget.onRoomCreated(room);
     } catch (e) {
-      _showError('Failed to create room: ${e.toString()}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to create room: ${e.toString()}'),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
     } finally {
-      if (mounted) {
-        setState(() => _isCreating = false);
-      }
+      setState(() => _isCreating = false);
     }
-  }
-
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message, style: GoogleFonts.inter(color: Colors.white)),
-        backgroundColor: const Color(0xFFEF4444),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
   }
 }

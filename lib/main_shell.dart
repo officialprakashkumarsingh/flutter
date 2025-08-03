@@ -890,7 +890,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                       context,
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) =>
-                            const CollaborationPage(),
+                            CollaborationPage(selectedModel: _selectedModel),
                         transitionsBuilder: (context, animation, secondaryAnimation, child) {
                           return SlideTransition(
                             position: Tween<Offset>(

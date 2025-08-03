@@ -9,8 +9,9 @@ import 'package:http/http.dart' as http;
 
 class RoomChatPage extends StatefulWidget {
   final CollaborationRoom room;
+  final String selectedModel;
 
-  const RoomChatPage({super.key, required this.room});
+  const RoomChatPage({super.key, required this.room, required this.selectedModel});
 
   @override
   State<RoomChatPage> createState() => _RoomChatPageState();
@@ -732,7 +733,7 @@ Guidelines:
       }
 
       final body = jsonEncode({
-        'model': 'claude-3-5-sonnet-20241022',
+        'model': widget.selectedModel,
         'messages': messages,
         'max_tokens': 1200,
         'temperature': 0.7,
