@@ -432,9 +432,23 @@ GRANT ALL ON public.room_messages TO authenticated;
 -- STEP 11: CLEANUP USER-TO-USER DIRECT CHAT REMNANTS
 -- ==========================================
 
--- Remove any realtime subscriptions for user-to-user direct chat tables
-ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS public.direct_chats;
-ALTER PUBLICATION supabase_realtime DROP TABLE IF EXISTS public.direct_messages;
+-- Remove any realtime subscriptions for user-to-user direct chat tables (if they exist)
+DO $$ 
+BEGIN
+    -- Try to drop direct_chats from publication if it exists
+    BEGIN
+        ALTER PUBLICATION supabase_realtime DROP TABLE public.direct_chats;
+    EXCEPTION WHEN others THEN
+        -- Table doesn't exist in publication, continue
+    END;
+    
+    -- Try to drop direct_messages from publication if it exists
+    BEGIN
+        ALTER PUBLICATION supabase_realtime DROP TABLE public.direct_messages;
+    EXCEPTION WHEN others THEN
+        -- Table doesn't exist in publication, continue
+    END;
+END $$;
 
 -- ==========================================
 -- SETUP COMPLETE!

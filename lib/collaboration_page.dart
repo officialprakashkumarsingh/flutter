@@ -87,49 +87,46 @@ class _ChatsPageState extends State<ChatsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title and Actions Row
-                Row(
+                // Title and Description Section
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Collabs',
-                            style: GoogleFonts.inter(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF09090B),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Create or join collaboration rooms to work together',
-                            style: GoogleFonts.inter(
-                              fontSize: 16,
-                              color: const Color(0xFF71717A),
-                            ),
-                          ),
-                        ],
+                    Text(
+                      'Collabs',
+                      style: GoogleFonts.inter(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF09090B),
                       ),
                     ),
-                    const SizedBox(width: 24),
-                    // Action Buttons
-                    Row(
-                      children: [
-                        _buildActionButton(
-                          'Join Room',
-                          Icons.group_add_rounded,
-                          () => _showJoinRoomDialog(),
-                        ),
-                        const SizedBox(width: 12),
-                        _buildActionButton(
-                          'Create Room',
-                          Icons.add_circle_outline_rounded,
-                          () => _showCreateRoomDialog(),
-                          isPrimary: true,
-                        ),
-                      ],
+                    const SizedBox(height: 8),
+                    Text(
+                      'Create or join collaboration rooms to work together',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        color: const Color(0xFF71717A),
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Action Buttons Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    _buildActionButton(
+                      'Join Room',
+                      Icons.group_add_rounded,
+                      () => _showJoinRoomDialog(),
+                    ),
+                    const SizedBox(width: 12),
+                    _buildActionButton(
+                      'Create Room',
+                      Icons.add_circle_outline_rounded,
+                      () => _showCreateRoomDialog(),
+                      isPrimary: true,
                     ),
                   ],
                 ),
@@ -198,37 +195,46 @@ class _ChatsPageState extends State<ChatsPage> {
     IconData icon,
     VoidCallback onPressed, {
     bool isPrimary = false,
+    bool isLarge = false,
   }) {
     return Container(
-      height: 44,
+      height: isLarge ? 52 : 44,
       decoration: BoxDecoration(
         color: isPrimary ? const Color(0xFF09090B) : Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(isLarge ? 12 : 8),
         border: Border.all(
           color: const Color(0xFFE4E4E7),
           width: 1,
         ),
+        boxShadow: isLarge ? [
+          BoxShadow(
+            color: const Color(0xFF09090B).withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ] : null,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(isLarge ? 12 : 8),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: isLarge ? 24 : 16),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: isLarge ? MainAxisSize.max : MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   icon,
-                  size: 18,
+                  size: isLarge ? 20 : 18,
                   color: isPrimary ? Colors.white : const Color(0xFF09090B),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   label,
                   style: GoogleFonts.inter(
-                    fontSize: 14,
+                    fontSize: isLarge ? 16 : 14,
                     fontWeight: FontWeight.w500,
                     color: isPrimary ? Colors.white : const Color(0xFF09090B),
                   ),
@@ -243,63 +249,95 @@ class _ChatsPageState extends State<ChatsPage> {
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(40),
-              border: Border.all(
-                color: const Color(0xFFE4E4E7),
-                width: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Enhanced Empty State Icon
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    const Color(0xFFF8F9FA),
+                    const Color(0xFFF1F5F9),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(60),
+                border: Border.all(
+                  color: const Color(0xFFE4E4E7),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF09090B).withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.groups_rounded,
+                size: 50,
+                color: Color(0xFF71717A),
               ),
             ),
-            child: const Icon(
-              Icons.groups_rounded,
-              size: 40,
-              color: Color(0xFF71717A),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'No collaboration rooms yet',
-            style: GoogleFonts.inter(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF09090B),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Create a new room or join an existing one to start collaborating',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              color: const Color(0xFF71717A),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildActionButton(
-                'Join Room',
-                Icons.group_add_rounded,
-                () => _showJoinRoomDialog(),
+            const SizedBox(height: 32),
+            
+            // Enhanced Title
+            Text(
+              'Start Collaborating',
+              style: GoogleFonts.inter(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF09090B),
               ),
-              const SizedBox(width: 12),
-              _buildActionButton(
-                'Create Room',
-                Icons.add_circle_outline_rounded,
-                () => _showCreateRoomDialog(),
-                isPrimary: true,
+            ),
+            const SizedBox(height: 12),
+            
+            // Enhanced Description
+            Text(
+              'No collaboration rooms yet. Create your first room or\njoin an existing one to start working together.',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                color: const Color(0xFF71717A),
+                height: 1.5,
               ),
-            ],
-          ),
-        ],
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 40),
+            
+            // Enhanced Action Buttons
+            Column(
+              children: [
+                SizedBox(
+                  width: 280,
+                  child: _buildActionButton(
+                    'Create Your First Room',
+                    Icons.add_circle_outline_rounded,
+                    () => _showCreateRoomDialog(),
+                    isPrimary: true,
+                    isLarge: true,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: 280,
+                  child: _buildActionButton(
+                    'Join Existing Room',
+                    Icons.group_add_rounded,
+                    () => _showJoinRoomDialog(),
+                    isLarge: true,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -321,17 +359,24 @@ class _ChatsPageState extends State<ChatsPage> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: const Color(0xFFE4E4E7),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF09090B).withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _joinRoomChat(room),
-          borderRadius: BorderRadius.circular(12),
+              child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _joinRoomChat(room),
+            borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
