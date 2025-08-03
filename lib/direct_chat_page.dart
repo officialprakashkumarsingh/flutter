@@ -101,18 +101,7 @@ class _DirectChatPageState extends State<DirectChatPage> {
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF8F9FA),
-              Color(0xFFE9ECEF),
-              Color(0xFFDEE2E6),
-              Color(0xFFF1F3F4),
-            ],
-          ),
-        ),
+        color: Colors.white,
         child: SafeArea(
           child: Column(
             children: [

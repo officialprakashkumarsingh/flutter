@@ -19,7 +19,7 @@ class CollaborationInputBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(bottom: 16),
       decoration: const BoxDecoration(
-        color: Color(0xFFF2F2F7), // iOS gray background for whole input area
+        color: Colors.white, // Pure white background for whole input area
       ),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

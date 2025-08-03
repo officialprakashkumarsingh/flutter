@@ -11,10 +11,10 @@ class CollaborationService {
   final _supabase = Supabase.instance.client;
   
   // Stream controllers for real-time updates
-  final _roomsController = StreamController<List<CollaborationRoom>>.broadcast();
-  final _messagesController = StreamController<List<RoomMessage>>.broadcast();
-  final _membersController = StreamController<List<RoomMember>>.broadcast();
-  final _typingController = StreamController<List<TypingIndicator>>.broadcast();
+  StreamController<List<CollaborationRoom>>? _roomsController;
+  StreamController<List<RoomMessage>>? _messagesController;
+  StreamController<List<RoomMember>>? _membersController;
+  StreamController<List<TypingIndicator>>? _typingController;
   
   // Subscriptions for realtime
   RealtimeChannel? _roomsSubscription;
@@ -27,13 +27,19 @@ class CollaborationService {
   String? _currentUserName;
   
   // Getters for streams
-  Stream<List<CollaborationRoom>> get roomsStream => _roomsController.stream;
-  Stream<List<RoomMessage>> get messagesStream => _messagesController.stream;
-  Stream<List<RoomMember>> get membersStream => _membersController.stream;
-  Stream<List<TypingIndicator>> get typingStream => _typingController.stream;
+  Stream<List<CollaborationRoom>> get roomsStream => _roomsController?.stream ?? const Stream.empty();
+  Stream<List<RoomMessage>> get messagesStream => _messagesController?.stream ?? const Stream.empty();
+  Stream<List<RoomMember>> get membersStream => _membersController?.stream ?? const Stream.empty();
+  Stream<List<TypingIndicator>> get typingStream => _typingController?.stream ?? const Stream.empty();
 
   /// Initialize the service with current user info
   Future<void> initialize() async {
+    // Initialize stream controllers
+    _roomsController ??= StreamController<List<CollaborationRoom>>.broadcast();
+    _messagesController ??= StreamController<List<RoomMessage>>.broadcast();
+    _membersController ??= StreamController<List<RoomMember>>.broadcast();
+    _typingController ??= StreamController<List<TypingIndicator>>.broadcast();
+    
     final user = _supabase.auth.currentUser;
     if (user != null) {
       _currentUserId = user.id;
@@ -424,7 +430,7 @@ class CollaborationService {
   Future<void> _refreshRooms() async {
     try {
       final rooms = await getUserRooms();
-      _roomsController.add(rooms);
+      _roomsController?.add(rooms);
     } catch (e) {
       print('Error refreshing rooms: $e');
     }
@@ -433,7 +439,7 @@ class CollaborationService {
   Future<void> _refreshMessages(String roomId) async {
     try {
       final messages = await getRoomMessages(roomId);
-      _messagesController.add(messages);
+      _messagesController?.add(messages);
     } catch (e) {
       print('Error refreshing messages: $e');
     }
@@ -442,7 +448,7 @@ class CollaborationService {
   Future<void> _refreshMembers(String roomId) async {
     try {
       final members = await getRoomMembers(roomId);
-      _membersController.add(members);
+      _membersController?.add(members);
     } catch (e) {
       print('Error refreshing members: $e');
     }
@@ -454,10 +460,15 @@ class CollaborationService {
     _messagesSubscription?.unsubscribe();
     _membersSubscription?.unsubscribe();
     
-    _roomsController.close();
-    _messagesController.close();
-    _membersController.close();
-    _typingController.close();
+    _roomsController?.close();
+    _messagesController?.close();
+    _membersController?.close();
+    _typingController?.close();
+    
+    _roomsController = null;
+    _messagesController = null;
+    _membersController = null;
+    _typingController = null;
   }
 
   /// Get current user info

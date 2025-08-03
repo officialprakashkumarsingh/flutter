@@ -12,16 +12,20 @@ class DirectChatService {
   String? _currentUserId;
   
   // Stream controllers for real-time updates
-  final _chatsController = StreamController<List<DirectChat>>.broadcast();
-  final _messagesController = StreamController<List<DirectMessage>>.broadcast();
+  StreamController<List<DirectChat>>? _chatsController;
+  StreamController<List<DirectMessage>>? _messagesController;
   
   RealtimeChannel? _chatsSubscription;
   RealtimeChannel? _messagesSubscription;
 
-  Stream<List<DirectChat>> get chatsStream => _chatsController.stream;
-  Stream<List<DirectMessage>> get messagesStream => _messagesController.stream;
+  Stream<List<DirectChat>> get chatsStream => _chatsController?.stream ?? const Stream.empty();
+  Stream<List<DirectMessage>> get messagesStream => _messagesController?.stream ?? const Stream.empty();
 
   Future<void> initialize() async {
+    // Initialize stream controllers
+    _chatsController ??= StreamController<List<DirectChat>>.broadcast();
+    _messagesController ??= StreamController<List<DirectMessage>>.broadcast();
+    
     _currentUserId = supabase.auth.currentUser?.id;
     if (_currentUserId == null) throw Exception('User not authenticated');
     
@@ -164,7 +168,7 @@ class DirectChatService {
       chats.add(DirectChat.fromJson(json));
     }
 
-    _chatsController.add(chats);
+    _chatsController?.add(chats);
     return chats;
   }
 
@@ -186,7 +190,7 @@ class DirectChatService {
       return DirectMessage.fromJson(messageJson);
     }).toList();
 
-    _messagesController.add(messages);
+          _messagesController?.add(messages);
     return messages;
   }
 
@@ -223,7 +227,10 @@ class DirectChatService {
   void dispose() {
     _chatsSubscription?.unsubscribe();
     _messagesSubscription?.unsubscribe();
-    _chatsController.close();
-    _messagesController.close();
+    _chatsController?.close();
+    _messagesController?.close();
+    
+    _chatsController = null;
+    _messagesController = null;
   }
 }

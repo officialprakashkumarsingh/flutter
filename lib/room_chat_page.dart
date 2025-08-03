@@ -92,7 +92,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7), // iOS systemGroupedBackground
+              backgroundColor: Colors.white, // iOS systemGroupedBackground
       appBar: _buildIOSAppBar(),
       body: Stack(
         children: [

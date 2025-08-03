@@ -83,18 +83,7 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF8F9FA),
-              Color(0xFFE9ECEF),
-              Color(0xFFDEE2E6),
-              Color(0xFFF1F3F4),
-            ],
-          ),
-        ),
+        color: Colors.white,
         child: SafeArea(
           child: Column(
             children: [
@@ -119,11 +108,11 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.7),
+          decoration: const BoxDecoration(
+            color: Colors.white,
             border: Border(
               bottom: BorderSide(
-                color: Colors.grey.withOpacity(0.2),
+                color: Colors.black12,
                 width: 1,
               ),
             ),
@@ -142,23 +131,16 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.grey.withOpacity(0.3),
+                          color: Colors.black26,
                           width: 1,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                       ),
                       child: const Icon(
                         Icons.arrow_back_ios_new,
-                        color: Color(0xFF495057),
+                        color: Colors.black,
                         size: 20,
                       ),
                     ),
@@ -172,7 +154,7 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF212529),
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -187,23 +169,16 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.grey.withOpacity(0.3),
+                          color: Colors.black26,
                           width: 1,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
                       ),
                       child: const Icon(
                         Icons.person_add,
-                        color: Color(0xFF495057),
+                        color: Colors.black,
                         size: 20,
                       ),
                     ),
@@ -216,28 +191,21 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
               // Tab selector with glassmorphism
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Colors.grey.withOpacity(0.2),
+                    color: Colors.black12,
                     width: 1,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
-                                  child: TabBar(
+                                                    child: TabBar(
                     controller: _tabController,
                     indicator: BoxDecoration(
-                      color: const Color(0xFF007AFF).withOpacity(0.1),
+                      color: Colors.black.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    labelColor: const Color(0xFF007AFF),
-                    unselectedLabelColor: const Color(0xFF6C757D),
+                    labelColor: Colors.black,
+                    unselectedLabelColor: Colors.black54,
                   labelStyle: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
@@ -551,35 +519,35 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
         margin: const EdgeInsets.all(40),
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.black12,
             width: 1,
           ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.chat_bubble_outline,
               size: 80,
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.black54,
             ),
             const SizedBox(height: 24),
-            Text(
+            const Text(
               'No Direct Chats',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.black,
                 fontSize: 24,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 12),
-            Text(
+            const Text(
               'Search for users by email to start chatting directly',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.black54,
                 fontSize: 16,
               ),
               textAlign: TextAlign.center,
@@ -593,10 +561,10 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.black26,
                     width: 1,
                   ),
                 ),
@@ -605,14 +573,14 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                   children: [
                     const Icon(
                       Icons.person_search,
-                      color: Colors.white,
+                      color: Colors.black,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
-                    Text(
+                    const Text(
                       'Find Users',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.black,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -656,10 +624,10 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white,
             width: 1,
           ),
         ),
@@ -669,10 +637,10 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.black26,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.4),
+                  color: Colors.black26,
                   width: 1,
                 ),
               ),
@@ -711,7 +679,7 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                     Text(
                       chat.lastMessageContent!,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.black54,
                         fontSize: 14,
                       ),
                       maxLines: 1,
@@ -760,10 +728,10 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white,
                   width: 1,
                 ),
               ),
@@ -773,7 +741,7 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                     width: 64,
                     height: 64,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Icon(
@@ -786,7 +754,7 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                   Text(
                     'Create AI Room',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.black,
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                     ),
@@ -795,7 +763,7 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                   Text(
                     'Create a room where multiple users can chat with AI together',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.black54,
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,
@@ -817,10 +785,10 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white,
                   width: 1,
                 ),
               ),
@@ -830,7 +798,7 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                     width: 64,
                     height: 64,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Icon(
@@ -843,7 +811,7 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                   Text(
                     'Join Room',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.black,
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                     ),
@@ -852,7 +820,7 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                   Text(
                     'Enter an invite code to join an existing AI room',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.black54,
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,
@@ -1497,10 +1465,10 @@ class _UserSearchDialogState extends State<_UserSearchDialog> {
       child: Container(
         constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Colors.white.withOpacity(0.2),
+            color: Colors.white,
             width: 1,
           ),
         ),
@@ -1537,7 +1505,7 @@ class _UserSearchDialogState extends State<_UserSearchDialog> {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: const Icon(
@@ -1555,10 +1523,10 @@ class _UserSearchDialogState extends State<_UserSearchDialog> {
                   // Search Field
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.black26,
                         width: 1,
                       ),
                     ),
@@ -1568,13 +1536,13 @@ class _UserSearchDialogState extends State<_UserSearchDialog> {
                       decoration: InputDecoration(
                         hintText: 'Enter email address...',
                         hintStyle: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.black45,
                         ),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.all(16),
                         prefixIcon: Icon(
                           Icons.email,
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.black54,
                         ),
                       ),
                       onChanged: _searchUsers,
@@ -1598,7 +1566,7 @@ class _UserSearchDialogState extends State<_UserSearchDialog> {
                                     Icon(
                                       Icons.search_off,
                                       size: 48,
-                                      color: Colors.white.withOpacity(0.5),
+                                      color: Colors.black38,
                                     ),
                                     const SizedBox(height: 12),
                                     Text(
@@ -1606,7 +1574,7 @@ class _UserSearchDialogState extends State<_UserSearchDialog> {
                                           ? 'Type an email to search'
                                           : 'No users found',
                                       style: TextStyle(
-                                        color: Colors.white.withOpacity(0.7),
+                                        color: Colors.black54,
                                         fontSize: 14,
                                       ),
                                     ),
@@ -1624,10 +1592,10 @@ class _UserSearchDialogState extends State<_UserSearchDialog> {
                                       margin: const EdgeInsets.only(bottom: 8),
                                       padding: const EdgeInsets.all(12),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.1),
+                                        color: Colors.white,
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
-                                          color: Colors.white.withOpacity(0.2),
+                                          color: Colors.white,
                                           width: 1,
                                         ),
                                       ),
@@ -1637,7 +1605,7 @@ class _UserSearchDialogState extends State<_UserSearchDialog> {
                                             width: 40,
                                             height: 40,
                                             decoration: BoxDecoration(
-                                              color: Colors.white.withOpacity(0.3),
+                                              color: Colors.black26,
                                               borderRadius: BorderRadius.circular(20),
                                             ),
                                             child: Center(
@@ -1667,7 +1635,7 @@ class _UserSearchDialogState extends State<_UserSearchDialog> {
                                                 Text(
                                                   user.email,
                                                   style: TextStyle(
-                                                    color: Colors.white.withOpacity(0.7),
+                                                    color: Colors.black54,
                                                     fontSize: 12,
                                                   ),
                                                 ),
