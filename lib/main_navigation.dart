@@ -53,19 +53,21 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   void _onNavTap(int index) {
     if (index == _currentIndex) return;
     
+    // Immediate haptic feedback for ultra-responsive feel
+    HapticFeedback.selectionClick();
+    
+    // Update state immediately for instant visual feedback
     setState(() {
       _currentIndex = index;
     });
     
-    // Direct page jump - no swiping through pages
+    // Jump directly to page with no delay
     _pageController.jumpToPage(index);
     
-    // Icon animation
-    _navAnimationController.reset();
-    _navAnimationController.forward();
-    
-    // Haptic feedback for native feel
-    HapticFeedback.lightImpact();
+    // Light second haptic for smooth confirmation
+    Future.delayed(const Duration(milliseconds: 30), () {
+      HapticFeedback.lightImpact();
+    });
   }
 
   void _updateSelectedModel(String model) {
@@ -124,10 +126,10 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildNavItem(0, _buildHomeIcon(), 'Home'),
-                _buildNavItem(1, _buildCharactersIcon(), 'Characters'),
-                _buildNavItem(2, _buildCollabsIcon(), 'Collabs'),
-                _buildNavItem(3, _buildHistoryIcon(), 'History'),
+                _buildNavItem(_buildHomeIcon(), 0),
+                _buildNavItem(_buildCharactersIcon(), 1),
+                _buildNavItem(_buildCollabsIcon(), 2),
+                _buildNavItem(_buildHistoryIcon(), 3),
               ],
             ),
           ),
@@ -135,8 +137,8 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     );
   }
 
-  Widget _buildNavItem(int index, Widget icon, String label) {
-    final isSelected = index == _currentIndex;
+  Widget _buildNavItem(Widget icon, int index) {
+    final isSelected = _currentIndex == index;
     
     return GestureDetector(
       onTap: () => _onNavTap(index),
@@ -144,29 +146,28 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
         animation: _navAnimationController,
         builder: (context, child) {
           return AnimatedContainer(
-            duration: const Duration(milliseconds: 350),
+            duration: const Duration(milliseconds: 200), // Faster response
             curve: Curves.easeInOutCubic,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // iOS-style icon with bounce and scale
-                Transform.scale(
-                  scale: isSelected ? _iconAnimations[index].value : 0.85,
+                // iOS-style icon with smooth scale animation
+                AnimatedScale(
+                  scale: isSelected ? 1.15 : 0.85, // Slightly bigger when selected
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeInOutCubic,
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 350),
-                    curve: isSelected ? Curves.elasticOut : Curves.easeInOut,
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeInOutCubic,
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: isSelected 
-                        ? _getSelectedColor(index).withOpacity(0.15)
-                        : Colors.transparent,
+                      color: Colors.transparent, // No background colors
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: icon,
                   ),
                 ),
-                // No labels as requested
               ],
             ),
           );
@@ -175,57 +176,65 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     );
   }
 
-  Color _getSelectedColor(int index) {
-    switch (index) {
-      case 0: return const Color(0xFF09090B); // Home - Black
-      case 1: return const Color(0xFF7C3AED); // Characters - Purple
-      case 2: return const Color(0xFF22C55E); // Collabs - Green
-      case 3: return const Color(0xFFEF4444); // History - Red
-      default: return const Color(0xFF09090B);
-    }
-  }
+
 
   Widget _buildHomeIcon() {
     final isSelected = _currentIndex == 0;
-    return FaIcon(
-      isSelected ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.house,
-      size: 16, // Smaller icons
-      color: isSelected 
-        ? const Color(0xFF09090B)
-        : const Color(0xFF64748B), // Grey to darker grey
+    return AnimatedRotation(
+      turns: isSelected ? 0.05 : 0, // Subtle rotation animation
+      duration: const Duration(milliseconds: 200),
+      child: FaIcon(
+        FontAwesomeIcons.house, // Single icon, no switching
+        size: 18, // Slightly larger for better visibility
+        color: isSelected 
+          ? const Color(0xFF09090B) // Pure black when active
+          : const Color(0xFF64748B), // Grey when inactive
+      ),
     );
   }
 
   Widget _buildCharactersIcon() {
     final isSelected = _currentIndex == 1;
-    return FaIcon(
-      isSelected ? FontAwesomeIcons.solidUser : FontAwesomeIcons.userGear,
-      size: 16, // Smaller icons
-      color: isSelected 
-        ? const Color(0xFF7C3AED)
-        : const Color(0xFF64748B), // Grey to darker grey
+    return AnimatedScale(
+      scale: isSelected ? 1.1 : 1.0, // Subtle scale animation
+      duration: const Duration(milliseconds: 200),
+      child: FaIcon(
+        FontAwesomeIcons.userGear, // Single icon, no switching
+        size: 18,
+        color: isSelected 
+          ? const Color(0xFF09090B) // Pure black when active
+          : const Color(0xFF64748B), // Grey when inactive
+      ),
     );
   }
 
   Widget _buildCollabsIcon() {
     final isSelected = _currentIndex == 2;
-    return FaIcon(
-      isSelected ? FontAwesomeIcons.solidComments : FontAwesomeIcons.users,
-      size: 16, // Smaller icons
-      color: isSelected 
-        ? const Color(0xFF22C55E)
-        : const Color(0xFF64748B), // Grey to darker grey
+    return AnimatedRotation(
+      turns: isSelected ? -0.05 : 0, // Subtle counter-rotation
+      duration: const Duration(milliseconds: 200),
+      child: FaIcon(
+        FontAwesomeIcons.users, // Single icon, no switching
+        size: 18,
+        color: isSelected 
+          ? const Color(0xFF09090B) // Pure black when active
+          : const Color(0xFF64748B), // Grey when inactive
+      ),
     );
   }
 
   Widget _buildHistoryIcon() {
     final isSelected = _currentIndex == 3;
-    return FaIcon(
-      isSelected ? FontAwesomeIcons.solidClock : FontAwesomeIcons.clockRotateLeft,
-      size: 16, // Smaller icons
-      color: isSelected 
-        ? const Color(0xFFEF4444)
-        : const Color(0xFF64748B), // Grey to darker grey
+    return AnimatedRotation(
+      turns: isSelected ? 0.1 : 0, // Clock-like rotation animation
+      duration: const Duration(milliseconds: 200),
+      child: FaIcon(
+        FontAwesomeIcons.clockRotateLeft, // Single icon, no switching
+        size: 18,
+        color: isSelected 
+          ? const Color(0xFF09090B) // Pure black when active
+          : const Color(0xFF64748B), // Grey when inactive
+      ),
     );
   }
 }

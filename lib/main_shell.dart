@@ -1131,6 +1131,10 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         shadowColor: Colors.transparent,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Color(0xFFF9F7F4), // Match background
+          statusBarIconBrightness: Brightness.dark,
+        ),
         title: GestureDetector(
           onTap: _showModelSelectionSheet,
           child: Container(
@@ -1248,18 +1252,51 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
           ),
         ],
       ),
-      body: SlideTransition(
-        position: _slideAnimation,
-        child: ChatPage(
-          key: _chatPageKey, 
-          onBookmark: _bookmarkMessage, 
-                                      selectedModel: widget.selectedModel,
-          onChatHistoryChanged: _refreshChatHistory, // Add callback
-          isTemporaryChatMode: _isTemporaryChatMode, // Pass temporary chat mode state
+      backgroundColor: const Color(0xFFF9F7F4), // Consistent cream background
+      body: CustomPaint(
+        painter: HomePatternPainter(),
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: ChatPage(
+            key: _chatPageKey, 
+            onBookmark: _bookmarkMessage, 
+                                        selectedModel: widget.selectedModel,
+            onChatHistoryChanged: _refreshChatHistory, // Add callback
+            isTemporaryChatMode: _isTemporaryChatMode, // Pass temporary chat mode state
+          ),
         ),
       ),
     );
   }
+}
+
+/* ----------------------------------------------------------
+   HOME PATTERN PAINTER for consistent background
+---------------------------------------------------------- */
+class HomePatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Fill with cream background
+    final paint = Paint()..color = const Color(0xFFF9F7F4);
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
+    
+    // Create subtle dot pattern
+    final dotPaint = Paint()
+      ..color = Colors.grey.withOpacity(0.03)
+      ..style = PaintingStyle.fill;
+    
+    const dotSize = 1.0;
+    const spacing = 30.0;
+    
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), dotSize, dotPaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
 /* ----------------------------------------------------------
