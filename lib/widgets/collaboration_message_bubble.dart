@@ -155,28 +155,28 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
                     child: AnimatedScale(
                       scale: (-_slideOffset / 60.0).clamp(0.5, 1.0), // Scale animation
                       duration: const Duration(milliseconds: 100),
-                      child: Container(
-                        width: 44, // Larger touch target
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF007AFF).withOpacity(0.15),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF007AFF).withOpacity(0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                                              child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF25D366).withOpacity(0.12),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF25D366).withOpacity(0.25),
+                                blurRadius: 12,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.reply_rounded,
+                              size: 18,
+                              color: Color(0xFF25D366),
                             ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: FaIcon(
-                            FontAwesomeIcons.reply,
-                            size: 20,
-                            color: Color(0xFF007AFF),
                           ),
                         ),
-                      ),
                     ),
                   ),
                 ),
@@ -274,13 +274,27 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
         decoration: BoxDecoration(
           color: _getBubbleColor(),
           borderRadius: _getBubbleBorderRadius(),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
-            ),
-          ],
+          border: widget.message.messageType == 'ai' || (!widget.isOwnMessage && widget.message.messageType != 'system')
+              ? Border.all(
+                  color: const Color(0xFFE4E4E7),
+                  width: 1,
+                )
+              : null,
+          boxShadow: widget.message.messageType == 'ai' 
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -447,13 +461,13 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   Color _getBubbleColor() {
     switch (widget.message.messageType) {
       case 'ai':
-        return Colors.transparent; // Transparent for AI
+        return Colors.transparent; // Transparent for AI messages
       case 'system':
-        return const Color(0xFFF1F5F9).withOpacity(0.5); // Very light gray for system
+        return const Color(0xFFF1F5F9).withOpacity(0.7); // Light gray for system
       default:
         return widget.isOwnMessage 
-            ? const Color(0xFF007AFF) // Blue for own messages
-            : _getUserBubbleColor(); // Different colors for different users
+            ? const Color(0xFF25D366) // WhatsApp green for own messages
+            : const Color(0xFFFFFFFF); // White for received messages
     }
   }
   
@@ -475,11 +489,15 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   }
 
   BorderRadius _getBubbleBorderRadius() {
-    const radius = Radius.circular(12);
-    const smallRadius = Radius.circular(4);
+    const radius = Radius.circular(18);
+    const smallRadius = Radius.circular(6);
 
     if (widget.message.messageType == 'system') {
-      return BorderRadius.circular(8);
+      return BorderRadius.circular(12);
+    }
+
+    if (widget.message.messageType == 'ai') {
+      return BorderRadius.circular(16);
     }
 
     return widget.isOwnMessage
@@ -504,7 +522,9 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
       case 'system':
         return const Color(0xFF71717A); // Subtle gray for system
       default:
-        return Colors.white; // White text for all colored bubbles
+        return widget.isOwnMessage 
+            ? Colors.white // White text for green own messages
+            : const Color(0xFF09090B); // Dark text for white received messages
     }
   }
 

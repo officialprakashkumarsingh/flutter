@@ -29,7 +29,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
   List<RoomMember> _members = [];
   bool _isLoading = true;
   bool _isSendingMessage = false;
-  bool _showMembers = false;
+  // Removed _showMembers - no longer needed since count is shown in room list
   RoomMessage? _replyingTo;
 
   @override
@@ -108,7 +108,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
       body: Stack(
         children: [
           _isLoading ? _buildLoadingState() : _buildChatInterface(),
-          if (_showMembers) _buildMembersDrawer(),
+          // Removed member drawer - count already shown in room list
         ],
       ),
     );
@@ -137,34 +137,30 @@ class _RoomChatPageState extends State<RoomChatPage> {
           color: Color(0xFF09090B),
         ),
       ),
-      title: GestureDetector(
-        onTap: () {
-          setState(() => _showMembers = !_showMembers);
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.room.name,
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF09090B),
-              ),
+      title: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.room.name,
+            style: GoogleFonts.inter(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF09090B),
             ),
+          ),
+          if (widget.room.description != null && widget.room.description!.isNotEmpty)
             Text(
-              _members.isNotEmpty 
-                  ? '${_members.length} member${_members.length == 1 ? '' : 's'}'
-                  : 'Loading members...',
+              widget.room.description!,
               style: GoogleFonts.inter(
-                fontSize: 12,
+                fontSize: 11,
                 color: const Color(0xFF71717A),
                 fontWeight: FontWeight.w400,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
+        ],
       ),
       actions: [
         // Copy invite code
@@ -576,93 +572,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
     );
   }
 
-  Widget _buildMembersDrawer() {
-    return Drawer(
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Members (${_members.length})',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF09090B),
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => setState(() => _showMembers = false),
-                    icon: const Icon(Icons.close_rounded, color: Color(0xFF09090B)),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(color: Color(0xFFE4E4E7)),
-            
-            Expanded(
-              child: ListView.builder(
-                itemCount: _members.length,
-                itemBuilder: (context, index) {
-                  final member = _members[index];
-                  return ListTile(
-                    leading: _buildUserAvatar(member.userName ?? 'Unknown'),
-                    title: Text(
-                      member.userName ?? 'Unknown User',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF09090B),
-                      ),
-                    ),
-                    subtitle: Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: member.isActive 
-                                ? const Color(0xFF10B981) 
-                                : const Color(0xFF6B7280),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          member.isAdmin 
-                              ? 'Admin ${member.isActive ? '• Online' : '• Offline'}'
-                              : member.isActive ? 'Online' : 'Offline',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: member.isAdmin 
-                                ? const Color(0xFF7C3AED)
-                                : const Color(0xFF71717A),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: member.isAdmin
-                        ? const Icon(
-                            Icons.admin_panel_settings_rounded,
-                            size: 16,
-                            color: Color(0xFF7C3AED),
-                          )
-                        : null,
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Removed _buildMembersDrawer - no longer needed since member count is shown in room list
 
   Future<void> _sendMessage() async {
     final content = _messageController.text.trim();

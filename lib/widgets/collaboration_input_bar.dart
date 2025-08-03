@@ -126,8 +126,8 @@ class CollaborationInputBar extends StatelessWidget {
                                 valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFEF4444)),
                               ),
                             )
-                          : const FaIcon(
-                              FontAwesomeIcons.paperPlane,
+                          : const Icon(
+                              Icons.send,
                               color: Colors.white,
                               size: 20,
                             ),
