@@ -82,59 +82,62 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
     );
   }
 
-  Widget _buildMinimalistHeader() {
+  Widget _buildIOSHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      decoration: BoxDecoration(
+        color: CupertinoColors.systemBackground.resolveFrom(context),
+        border: Border(
+          bottom: BorderSide(
+            color: CupertinoColors.separator.resolveFrom(context).withOpacity(0.3),
+            width: 0.5,
+          ),
+        ),
+      ),
       child: Column(
         children: [
           // Top Row
           Row(
             children: [
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.pop(context);
+                },
                 child: Container(
-                  width: 44,
-                  height: 44,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.06),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    color: CupertinoColors.systemGray6.resolveFrom(context),
+                    borderRadius: BorderRadius.circular(18),
                   ),
-                  child: const Center(
-                    child: FaIcon(
-                      FontAwesomeIcons.arrowLeft,
-                      size: 18,
-                      color: Color(0xFF09090B),
-                    ),
+                  child: Icon(
+                    CupertinoIcons.back,
+                    size: 20,
+                    color: CupertinoColors.systemBlue.resolveFrom(context),
                   ),
                 ),
               ),
               const Spacer(),
               if (_tabController.index == 0)
-                GestureDetector(
-                  onTap: () {
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: () {
                     HapticFeedback.lightImpact();
                     _showCreateRoomDialog();
                   },
                   child: Container(
-                    width: 44,
-                    height: 44,
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF09090B),
-                      borderRadius: BorderRadius.circular(14),
+                      color: CupertinoColors.systemBlue.resolveFrom(context),
+                      borderRadius: BorderRadius.circular(18),
                     ),
-                    child: const Center(
-                      child: FaIcon(
-                        FontAwesomeIcons.plus,
-                        size: 18,
-                        color: Colors.white,
-                      ),
+                    child: const Icon(
+                      CupertinoIcons.add,
+                      size: 20,
+                      color: CupertinoColors.white,
                     ),
                   ),
                 ),
