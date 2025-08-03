@@ -8,15 +8,15 @@
 
 ### 🗄️ **Database Setup SQL Files**
 
-#### **🎯 Option 1: App-Logic Matching Setup (RECOMMENDED)**
-**File**: `ahamai_app_logic_matching_setup.sql`
-**Download**: [Download App-Matching SQL](https://github.com/officialprakashkumarsingh/flutter/raw/fresh-main/ahamai_app_logic_matching_setup.sql)
+#### **🔧 Option 1: Fixed App Errors Setup (RECOMMENDED)**
+**File**: `ahamai_fixed_app_errors_setup.sql`
+**Download**: [Download Error-Fixed SQL](https://github.com/officialprakashkumarsingh/flutter/raw/fresh-main/ahamai_fixed_app_errors_setup.sql)
 - ⚠️ **WARNING: DELETES ALL EXISTING DATA**
-- 🎯 **DESIGNED FOR YOUR FLUTTER APP**: Matches exactly how your app works
+- 🔧 **FIXES YOUR SPECIFIC ERRORS**: Solves .single() PostgresException failures
+- ✅ Failed to initialize: Profile will ALWAYS exist for .single() queries
+- ✅ Failed to join room: Room lookup optimized for invite codes
 - 📱 Tables match CollaborationRoom model exactly
-- 🔍 Indexes optimized for your app's query patterns
-- 🚀 App handles security, database provides data
-- ✅ Zero conflicts between app logic and database policies
+- 🛡️ Robust error handling with retroactive profile creation
 
 #### **Option 2: Simple No-Recursion Setup (SAFE UPGRADE)**
 **File**: `ahamai_simple_no_recursion_setup.sql`
@@ -51,12 +51,12 @@
 
 ### **Database Setup:**
 
-#### **🎯 For Fresh Start (APP-MATCHING - RECOMMENDED):**
-1. Download `ahamai_app_logic_matching_setup.sql`
+#### **🔧 For Fresh Start (ERROR-FIXED - RECOMMENDED):**
+1. Download `ahamai_fixed_app_errors_setup.sql`
 2. Open Supabase SQL Editor
 3. Copy & paste the entire file content
 4. Run the script
-5. **Result**: Database designed exactly for your Flutter app!
+5. **Result**: Your specific PostgresException errors are fixed!
 
 #### **⚡ For Existing Setup:**
 1. Download `ahamai_simple_no_recursion_setup.sql`
@@ -86,11 +86,11 @@
 - ✅ Automatic uppercase formatting
 
 ### 🗄️ **Database Setup**
-- 🎯 **APP-DESIGNED**: Matches exactly how your Flutter app works
+- 🔧 **ERROR-SPECIFIC FIXES**: Solves your exact PostgresException failures
+- ✅ Failed to initialize: Profile creation with retroactive fixes
+- ✅ Failed to join room: Optimized invite code lookups
+- 🛡️ Robust error handling for all .single() queries
 - 📱 Tables match CollaborationRoom model perfectly
-- 🔍 Optimized for your app's specific query patterns
-- 🚀 App handles security, database provides data access
-- ✅ Zero conflicts between app logic and database policies
 
 ---
 
