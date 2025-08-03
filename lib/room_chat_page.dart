@@ -91,10 +91,10 @@ class _RoomChatPageState extends State<RoomChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      navigationBar: _buildIOSNavigationBar(),
-      child: Stack(
+    return Scaffold(
+      backgroundColor: const Color(0xFFF2F2F7), // iOS systemGroupedBackground
+      appBar: _buildIOSAppBar(),
+      body: Stack(
         children: [
           _isLoading ? _buildLoadingState() : _buildChatInterface(),
           if (_showMembers) _buildMembersDrawer(),
@@ -103,7 +103,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
     );
   }
 
-  CupertinoNavigationBar _buildIOSNavigationBar() {
+  PreferredSizeWidget _buildIOSAppBar() {
     return CupertinoNavigationBar(
       backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
       border: Border(

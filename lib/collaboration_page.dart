@@ -64,9 +64,9 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
-      child: SafeArea(
+    return Scaffold(
+      backgroundColor: const Color(0xFFF2F2F7), // iOS systemGroupedBackground
+      body: SafeArea(
         child: Column(
           children: [
             _buildIOSHeader(),
