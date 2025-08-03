@@ -174,7 +174,7 @@ class _ChatsPageState extends State<ChatsPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Create or join collaboration rooms to work together with your team',
+                'Create or join collaboration rooms to work together with friends, families and teams',
                 style: GoogleFonts.inter(
                   fontSize: 16,
                   color: const Color(0xFF71717A),
@@ -292,7 +292,7 @@ class _ChatsPageState extends State<ChatsPage> {
     bool isLarge = false,
   }) {
     return Container(
-      height: isLarge ? 52 : 44,
+      height: isLarge ? 44 : 36,
       decoration: BoxDecoration(
         color: isPrimary ? const Color(0xFF09090B) : Colors.white,
         borderRadius: BorderRadius.circular(isLarge ? 12 : 8),
@@ -314,21 +314,21 @@ class _ChatsPageState extends State<ChatsPage> {
           onTap: onPressed,
           borderRadius: BorderRadius.circular(isLarge ? 12 : 8),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: isLarge ? 24 : 16),
+            padding: EdgeInsets.symmetric(horizontal: isLarge ? 20 : 12),
             child: Row(
               mainAxisSize: isLarge ? MainAxisSize.max : MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   icon,
-                  size: isLarge ? 20 : 18,
+                  size: isLarge ? 18 : 16,
                   color: isPrimary ? Colors.white : const Color(0xFF09090B),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Text(
                   label,
                   style: GoogleFonts.inter(
-                    fontSize: isLarge ? 16 : 14,
+                    fontSize: isLarge ? 14 : 13,
                     fontWeight: FontWeight.w500,
                     color: isPrimary ? Colors.white : const Color(0xFF09090B),
                   ),

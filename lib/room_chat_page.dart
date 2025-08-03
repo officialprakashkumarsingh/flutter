@@ -47,6 +47,17 @@ class _RoomChatPageState extends State<RoomChatPage> {
 
   Future<void> _initializeRoom() async {
     try {
+      // Initialize collaboration service first
+      await _collaborationService.initialize();
+      
+      // Load initial members to ensure we have current data
+      final initialMembers = await _collaborationService.getRoomMembers(widget.room.id);
+      if (mounted) {
+        setState(() {
+          _members = initialMembers;
+        });
+      }
+      
       // Subscribe to real-time updates
       _collaborationService.subscribeToMessages(widget.room.id);
       _collaborationService.subscribeToMembers(widget.room.id);
@@ -92,8 +103,8 @@ class _RoomChatPageState extends State<RoomChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-              backgroundColor: Colors.white, // iOS systemGroupedBackground
-      appBar: _buildIOSAppBar(),
+      backgroundColor: const Color(0xFFFAFAFA), // Shadcn neutral background
+      appBar: _buildShadcnAppBar(),
       body: Stack(
         children: [
           _isLoading ? _buildLoadingState() : _buildChatInterface(),
@@ -103,51 +114,53 @@ class _RoomChatPageState extends State<RoomChatPage> {
     );
   }
 
-  PreferredSizeWidget _buildIOSAppBar() {
+  PreferredSizeWidget _buildShadcnAppBar() {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
       shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
       bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(0.5),
+        preferredSize: const Size.fromHeight(1),
         child: Container(
-          color: const Color(0xFFE5E5EA).withOpacity(0.3),
-          height: 0.5,
+          color: const Color(0xFFE4E4E7),
+          height: 1,
         ),
       ),
       leading: IconButton(
         onPressed: () {
-          HapticFeedback.lightImpact();
           Navigator.pop(context);
         },
         icon: const Icon(
-          CupertinoIcons.chevron_left,
-          size: 24,
-          color: Color(0xFF007AFF),
+          Icons.arrow_back_rounded,
+          size: 22,
+          color: Color(0xFF09090B),
         ),
       ),
       title: GestureDetector(
         onTap: () {
-          HapticFeedback.lightImpact();
           setState(() => _showMembers = !_showMembers);
         },
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               widget.room.name,
-              style: const TextStyle(
-                fontSize: 17,
+              style: GoogleFonts.inter(
+                fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF000000),
+                color: const Color(0xFF09090B),
               ),
             ),
             Text(
-              '${_members.length} member${_members.length == 1 ? '' : 's'}',
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF8E8E93),
+              _members.isNotEmpty 
+                  ? '${_members.length} member${_members.length == 1 ? '' : 's'}'
+                  : 'Loading members...',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: const Color(0xFF71717A),
+                fontWeight: FontWeight.w400,
               ),
             ),
           ],
@@ -155,27 +168,49 @@ class _RoomChatPageState extends State<RoomChatPage> {
       ),
       actions: [
         // Copy invite code
-        IconButton(
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            _copyInviteCode();
-          },
-          icon: const Icon(
-            CupertinoIcons.doc_on_clipboard,
-            size: 20,
-            color: Color(0xFF007AFF),
+        Container(
+          margin: const EdgeInsets.only(right: 4),
+          child: IconButton(
+            onPressed: _copyInviteCode,
+            icon: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: const Color(0xFFE4E4E7),
+                  width: 1,
+                ),
+              ),
+              child: const Icon(
+                Icons.copy_rounded,
+                size: 16,
+                color: Color(0xFF09090B),
+              ),
+            ),
           ),
         ),
         // Room menu
-        IconButton(
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            _showIOSActionSheet(context);
-          },
-          icon: const Icon(
-            CupertinoIcons.ellipsis,
-            size: 20,
-            color: Color(0xFF007AFF),
+        Container(
+          margin: const EdgeInsets.only(right: 8),
+          child: IconButton(
+            onPressed: () => _showShadcnActionSheet(context),
+            icon: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: const Color(0xFFE4E4E7),
+                  width: 1,
+                ),
+              ),
+              child: const Icon(
+                Icons.more_vert_rounded,
+                size: 16,
+                color: Color(0xFF09090B),
+              ),
+            ),
           ),
         ),
       ],
@@ -911,53 +946,136 @@ Guidelines:
     _showSnackBar('Invite code copied: ${widget.room.inviteCode}');
   }
 
-  void _showIOSActionSheet(BuildContext context) {
-    showCupertinoModalPopup(
+  void _showShadcnActionSheet(BuildContext context) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => CupertinoActionSheet(
-        actions: [
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              _showRoomInfo();
-            },
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE4E4E7),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            
+            // Room Info Action
+            _buildActionSheetItem(
+              icon: Icons.info_outline_rounded,
+              label: 'Room Info',
+              onTap: () {
+                Navigator.pop(context);
+                _showRoomInfo();
+              },
+            ),
+            
+            // Leave Room Action
+            _buildActionSheetItem(
+              icon: Icons.logout_rounded,
+              label: 'Leave Room',
+              isDestructive: true,
+              onTap: () {
+                Navigator.pop(context);
+                _leaveRoom();
+              },
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // Cancel button
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: const Color(0xFFF8F9FA),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(
+                      color: Color(0xFFE4E4E7),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  'Cancel',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF09090B),
+                  ),
+                ),
+              ),
+            ),
+            
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionSheetItem({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool isDestructive = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFE4E4E7),
+                width: 1,
+              ),
+            ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  CupertinoIcons.info,
-                  size: 20,
-                  color: CupertinoColors.systemBlue.resolveFrom(context),
+                  icon,
+                  size: 18,
+                  color: isDestructive 
+                      ? const Color(0xFFDC2626) 
+                      : const Color(0xFF09090B),
                 ),
-                const SizedBox(width: 8),
-                const Text('Room Info'),
+                const SizedBox(width: 12),
+                Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isDestructive 
+                        ? const Color(0xFFDC2626) 
+                        : const Color(0xFF09090B),
+                  ),
+                ),
               ],
             ),
           ),
-          CupertinoActionSheetAction(
-            isDestructiveAction: true,
-            onPressed: () {
-              Navigator.pop(context);
-              _leaveRoom();
-            },
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  CupertinoIcons.arrow_right_square,
-                  size: 20,
-                  color: CupertinoColors.destructiveRed,
-                ),
-                const SizedBox(width: 8),
-                const Text('Leave Room'),
-              ],
-            ),
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          isDefaultAction: true,
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
         ),
       ),
     );

@@ -19,7 +19,13 @@ class CollaborationInputBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(bottom: 16),
       decoration: const BoxDecoration(
-        color: Colors.white, // Pure white background for whole input area
+        color: Color(0xFFFAFAFA), // Match app background
+        border: Border(
+          top: BorderSide(
+            color: Color(0xFFE4E4E7),
+            width: 1,
+          ),
+        ),
       ),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -28,7 +34,7 @@ class CollaborationInputBar extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: Colors.white, // White background only for typing area
-          borderRadius: BorderRadius.circular(20), // More iOS-like rounded corners
+          borderRadius: BorderRadius.circular(12), // Shadcn style rounded corners
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.06),
