@@ -64,97 +64,216 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: _buildAppBar(),
-      body: _isLoading 
-          ? _buildLoadingState()
-          : _error != null 
-              ? _buildErrorState()
-              : _buildMainContent(),
+      backgroundColor: const Color(0xFFFBFBFB),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildMinimalistHeader(),
+            Expanded(
+              child: _isLoading 
+                  ? _buildLoadingState()
+                  : _error != null 
+                      ? _buildErrorState()
+                      : _buildMainContent(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      leading: IconButton(
-        onPressed: () => Navigator.pop(context),
-        icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Color(0xFF09090B), size: 18),
-      ),
-      title: Text(
-        'Collaborate',
-        style: GoogleFonts.inter(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: const Color(0xFF09090B),
-        ),
-      ),
-      actions: [
-        // Add create room button in header (only one place)
-        if (_tabController.index == 0)
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF007AFF),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(20),
-                child: InkWell(
-                  onTap: () {
-                    HapticFeedback.lightImpact();
-                    _showCreateRoomDialog();
-                  },
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const FaIcon(
-                          FontAwesomeIcons.plus,
-                          size: 12,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Create',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
+  Widget _buildMinimalistHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+      child: Column(
+        children: [
+          // Top Row
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: FaIcon(
+                      FontAwesomeIcons.arrowLeft,
+                      size: 18,
+                      color: Color(0xFF09090B),
                     ),
                   ),
                 ),
               ),
+              const Spacer(),
+              if (_tabController.index == 0)
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _showCreateRoomDialog();
+                  },
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF09090B),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Center(
+                      child: FaIcon(
+                        FontAwesomeIcons.plus,
+                        size: 18,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Title Section
+          Row(
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Collaborate',
+                    style: GoogleFonts.inter(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF09090B),
+                      letterSpacing: -1.2,
+                      height: 1.0,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Connect with your team',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      color: const Color(0xFF71717A),
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Minimal Tab Selector
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      _tabController.animateTo(0);
+                      setState(() {});
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: _tabController.index == 0 
+                            ? const Color(0xFF09090B) 
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          FaIcon(
+                            FontAwesomeIcons.users,
+                            size: 16,
+                            color: _tabController.index == 0 
+                                ? Colors.white 
+                                : const Color(0xFF71717A),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'My Rooms',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: _tabController.index == 0 
+                                  ? Colors.white 
+                                  : const Color(0xFF71717A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      _tabController.animateTo(1);
+                      setState(() {});
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: _tabController.index == 1 
+                            ? const Color(0xFF09090B) 
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          FaIcon(
+                            FontAwesomeIcons.rightToBracket,
+                            size: 16,
+                            color: _tabController.index == 1 
+                                ? Colors.white 
+                                : const Color(0xFF71717A),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Join Room',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: _tabController.index == 1 
+                                  ? Colors.white 
+                                  : const Color(0xFF71717A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-      ],
-      bottom: TabBar(
-        controller: _tabController,
-        indicatorColor: const Color(0xFF09090B),
-        indicatorWeight: 2,
-        labelColor: const Color(0xFF09090B),
-        unselectedLabelColor: const Color(0xFF71717A),
-        labelStyle: GoogleFonts.inter(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-        unselectedLabelStyle: GoogleFonts.inter(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-        ),
-        onTap: (index) => setState(() {}), // Rebuild to show/hide create button
-        tabs: const [
-          Tab(icon: FaIcon(FontAwesomeIcons.users, size: 16), text: 'My Rooms'),
-          Tab(icon: FaIcon(FontAwesomeIcons.rightToBracket, size: 16), text: 'Join Room'),
         ],
       ),
     );
@@ -212,12 +331,15 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
   }
 
   Widget _buildMainContent() {
-    return TabBarView(
-      controller: _tabController,
-      children: [
-        _buildMyRoomsTab(),
-        _buildJoinRoomTab(),
-      ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildMyRoomsTab(),
+          _buildJoinRoomTab(),
+        ],
+      ),
     );
   }
 
@@ -266,49 +388,85 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
   Widget _buildEmptyRoomsState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 64,
-              height: 64,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                color: const Color(0xFF09090B),
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: const Center(
                 child: FaIcon(
                   FontAwesomeIcons.users,
-                  size: 24,
-                  color: Colors.white,
+                  size: 32,
+                  color: Color(0xFF71717A),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Text(
               'No rooms yet',
               style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
                 color: const Color(0xFF09090B),
+                letterSpacing: -0.3,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               'Create your first room to start\ncollaborating with your team',
               style: GoogleFonts.inter(
-                fontSize: 13,
+                fontSize: 15,
                 color: const Color(0xFF71717A),
-                height: 1.4,
+                height: 1.5,
+                fontWeight: FontWeight.w400,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
-            _buildSmallButton(
-              onPressed: _showCreateRoomDialog,
-              icon: FontAwesomeIcons.plus,
-              text: 'Create Room',
+            const SizedBox(height: 32),
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                _showCreateRoomDialog();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF09090B),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const FaIcon(
+                      FontAwesomeIcons.plus,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Create Room',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -329,45 +487,45 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
 
   Widget _buildRoomCard(CollaborationRoom room) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: () => _joinRoom(room),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                // Room Avatar - Fixed positioning
+                // Room Avatar
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     color: const Color(0xFF09090B),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Center(
                     child: FaIcon(
                       FontAwesomeIcons.users,
-                      size: 16,
+                      size: 20,
                       color: Colors.white,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 
                 // Room Info
                 Expanded(
@@ -377,36 +535,48 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                       Text(
                         room.name,
                         style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
                           color: const Color(0xFF09090B),
+                          letterSpacing: -0.3,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 6),
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               room.inviteCode,
                               style: GoogleFonts.robotoMono(
-                                fontSize: 10,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: const Color(0xFF71717A),
+                                letterSpacing: 1,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 12),
+                          Container(
+                            width: 4,
+                            height: 4,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE4E4E7),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
                           Text(
                             '${room.memberCount} members',
                             style: GoogleFonts.inter(
-                              fontSize: 11,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
                               color: const Color(0xFF71717A),
                             ),
                           ),
@@ -417,10 +587,20 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                 ),
                 
                 // Arrow
-                const FaIcon(
-                  FontAwesomeIcons.chevronRight,
-                  size: 12,
-                  color: Color(0xFF71717A),
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Center(
+                    child: FaIcon(
+                      FontAwesomeIcons.chevronRight,
+                      size: 14,
+                      color: Color(0xFF71717A),
+                    ),
+                  ),
                 ),
               ],
             ),
