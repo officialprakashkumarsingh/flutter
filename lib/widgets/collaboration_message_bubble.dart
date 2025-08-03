@@ -219,19 +219,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
                   constraints: BoxConstraints(
                     maxWidth: MediaQuery.of(context).size.width * 0.75,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: widget.isOwnMessage ? [
-                      _buildMessageBubble(),
-                      const SizedBox(width: 8),
-                      _buildAvatar(),
-                    ] : [
-                      _buildAvatar(),
-                      const SizedBox(width: 8),
-                      _buildMessageBubble(),
-                    ],
-                  ),
+                  child: _buildMessageBubble(),
                 ),
                 
                 // Heart animation overlay
@@ -261,6 +249,66 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCompactAvatar() {
+    if (widget.message.messageType == 'system') {
+      return const SizedBox.shrink(); // No avatar for system messages
+    }
+
+    Color backgroundColor;
+    Widget avatarChild;
+
+    switch (widget.message.messageType) {
+      case 'ai':
+        backgroundColor = const Color(0xFF7C3AED); // Purple for AI
+        avatarChild = const FaIcon(
+          FontAwesomeIcons.robot,
+          size: 8,
+          color: Colors.white,
+        );
+        break;
+      default:
+        // Generate color based on username for consistency
+        final colorIndex = widget.message.userName.hashCode % 8;
+        final colors = [
+          const Color(0xFF34C759), // Green
+          const Color(0xFFFF9500), // Orange  
+          const Color(0xFF5856D6), // Purple
+          const Color(0xFFFF2D92), // Pink
+          const Color(0xFF32D74B), // Light Green
+          const Color(0xFFFF6482), // Coral
+          const Color(0xFF64D2FF), // Light Blue
+          const Color(0xFFBF5AF2), // Light Purple
+        ];
+        
+        backgroundColor = colors[colorIndex];
+        
+        // Use first character of userName
+        String displayChar = widget.message.userName.isNotEmpty 
+            ? widget.message.userName[0].toUpperCase()
+            : '?';
+        
+        avatarChild = Text(
+          displayChar,
+          style: GoogleFonts.inter(
+            fontSize: 8,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        );
+        break;
+    }
+
+    return Container(
+      width: 16,
+      height: 16,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        shape: BoxShape.circle,
+      ),
+      child: Center(child: avatarChild),
     );
   }
 
@@ -345,6 +393,9 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Avatar BEFORE name (as requested)
+          _buildCompactAvatar(),
+          const SizedBox(width: 6),
           Text(
             widget.message.messageType == 'ai' ? 'AhamAI' : widget.message.userName,
             style: GoogleFonts.inter(

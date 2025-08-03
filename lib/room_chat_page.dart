@@ -273,11 +273,13 @@ class _RoomChatPageState extends State<RoomChatPage> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final message = _messages[index];
-                                return CollaborationMessageBubble(
-                          message: message,
-                          isOwnMessage: message.isOwnMessage,
-                          onReply: _handleReply,
-                        );
+        // Alternate message sides: odd index (1,3,5...) = left, even index (0,2,4...) = right
+        final bool forceLeft = (index + 1) % 2 == 1; // 1st, 3rd, 5th message go left
+        return CollaborationMessageBubble(
+          message: message,
+          isOwnMessage: !forceLeft, // Right side when not forced left
+          onReply: _handleReply,
+        );
       },
     );
   }

@@ -16,11 +16,13 @@ class CollaborationInputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(bottom: 16),
-      decoration: const BoxDecoration(
-        color: Colors.white, // Clean white background
-      ),
+    return CustomPaint(
+      painter: InputPatternPainter(),
+      child: Container(
+        padding: const EdgeInsets.only(bottom: 16),
+        decoration: const BoxDecoration(
+          color: Colors.transparent, // Transparent to show pattern
+        ),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
@@ -132,7 +134,38 @@ class CollaborationInputBar extends StatelessWidget {
             ),
           ],
         ),
+        ),
       ),
     );
   }
+}
+
+class InputPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Fill with white background
+    final paint = Paint()..color = Colors.white;
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
+    
+    // Create subtle dot pattern for input area
+    final dotPaint = Paint()
+      ..color = Colors.grey.withOpacity(0.08)
+      ..style = PaintingStyle.fill;
+    
+    const dotSize = 1.5;
+    const spacing = 20.0;
+    
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), dotSize, dotPaint);
+        // Add smaller dots for more WhatsApp-like pattern
+        if ((x / spacing) % 2 == 0 && (y / spacing) % 2 == 0) {
+          canvas.drawCircle(Offset(x + spacing/2, y + spacing/2), dotSize * 0.5, dotPaint);
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
