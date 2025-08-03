@@ -104,42 +104,44 @@ class _RoomChatPageState extends State<RoomChatPage> {
   }
 
   PreferredSizeWidget _buildIOSAppBar() {
-    return CupertinoNavigationBar(
-      backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
-      border: Border(
-        bottom: BorderSide(
-          color: CupertinoColors.separator.resolveFrom(context).withOpacity(0.3),
-          width: 0.5,
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(0.5),
+        child: Container(
+          color: const Color(0xFFE5E5EA).withOpacity(0.3),
+          height: 0.5,
         ),
       ),
-      leading: CupertinoButton(
-        padding: EdgeInsets.zero,
+      leading: TextButton(
         onPressed: () {
           HapticFeedback.lightImpact();
           Navigator.pop(context);
         },
-        child: Row(
+        child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               CupertinoIcons.back,
               size: 20,
-              color: CupertinoColors.systemBlue.resolveFrom(context),
+              color: Color(0xFF007AFF),
             ),
-            const SizedBox(width: 4),
+            SizedBox(width: 4),
             Text(
-              'Messages',
+              'Collaborate',
               style: TextStyle(
                 fontSize: 17,
-                color: CupertinoColors.systemBlue.resolveFrom(context),
+                color: Color(0xFF007AFF),
               ),
             ),
           ],
         ),
       ),
-      middle: CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: () {
+      title: GestureDetector(
+        onTap: () {
           HapticFeedback.lightImpact();
           setState(() => _showMembers = !_showMembers);
         },
@@ -148,54 +150,48 @@ class _RoomChatPageState extends State<RoomChatPage> {
           children: [
             Text(
               widget.room.name,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: CupertinoColors.label.resolveFrom(context),
+                color: Color(0xFF000000),
               ),
             ),
             Text(
               '${_members.length} member${_members.length == 1 ? '' : 's'}',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 13,
-                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                color: Color(0xFF8E8E93),
               ),
             ),
           ],
         ),
       ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Copy invite code
-          CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              _copyInviteCode();
-            },
-            child: Icon(
-              CupertinoIcons.doc_on_clipboard,
-              size: 20,
-              color: CupertinoColors.systemBlue.resolveFrom(context),
-            ),
+      actions: [
+        // Copy invite code
+        IconButton(
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            _copyInviteCode();
+          },
+          icon: const Icon(
+            CupertinoIcons.doc_on_clipboard,
+            size: 20,
+            color: Color(0xFF007AFF),
           ),
-          const SizedBox(width: 8),
-          // Room menu
-          CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              _showIOSActionSheet(context);
-            },
-            child: Icon(
-              CupertinoIcons.ellipsis,
-              size: 20,
-              color: CupertinoColors.systemBlue.resolveFrom(context),
-            ),
+        ),
+        // Room menu
+        IconButton(
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            _showIOSActionSheet(context);
+          },
+          icon: const Icon(
+            CupertinoIcons.ellipsis,
+            size: 20,
+            color: Color(0xFF007AFF),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

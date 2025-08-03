@@ -348,14 +348,27 @@ class CollaborationService {
     try {
       final response = await _supabase
           .from('room_members')
-          .select('*')
+          .select('''
+            *,
+            profiles!inner(full_name, email)
+          ''')
           .eq('room_id', roomId)
           .eq('is_active', true)
           .order('joined_at');
 
       print('Members response: ${response.length} members found for room $roomId');
       
-      return response.map((json) => RoomMember.fromJson(json)).toList();
+      return response.map((json) {
+        final profile = json['profiles'];
+        final userName = profile['full_name'] ?? profile['email']?.split('@')[0] ?? 'Unknown User';
+        final userEmail = profile['email'];
+        
+        // Add user info to the json before parsing
+        json['user_name'] = userName;
+        json['user_email'] = userEmail;
+        
+        return RoomMember.fromJson(json);
+      }).toList();
     } catch (e) {
       print('Error getting room members: $e');
       return [];
