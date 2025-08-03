@@ -106,9 +106,9 @@ class AhamAIApp extends StatelessWidget {
           ),
           margin: EdgeInsets.zero,
         ),
-        scaffoldBackgroundColor: Colors.white, // Changed from cream to white
+        scaffoldBackgroundColor: const Color(0xFFF9F7F4), // Cream background
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white, // Changed to white
+          backgroundColor: Color(0xFFF9F7F4), // Cream background
           foregroundColor: Color(0xFF09090B),
           elevation: 0,
           surfaceTintColor: Colors.transparent,
@@ -116,7 +116,7 @@ class AhamAIApp extends StatelessWidget {
           shadowColor: Colors.transparent,
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Colors.white,
+          backgroundColor: Color(0xFFF9F7F4), // Cream background
           selectedItemColor: Color(0xFF09090B),
           unselectedItemColor: Color(0xFF71717A),
           elevation: 8,

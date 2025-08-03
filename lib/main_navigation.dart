@@ -18,6 +18,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   late PageController _pageController;
   late AnimationController _navAnimationController;
   late List<Animation<double>> _iconAnimations;
+  String _selectedModel = 'claude-3-7-sonnet'; // Manage selected model at top level
 
   @override
   void initState() {
@@ -66,10 +67,16 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     HapticFeedback.lightImpact();
   }
 
+  void _updateSelectedModel(String model) {
+    setState(() {
+      _selectedModel = model;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF9F7F4), // Cream background
       body: CustomPaint(
         painter: MainPatternPainter(),
         child: PageView(
@@ -82,10 +89,13 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
             _navAnimationController.reset();
             _navAnimationController.forward();
           },
-          children: const [
-            MainShell(), // Home page (current chat interface)
-            CharactersPage(), // Characters page  
-            CollaborationPageWrapper(), // Collabs page
+          children: [
+            MainShell(
+              selectedModel: _selectedModel,
+              onModelChanged: _updateSelectedModel,
+            ), // Home page (current chat interface)
+            const CharactersPage(), // Characters page  
+            CollaborationPageWrapper(selectedModel: _selectedModel), // Collabs page
           ],
         ),
       ),
@@ -96,7 +106,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   Widget _buildBottomNavBar() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFF9F7F4), // Cream background
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -196,11 +206,13 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
 
 // Wrapper for collaboration page to handle navigation context
 class CollaborationPageWrapper extends StatelessWidget {
-  const CollaborationPageWrapper({super.key});
+  final String selectedModel;
+  
+  const CollaborationPageWrapper({super.key, required this.selectedModel});
 
   @override
   Widget build(BuildContext context) {
-    return const ChatsPage(selectedModel: 'claude-3-7-sonnet');
+    return ChatsPage(selectedModel: selectedModel);
   }
 }
 
@@ -208,8 +220,8 @@ class CollaborationPageWrapper extends StatelessWidget {
 class MainPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // Fill with white background
-    final paint = Paint()..color = Colors.white;
+    // Fill with cream background
+    final paint = Paint()..color = const Color(0xFFF9F7F4);
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
     
     // Create subtle dot pattern

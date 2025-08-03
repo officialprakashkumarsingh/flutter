@@ -55,7 +55,11 @@ void showRoundedSnackBar(BuildContext context, String message, {bool isError = f
    MAIN SHELL (Tab Navigation)
 ---------------------------------------------------------- */
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  final String selectedModel;
+  final Function(String) onModelChanged;
+  
+  const MainShell({super.key, required this.selectedModel, required this.onModelChanged});
+  
   @override
   State<MainShell> createState() => _MainShellState();
 }
@@ -84,7 +88,6 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
 
   // State for model selection
   List<String> _models = [];
-  String _selectedModel = 'claude-3-7-sonnet'; 
   bool _isLoadingModels = true;
   
   // State for temporary chat mode
@@ -294,8 +297,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   /// Switch to a different AI model (called by external tools)
   void switchModel(String modelName) {
     if (_models.contains(modelName)) {
-      setState(() => _selectedModel = modelName);
-      showRoundedSnackBar(context, '🔄 Switched to $_selectedModel');
+          widget.onModelChanged(modelName);
+    showRoundedSnackBar(context, '🔄 Switched to ${widget.selectedModel}');
     }
   }
 
@@ -310,8 +313,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         final models = (data['data'] as List).map<String>((item) => item['id']).toList();
         setState(() {
           _models = models;
-          if (!_models.contains(_selectedModel) && _models.isNotEmpty) {
-            _selectedModel = _models.first;
+              if (!_models.contains(widget.selectedModel) && _models.isNotEmpty) {
+      widget.onModelChanged(_models.first);
           }
           _isLoadingModels = false;
         });
@@ -399,7 +402,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                           itemCount: _models.length,
                           itemBuilder: (context, index) {
                             final model = _models[index];
-                            final isSelected = _selectedModel == model;
+                            final isSelected = widget.selectedModel == model;
                             return Container(
                               margin: const EdgeInsets.only(bottom: 8),
                               decoration: BoxDecoration(
@@ -424,9 +427,9 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                                     : null,
                                 onTap: () {
                                   HapticFeedback.selectionClick();
-                                  setState(() => _selectedModel = model);
-                                  Navigator.pop(context);
-                                  showRoundedSnackBar(context, '✅ $_selectedModel selected');
+                                                      widget.onModelChanged(model);
+                    Navigator.pop(context);
+                    showRoundedSnackBar(context, '✅ ${widget.selectedModel} selected');
                                 },
                               ),
                             );
@@ -891,7 +894,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                       context,
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) =>
-                            ChatsPage(selectedModel: _selectedModel),
+                            ChatsPage(selectedModel: widget.selectedModel),
                         transitionsBuilder: (context, animation, secondaryAnimation, child) {
                           return SlideTransition(
                             position: Tween<Offset>(
@@ -1123,7 +1126,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
       key: _scaffoldKey,
       extendBody: true,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF9F7F4), // Cream background
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
@@ -1250,7 +1253,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         child: ChatPage(
           key: _chatPageKey, 
           onBookmark: _bookmarkMessage, 
-          selectedModel: _selectedModel,
+                                      selectedModel: widget.selectedModel,
           onChatHistoryChanged: _refreshChatHistory, // Add callback
           isTemporaryChatMode: _isTemporaryChatMode, // Pass temporary chat mode state
         ),
