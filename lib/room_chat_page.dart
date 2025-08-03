@@ -102,6 +102,13 @@ class _RoomChatPageState extends State<RoomChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Set status bar to be visible with dark content
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+    ));
+
     return Scaffold(
       backgroundColor: Colors.white, // Clean white background
       appBar: _buildShadcnAppBar(),

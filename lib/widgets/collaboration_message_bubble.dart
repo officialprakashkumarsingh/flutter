@@ -374,14 +374,12 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   }
 
   Widget _buildMessageBubble() {
-    return Flexible(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildMessageHeader(),
-          _buildMessageContent(),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildMessageHeader(),
+        _buildMessageContent(),
+      ],
     );
   }
 
