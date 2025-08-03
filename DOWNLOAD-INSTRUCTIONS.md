@@ -8,27 +8,37 @@
 
 ### 🗄️ **Database Setup SQL Files**
 
-#### **Option 1: Simple No-Recursion Setup (RECOMMENDED)**
+#### **🔥 Option 1: Advanced Fresh Setup (RECOMMENDED FOR CLEAN START)**
+**File**: `ahamai_fresh_advanced_setup.sql`
+**Download**: [Download Fresh Advanced SQL](https://github.com/officialprakashkumarsingh/flutter/raw/fresh-main/ahamai_fresh_advanced_setup.sql)
+- ⚠️ **WARNING: DELETES ALL EXISTING DATA**
+- 🔥 Complete fresh start with most advanced features
+- ✅ ZERO recursion errors guaranteed
+- ✅ Enhanced collaboration rooms with roles & permissions
+- ✅ Real-time messaging with reply support
+- ✅ Production-ready with comprehensive indexing
+- ✅ Advanced security policies with granular permissions
+
+#### **Option 2: Simple No-Recursion Setup (SAFE UPGRADE)**
 **File**: `ahamai_simple_no_recursion_setup.sql`
 **Download**: [Download Simple SQL](https://github.com/officialprakashkumarsingh/flutter/raw/fresh-main/ahamai_simple_no_recursion_setup.sql)
 - ✅ FIXES infinite recursion errors completely
+- ✅ Preserves existing data
 - ✅ Simple, safe policies with no circular dependencies
-- ✅ Authenticated users can view all rooms (join via invite codes)
-- ✅ Perfect for collaboration apps
+- ✅ Perfect for existing setups
 
-#### **Option 2: Advanced Recursion-Fixed Setup**
+#### **Option 3: Advanced Recursion-Fixed Setup**
 **File**: `ahamai_recursion_fixed_setup.sql`
 **Download**: [Download Advanced SQL](https://github.com/officialprakashkumarsingh/flutter/raw/fresh-main/ahamai_recursion_fixed_setup.sql)
 - ✅ Fixes recursion with helper functions
 - ✅ More granular security policies
 - ✅ Service role bypasses for complex operations
 
-#### **Option 3: Original Complete Setup**
+#### **Option 4: Original Complete Setup**
 **File**: `ahamai_complete_safe_setup.sql`
 **Download**: [Download Complete SQL](https://github.com/officialprakashkumarsingh/flutter/raw/fresh-main/ahamai_complete_safe_setup.sql)
 - ⚠️ May have recursion issues with some setups
 - ✅ Works on any database state (fresh, existing, partial)
-- ✅ Handles all conflicts gracefully
 
 ---
 
@@ -41,11 +51,20 @@
 4. **Features**: All authentication & layout fixes included!
 
 ### **Database Setup:**
-1. Download `ahamai_simple_no_recursion_setup.sql` (RECOMMENDED)
+
+#### **🔥 For Fresh Start (RECOMMENDED):**
+1. Download `ahamai_fresh_advanced_setup.sql`
 2. Open Supabase SQL Editor
 3. Copy & paste the entire file content
 4. Run the script
-5. **Result**: Perfect database setup with ZERO recursion errors!
+5. **Result**: Most advanced setup with ZERO recursion errors!
+
+#### **⚡ For Existing Setup:**
+1. Download `ahamai_simple_no_recursion_setup.sql`
+2. Open Supabase SQL Editor
+3. Copy & paste the entire file content
+4. Run the script
+5. **Result**: Fixed recursion errors while preserving data!
 
 ---
 
