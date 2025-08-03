@@ -75,7 +75,12 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                   ? _buildLoadingState()
                   : _error != null 
                       ? _buildErrorState()
-                      : _buildMainContent(),
+                      : Column(
+                          children: [
+                            _buildTabContent(),
+                            Expanded(child: _buildMainContent()),
+                          ],
+                        ),
             ),
           ],
         ),
@@ -85,158 +90,178 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
 
   Widget _buildIOSHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
       decoration: BoxDecoration(
         color: CupertinoColors.systemBackground.resolveFrom(context),
         border: Border(
           bottom: BorderSide(
-            color: CupertinoColors.separator.resolveFrom(context).withOpacity(0.3),
+            color: CupertinoColors.separator.resolveFrom(context).withOpacity(0.2),
             width: 0.5,
           ),
         ),
       ),
-      child: Column(
+      child: Row(
         children: [
-          // Top Row
+          // Back button
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.pop(context);
+            },
+            child: Icon(
+              CupertinoIcons.chevron_left,
+              size: 24,
+              color: CupertinoColors.systemBlue.resolveFrom(context),
+            ),
+          ),
+          
+          // Title
+          Expanded(
+            child: Text(
+              'Collaborate',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: CupertinoColors.label.resolveFrom(context),
+              ),
+            ),
+          ),
+          
+          // Action buttons
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
+              // Join room button
               CupertinoButton(
                 padding: EdgeInsets.zero,
                 onPressed: () {
                   HapticFeedback.lightImpact();
-                  Navigator.pop(context);
+                  _showJoinRoomDialog();
                 },
                 child: Container(
-                  width: 36,
-                  height: 36,
+                  width: 32,
+                  height: 32,
                   decoration: BoxDecoration(
-                    color: CupertinoColors.systemGrey6,
-                    borderRadius: BorderRadius.circular(18),
+                    color: CupertinoColors.systemGreen.resolveFrom(context),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(
-                    CupertinoIcons.back,
-                    size: 20,
+                  child: const Icon(
+                    CupertinoIcons.arrow_down_right_arrow_up_left,
+                    size: 16,
+                    color: CupertinoColors.white,
+                  ),
+                ),
+              ),
+              
+              const SizedBox(width: 12),
+              
+              // Create room button
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  _showCreateRoomDialog();
+                },
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
                     color: CupertinoColors.systemBlue.resolveFrom(context),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                ),
-              ),
-              const Spacer(),
-              if (_tabController.index == 0)
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    _showCreateRoomDialog();
-                  },
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: CupertinoColors.systemBlue.resolveFrom(context),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: const Icon(
-                      CupertinoIcons.add,
-                      size: 20,
-                      color: CupertinoColors.white,
-                    ),
+                  child: const Icon(
+                    CupertinoIcons.add,
+                    size: 16,
+                    color: CupertinoColors.white,
                   ),
-                ),
-            ],
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // Minimalist Title
-          Row(
-            children: [
-              Text(
-                'Collaborate',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                  color: CupertinoColors.label.resolveFrom(context),
                 ),
               ),
             ],
           ),
-          
-          const SizedBox(height: 16),
-          
-          // iOS-style Segmented Control
-          Container(
-            decoration: BoxDecoration(
-              color: CupertinoColors.systemGrey6,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: CupertinoSlidingSegmentedControl<int>(
-              backgroundColor: CupertinoColors.systemGrey6,
-              thumbColor: CupertinoColors.systemBackground.resolveFrom(context),
-              padding: const EdgeInsets.all(4),
-              groupValue: _tabController.index,
-              onValueChanged: (value) {
-                HapticFeedback.selectionClick();
-                _tabController.animateTo(value!);
-                setState(() {});
-              },
-              children: {
-                0: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        CupertinoIcons.person_2_fill,
-                        size: 16,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabContent() {
+    return Column(
+      children: [
+        // Custom tab selector
+        Container(
+          margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          decoration: BoxDecoration(
+            color: CupertinoColors.systemGrey6.resolveFrom(context),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: CupertinoSlidingSegmentedControl<int>(
+            backgroundColor: CupertinoColors.systemGrey6.resolveFrom(context),
+            thumbColor: CupertinoColors.systemBackground.resolveFrom(context),
+            padding: const EdgeInsets.all(4),
+            groupValue: _tabController.index,
+            onValueChanged: (value) {
+              HapticFeedback.selectionClick();
+              _tabController.animateTo(value!);
+              setState(() {});
+            },
+            children: {
+              0: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      CupertinoIcons.person_2_fill,
+                      size: 16,
+                      color: _tabController.index == 0 
+                          ? CupertinoColors.systemBlue.resolveFrom(context)
+                          : CupertinoColors.secondaryLabel.resolveFrom(context),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'My Rooms',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
                         color: _tabController.index == 0 
                             ? CupertinoColors.systemBlue.resolveFrom(context)
                             : CupertinoColors.secondaryLabel.resolveFrom(context),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'My Rooms',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: _tabController.index == 0 
-                              ? CupertinoColors.systemBlue.resolveFrom(context)
-                              : CupertinoColors.secondaryLabel.resolveFrom(context),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                1: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        CupertinoIcons.arrow_right_circle_fill,
-                        size: 16,
+              ),
+              1: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      CupertinoIcons.arrow_right_circle_fill,
+                      size: 16,
+                      color: _tabController.index == 1 
+                          ? CupertinoColors.systemBlue.resolveFrom(context)
+                          : CupertinoColors.secondaryLabel.resolveFrom(context),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Join Room',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
                         color: _tabController.index == 1 
                             ? CupertinoColors.systemBlue.resolveFrom(context)
                             : CupertinoColors.secondaryLabel.resolveFrom(context),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Join Room',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: _tabController.index == 1 
-                              ? CupertinoColors.systemBlue.resolveFrom(context)
-                              : CupertinoColors.secondaryLabel.resolveFrom(context),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              },
-            ),
+              ),
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -292,56 +317,107 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
   }
 
   Widget _buildMainContent() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildMyRoomsTab(),
-          _buildJoinRoomTab(),
-        ],
-      ),
+    return TabBarView(
+      controller: _tabController,
+      children: [
+        _buildMyRoomsTab(),
+        _buildJoinRoomTab(),
+      ],
     );
   }
 
   Widget _buildMyRoomsTab() {
     return _rooms.isEmpty 
         ? _buildEmptyRoomsState()
-        : _buildRoomsList();
+        : _buildModernRoomsList();
   }
 
   Widget _buildJoinRoomTab() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const FaIcon(FontAwesomeIcons.ticket, color: Color(0xFF09090B), size: 20),
-              const SizedBox(width: 12),
-              Text(
-                'Join with Invite Code',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF09090B),
-                ),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemGreen.resolveFrom(context),
+                borderRadius: BorderRadius.circular(24),
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Enter the 6-character invite code shared by your friend',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: const Color(0xFF71717A),
+              child: const Icon(
+                CupertinoIcons.arrow_down_right_arrow_up_left,
+                size: 36,
+                color: CupertinoColors.white,
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          
-          _buildJoinRoomForm(),
-        ],
+            
+            const SizedBox(height: 24),
+            
+            Text(
+              'Join a Room',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: CupertinoColors.label.resolveFrom(context),
+              ),
+            ),
+            
+            const SizedBox(height: 8),
+            
+            Text(
+              'Enter a 6-character invite code to join\na room and start collaborating',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                height: 1.4,
+              ),
+            ),
+            
+            const SizedBox(height: 32),
+            
+            _buildModernJoinButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernJoinButton() {
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: () {
+        HapticFeedback.lightImpact();
+        _showJoinRoomDialog();
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: CupertinoColors.systemGreen.resolveFrom(context),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              CupertinoIcons.arrow_down_right_arrow_up_left,
+              color: CupertinoColors.white,
+              size: 20,
+            ),
+            SizedBox(width: 8),
+            Text(
+              'Join with Code',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: CupertinoColors.white,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -416,6 +492,25 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildModernRoomsList() {
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildModernRoomCard(_rooms[index]),
+              ),
+              childCount: _rooms.length,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -540,6 +635,144 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
       );
   }
 
+  Widget _buildModernRoomCard(CollaborationRoom room) {
+    return Container(
+      decoration: BoxDecoration(
+        color: CupertinoColors.systemBackground.resolveFrom(context),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: CupertinoColors.systemGrey.resolveFrom(context).withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          _joinRoom(room);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              // Modern Avatar
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemBlue.resolveFrom(context),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  CupertinoIcons.group,
+                  size: 24,
+                  color: CupertinoColors.white,
+                ),
+              ),
+              
+              const SizedBox(width: 16),
+              
+              // Room Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      room.name,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: CupertinoColors.label.resolveFrom(context),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    
+                    if (room.description != null && room.description!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        room.description!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    
+                    const SizedBox(height: 8),
+                    
+                    // Stats Row
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.systemGrey6.resolveFrom(context),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                CupertinoIcons.person_2,
+                                size: 12,
+                                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${room.memberCount}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(width: 8),
+                        
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.systemBlue.resolveFrom(context).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            room.inviteCode,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: CupertinoColors.systemBlue.resolveFrom(context),
+                              fontFamily: 'Monaco',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Action Icon
+              Icon(
+                CupertinoIcons.chevron_right,
+                size: 20,
+                color: CupertinoColors.tertiaryLabel.resolveFrom(context),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildJoinRoomForm() {
     return Column(
       children: [
@@ -637,14 +870,40 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
   void _showCreateRoomDialog() {
     showCupertinoModalPopup(
       context: context,
+      barrierDismissible: true,
       builder: (context) => CreateRoomDialog(
         onRoomCreated: (room) {
           setState(() {
             _rooms.insert(0, room);
           });
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
+            CupertinoPageRoute(
+              builder: (context) => RoomChatPage(
+                room: room, 
+                selectedModel: widget.selectedModel,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showJoinRoomDialog() {
+    showCupertinoModalPopup(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => JoinRoomDialog(
+        onRoomJoined: (room) {
+          setState(() {
+            if (!_rooms.any((r) => r.id == room.id)) {
+              _rooms.insert(0, room);
+            }
+          });
+          Navigator.pushReplacement(
+            context,
+            CupertinoPageRoute(
               builder: (context) => RoomChatPage(
                 room: room, 
                 selectedModel: widget.selectedModel,
@@ -713,6 +972,257 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
 }
 
 enum ButtonVariant { primary, secondary }
+
+// iOS-Style Join Room Modal
+class JoinRoomDialog extends StatefulWidget {
+  final Function(CollaborationRoom) onRoomJoined;
+
+  const JoinRoomDialog({super.key, required this.onRoomJoined});
+
+  @override
+  State<JoinRoomDialog> createState() => _JoinRoomDialogState();
+}
+
+class _JoinRoomDialogState extends State<JoinRoomDialog> {
+  final _codeController = TextEditingController();
+  final _collaborationService = CollaborationService();
+  bool _isJoining = false;
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFFF2F2F7),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // iOS-style handle
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD1D1D6),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: _isJoining ? null : () => Navigator.pop(context),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Color(0xFF007AFF),
+                        fontSize: 17,
+                      ),
+                    ),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      'Join Room',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF000000),
+                      ),
+                    ),
+                  ),
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: _isJoining ? null : _joinRoom,
+                    child: _isJoining
+                        ? const CupertinoActivityIndicator()
+                        : const Text(
+                            'Join',
+                            style: TextStyle(
+                              color: Color(0xFF007AFF),
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            
+            // Form content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    // Invite Code Section
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF34C759),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    CupertinoIcons.tickets,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Invite Code',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF8E8E93),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      CupertinoTextField(
+                                        controller: _codeController,
+                                        placeholder: 'Enter 6-character code',
+                                        textCapitalization: TextCapitalization.characters,
+                                        maxLength: 6,
+                                        style: const TextStyle(
+                                          fontSize: 17,
+                                          color: Color(0xFF000000),
+                                          fontFamily: 'Monaco',
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 2,
+                                        ),
+                                        decoration: const BoxDecoration(),
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Info Section
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                CupertinoIcons.info_circle,
+                                color: CupertinoColors.systemBlue.resolveFrom(context),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'How it works',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF000000),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Ask your friend to share their 6-character room code. Enter it above to join their conversation and start collaborating with AI together.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF8E8E93),
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _joinRoom() async {
+    final code = _codeController.text.trim().toUpperCase();
+    
+    if (code.length != 6) {
+      _showErrorAlert('Please enter a valid 6-character code');
+      return;
+    }
+
+    setState(() => _isJoining = true);
+
+    try {
+      final room = await _collaborationService.joinRoom(code);
+      Navigator.pop(context);
+      widget.onRoomJoined(room);
+    } catch (e) {
+      _showErrorAlert('Failed to join room: ${e.toString()}');
+    } finally {
+      setState(() => _isJoining = false);
+    }
+  }
+
+  void _showErrorAlert(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 // iOS-Style Create Room Modal
 class CreateRoomDialog extends StatefulWidget {
