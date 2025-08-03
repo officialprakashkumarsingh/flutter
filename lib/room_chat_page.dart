@@ -115,11 +115,15 @@ class _RoomChatPageState extends State<RoomChatPage> {
   }
 
   PreferredSizeWidget _buildShadcnAppBar() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      shadowColor: Colors.transparent,
-      surfaceTintColor: Colors.transparent,
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(kToolbarHeight),
+      child: CustomPaint(
+        painter: WhatsAppPatternPainter(),
+        child: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
       bottom: const PreferredSize(
         preferredSize: Size.fromHeight(0),
         child: SizedBox.shrink(),
@@ -179,6 +183,8 @@ class _RoomChatPageState extends State<RoomChatPage> {
           ),
         ),
       ],
+        ),
+      ),
     );
   }
 

@@ -150,11 +150,13 @@ class _ChatsPageState extends State<ChatsPage> {
 
 
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-      ),
+    return CustomPaint(
+      painter: CollabsPatternPainter(),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+        decoration: const BoxDecoration(
+          color: Colors.transparent,
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -213,6 +215,7 @@ class _ChatsPageState extends State<ChatsPage> {
           // Search Bar - More compact
           _buildSearchBar(),
         ],
+        ),
       ),
     );
   }
