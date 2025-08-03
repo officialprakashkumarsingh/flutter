@@ -179,7 +179,23 @@ class CollaborationService {
         .eq('is_active', true)
         .order('last_activity', ascending: false);
 
-    return response.map((json) => CollaborationRoom.fromJson(json)).toList();
+    List<CollaborationRoom> rooms = [];
+    
+    for (var json in response) {
+      final room = CollaborationRoom.fromJson(json);
+      
+      // Get member count for this room
+      final memberCountResponse = await _supabase
+          .from('room_members')
+          .select('id')
+          .eq('room_id', room.id)
+          .eq('is_active', true);
+      
+      final roomWithCount = room.copyWith(memberCount: memberCountResponse.length);
+      rooms.add(roomWithCount);
+    }
+
+    return rooms;
   }
 
   /// Subscribe to room updates

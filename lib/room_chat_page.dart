@@ -706,6 +706,10 @@ class _RoomChatPageState extends State<RoomChatPage> {
         'Authorization': 'Bearer ahamaibyprakash25',
       });
 
+      // Get current user info
+      final currentUserId = _collaborationService.currentUserId;
+      final currentUserName = _collaborationService.currentUserName;
+      
       // Build conversation context from recent messages and room info
       List<Map<String, String>> messages = [
         {
@@ -719,15 +723,25 @@ Room Context:
 - Total Members: ${roomMembers.length}
 - Active Members: ${roomMembers.map((m) => m.userName).join(', ')}
 
+Current Message Context:
+- Message Author: ${recentMessages.isNotEmpty ? recentMessages.last.userName : 'Unknown'}
+- Author ID: ${recentMessages.isNotEmpty ? recentMessages.last.userId : 'Unknown'}
+- Current User: $currentUserName (ID: $currentUserId)
+- Is Author Current User: ${recentMessages.isNotEmpty ? (recentMessages.last.userId == currentUserId) : false}
+
+Member Details:
+${roomMembers.map((m) => '- ${m.userName} (ID: ${m.userId})${m.isActive ? ' [ACTIVE]' : ' [INACTIVE]'}').join('\n')}
+
 Guidelines:
 - Provide helpful, accurate, and concise responses
 - Engage naturally in conversations with multiple users
 - Reference previous messages and participants by name when relevant
+- You can see who sent each message and their activity status
+- Be aware of member relationships and interactions
 - Keep responses conversational but informative
-- If users are discussing a topic, contribute meaningfully to that discussion
 - Be friendly and approachable while maintaining professionalism
 - You can mention specific users by name when appropriate
-- Be aware of the room context and ongoing conversations'''
+- Understand the room dynamics and member participation'''
         }
       ];
 

@@ -96,10 +96,44 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
         if (_tabController.index == 0)
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: _buildSmallButton(
-              onPressed: _showCreateRoomDialog,
-              icon: FontAwesomeIcons.plus,
-              text: 'Create',
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF007AFF),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+                child: InkWell(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    _showCreateRoomDialog();
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const FaIcon(
+                          FontAwesomeIcons.plus,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Create',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
       ],

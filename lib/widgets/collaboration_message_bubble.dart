@@ -51,6 +51,31 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
 
   @override
   Widget build(BuildContext context) {
+    // Special layout for system messages
+    if (widget.message.messageType == 'system') {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9).withOpacity(0.7),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              widget.message.content,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: const Color(0xFF71717A),
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
+    
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 20),
       child: Column(
@@ -75,32 +100,39 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
           }
         });
       },
-      onPanStart: widget.onReply != null && widget.message.messageType != 'system' 
-          ? (_) => setState(() => _isSliding = true)
+      onHorizontalDragStart: widget.onReply != null && widget.message.messageType != 'system' 
+          ? (_) {
+              setState(() {
+                _isSliding = true;
+                _slideOffset = 0.0;
+              });
+            }
           : null,
-      onPanUpdate: widget.onReply != null && widget.message.messageType != 'system'
+      onHorizontalDragUpdate: widget.onReply != null && widget.message.messageType != 'system'
           ? (details) {
               if (_isSliding) {
                 setState(() {
-                  // Limit slide distance and make it feel natural
-                  _slideOffset = (details.delta.dx * 0.5).clamp(-60.0, 0.0);
+                  // Only allow sliding to the left
+                  final newOffset = _slideOffset + details.delta.dx;
+                  _slideOffset = newOffset.clamp(-80.0, 0.0);
                 });
               }
             }
           : null,
-      onPanEnd: widget.onReply != null && widget.message.messageType != 'system'
+      onHorizontalDragEnd: widget.onReply != null && widget.message.messageType != 'system'
           ? (_) {
               if (_isSliding) {
-                setState(() => _isSliding = false);
-                
                 // Trigger reply if slid enough
-                if (_slideOffset <= -30.0) {
+                if (_slideOffset <= -40.0) {
                   widget.onReply!(widget.message);
                   HapticFeedback.mediumImpact();
                 }
                 
                 // Reset slide offset with animation
-                setState(() => _slideOffset = 0.0);
+                setState(() {
+                  _isSliding = false;
+                  _slideOffset = 0.0;
+                });
               }
             }
           : null,
@@ -112,26 +144,25 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
             // Reply icon that appears when sliding
             if (_slideOffset < -10.0)
               Positioned(
-                right: widget.isOwnMessage ? null : 10,
-                left: widget.isOwnMessage ? 10 : null,
+                right: 20,
                 top: 0,
                 bottom: 0,
                 child: Center(
                   child: AnimatedOpacity(
-                    opacity: (-_slideOffset / 60.0).clamp(0.0, 1.0),
-                    duration: const Duration(milliseconds: 100),
+                    opacity: (-_slideOffset / 80.0).clamp(0.0, 1.0),
+                    duration: const Duration(milliseconds: 50),
                     child: Container(
-                      width: 32,
-                      height: 32,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF09090B).withOpacity(0.1),
+                        color: const Color(0xFF007AFF).withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                       child: const Center(
                         child: FaIcon(
                           FontAwesomeIcons.reply,
-                          size: 16,
-                          color: Color(0xFF09090B),
+                          size: 18,
+                          color: Color(0xFF007AFF),
                         ),
                       ),
                     ),
@@ -394,14 +425,31 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   Color _getBubbleColor() {
     switch (widget.message.messageType) {
       case 'ai':
-        return const Color(0xFFF8F9FA); // Light gray for AI
+        return Colors.transparent; // Transparent for AI
       case 'system':
-        return const Color(0xFFF1F5F9); // Very light gray for system
+        return const Color(0xFFF1F5F9).withOpacity(0.5); // Very light gray for system
       default:
         return widget.isOwnMessage 
-            ? const Color(0xFF09090B) // Your app's dark color for own messages
-            : Colors.white; // White for others
+            ? const Color(0xFF007AFF) // Blue for own messages
+            : _getUserBubbleColor(); // Different colors for different users
     }
+  }
+  
+  Color _getUserBubbleColor() {
+    // Generate different colors for different users based on their username
+    final colors = [
+      const Color(0xFF34C759), // Green
+      const Color(0xFFFF9500), // Orange  
+      const Color(0xFF5856D6), // Purple
+      const Color(0xFFFF2D92), // Pink
+      const Color(0xFF32D74B), // Light Green
+      const Color(0xFFFFD60A), // Yellow
+      const Color(0xFF64D2FF), // Light Blue
+      const Color(0xFFBF5AF2), // Light Purple
+    ];
+    
+    final hash = widget.message.userName.hashCode;
+    return colors[hash.abs() % colors.length];
   }
 
   BorderRadius _getBubbleBorderRadius() {
@@ -430,13 +478,11 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   Color _getTextColor() {
     switch (widget.message.messageType) {
       case 'ai':
-        return const Color(0xFF09090B); // Your app's dark color for AI
+        return const Color(0xFF09090B); // Dark text for transparent AI bubble
       case 'system':
         return const Color(0xFF71717A); // Subtle gray for system
       default:
-        return widget.isOwnMessage 
-            ? Colors.white // White text for dark bubbles
-            : const Color(0xFF09090B); // Dark text for light bubbles
+        return Colors.white; // White text for all colored bubbles
     }
   }
 
