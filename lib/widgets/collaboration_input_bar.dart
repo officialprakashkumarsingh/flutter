@@ -20,12 +20,6 @@ class CollaborationInputBar extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       decoration: const BoxDecoration(
         color: Colors.white, // Clean white background
-        border: Border(
-          top: BorderSide(
-            color: Color(0xFFE4E4E7),
-            width: 1,
-          ),
-        ),
       ),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -126,10 +120,10 @@ class CollaborationInputBar extends StatelessWidget {
                                 valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFEF4444)),
                               ),
                             )
-                          : const Icon(
-                              Icons.send,
+                          : const FaIcon(
+                              FontAwesomeIcons.arrowUp,
                               color: Colors.white,
-                              size: 20,
+                              size: 18,
                             ),
                     ),
                   ),

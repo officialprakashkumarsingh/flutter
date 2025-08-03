@@ -120,20 +120,17 @@ class _RoomChatPageState extends State<RoomChatPage> {
       elevation: 0,
       shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1),
-        child: Container(
-          color: const Color(0xFFE4E4E7),
-          height: 1,
-        ),
+      bottom: const PreferredSize(
+        preferredSize: Size.fromHeight(0),
+        child: SizedBox.shrink(),
       ),
       leading: IconButton(
         onPressed: () {
           Navigator.pop(context);
         },
-        icon: const Icon(
-          Icons.arrow_back_rounded,
-          size: 22,
+        icon: const FaIcon(
+          FontAwesomeIcons.chevronLeft,
+          size: 18,
           color: Color(0xFF09090B),
         ),
       ),
@@ -194,15 +191,8 @@ class _RoomChatPageState extends State<RoomChatPage> {
   }
 
   Widget _buildChatInterface() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        image: DecorationImage(
-          image: _createWhatsAppDotPattern(),
-          repeat: ImageRepeat.repeat,
-          opacity: 0.03,
-        ),
-      ),
+    return CustomPaint(
+      painter: WhatsAppPatternPainter(),
       child: Column(
         children: [
           // Room info banner
@@ -222,13 +212,6 @@ class _RoomChatPageState extends State<RoomChatPage> {
           ),
         ],
       ),
-    );
-  }
-
-  ImageProvider _createWhatsAppDotPattern() {
-    // Creating a subtle dot pattern like WhatsApp
-    return const NetworkImage(
-      'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMC44IiBmaWxsPSIjMDAwMDAwIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+'
     );
   }
 
@@ -1203,4 +1186,34 @@ Guidelines:
       ),
     );
   }
+}
+
+class WhatsAppPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Fill with white background
+    final paint = Paint()..color = Colors.white;
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
+    
+    // Create dot pattern
+    final dotPaint = Paint()
+      ..color = Colors.grey.withOpacity(0.08)
+      ..style = PaintingStyle.fill;
+    
+    const dotSize = 1.5;
+    const spacing = 20.0;
+    
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), dotSize, dotPaint);
+        // Add smaller dots for more WhatsApp-like pattern
+        if ((x / spacing) % 2 == 0 && (y / spacing) % 2 == 0) {
+          canvas.drawCircle(Offset(x + spacing/2, y + spacing/2), dotSize * 0.5, dotPaint);
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

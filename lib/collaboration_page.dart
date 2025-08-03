@@ -120,15 +120,8 @@ class _ChatsPageState extends State<ChatsPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          image: DecorationImage(
-            image: _createCollabsDotPattern(),
-            repeat: ImageRepeat.repeat,
-            opacity: 0.02,
-          ),
-        ),
+      body: CustomPaint(
+        painter: CollabsPatternPainter(),
         child: SafeArea(
           child: Column(
             children: [
@@ -154,12 +147,7 @@ class _ChatsPageState extends State<ChatsPage> {
     );
   }
 
-  ImageProvider _createCollabsDotPattern() {
-    // Creating a subtle dot pattern for Collabs page
-    return const NetworkImage(
-      'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMSIgZmlsbD0iIzAwMDAwMCIgZmlsbC1vcGFjaXR5PSIwLjA4Ii8+CjxjaXJjbGUgY3g9IjUiIGN5PSI1IiByPSIwLjUiIGZpbGw9IiMwMDAwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNCIvPgo8Y2lyY2xlIGN4PSIyNSIgY3k9IjI1IiByPSIwLjUiIGZpbGw9IiMwMDAwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNCIvPgo8L3N2Zz4='
-    );
-  }
+
 
   Widget _buildHeader() {
     return Container(
@@ -488,12 +476,12 @@ class _ChatsPageState extends State<ChatsPage> {
           ),
         ),
         // Rooms List
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: _loadRooms,
-            color: const Color(0xFF09090B),
-            strokeWidth: 2.5,
-            displacement: 30,
+                    Expanded(
+              child: RefreshIndicator(
+                onRefresh: _loadRooms,
+                color: const Color(0xFF7C3AED),
+                strokeWidth: 2.0,
+                displacement: 20,
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
               itemCount: _filteredRooms.length,
