@@ -86,17 +86,19 @@ DROP TABLE IF EXISTS public.collaboration_rooms CASCADE;
 
 -- Keep AI chat functionality - DO NOT DROP these tables:
 -- public.chat_conversations (AI chat history)
--- public.characters (AI characters)
+-- public.characters (AI characters)  
 -- public.profiles (user profiles)
 
--- Delete all auth users (THIS WILL DELETE ALL USER ACCOUNTS)
-DELETE FROM auth.users;
+-- NOTE: We are NOT deleting auth users to preserve existing accounts
+-- If you need a completely fresh start, uncomment the line below:
+-- DELETE FROM auth.users;
 
 -- ==========================================
--- STEP 2: CREATE MAIN APP TABLES
+-- STEP 2: CREATE MAIN APP TABLES (SAFE MODE)
 -- ==========================================
 
 -- Create profiles table for user data (only if not exists)
+-- This will safely create the table only if it doesn't already exist
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
