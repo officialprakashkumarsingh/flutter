@@ -112,10 +112,7 @@ class DirectChatService {
   Future<List<DirectChat>> getUserChats() async {
     final response = await supabase
         .from('direct_chats')
-        .select('''
-          *,
-          direct_messages!last_message_id(content)
-        ''')
+        .select('*')
         .or('participant_1.eq.$_currentUserId,participant_2.eq.$_currentUserId')
         .order('updated_at', ascending: false);
 
@@ -143,10 +140,25 @@ class DirectChatService {
           .eq('is_read', false)
           .count();
 
+      // Get last message content if last_message_id exists
+      String? lastMessageContent;
+      if (chatData['last_message_id'] != null) {
+        try {
+          final lastMessage = await supabase
+              .from('direct_messages')
+              .select('content')
+              .eq('id', chatData['last_message_id'])
+              .single();
+          lastMessageContent = lastMessage['content'];
+        } catch (e) {
+          // If message not found, continue without content
+        }
+      }
+
       final json = Map<String, dynamic>.from(chatData);
       json['other_user_name'] = otherUserResponse['full_name'];
       json['other_user_email'] = otherUserResponse['email'];
-      json['last_message_content'] = chatData['direct_messages']?['content'];
+      json['last_message_content'] = lastMessageContent;
       json['unread_count'] = unreadCount.count;
 
       chats.add(DirectChat.fromJson(json));

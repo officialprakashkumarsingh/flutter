@@ -29,6 +29,11 @@ CREATE TABLE IF NOT EXISTS direct_messages (
     is_read BOOLEAN DEFAULT FALSE
 );
 
+-- Add foreign key constraint for last_message_id after both tables are created
+ALTER TABLE direct_chats 
+ADD CONSTRAINT fk_last_message 
+FOREIGN KEY (last_message_id) REFERENCES direct_messages(id) ON DELETE SET NULL;
+
 -- Enable RLS on new tables
 ALTER TABLE direct_chats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE direct_messages ENABLE ROW LEVEL SECURITY;

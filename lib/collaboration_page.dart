@@ -88,10 +88,10 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF667eea),
-              Color(0xFF764ba2),
-              Color(0xFFf093fb),
-              Color(0xFFf5576c),
+              Color(0xFFF8F9FA),
+              Color(0xFFE9ECEF),
+              Color(0xFFDEE2E6),
+              Color(0xFFF1F3F4),
             ],
           ),
         ),
@@ -120,10 +120,10 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
+            color: Colors.white.withOpacity(0.7),
             border: Border(
               bottom: BorderSide(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.grey.withOpacity(0.2),
                 width: 1,
               ),
             ),
@@ -142,16 +142,23 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.grey.withOpacity(0.3),
                           width: 1,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: const Icon(
                         Icons.arrow_back_ios_new,
-                        color: Colors.white,
+                        color: Color(0xFF495057),
                         size: 20,
                       ),
                     ),
@@ -162,17 +169,10 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                     child: Text(
                       'Chats',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            offset: const Offset(0, 1),
-                            blurRadius: 3,
-                            color: Colors.black.withOpacity(0.3),
-                          ),
-                        ],
+                        color: Color(0xFF212529),
                       ),
                     ),
                   ),
@@ -187,16 +187,23 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.grey.withOpacity(0.3),
                           width: 1,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: const Icon(
                         Icons.person_add,
-                        color: Colors.white,
+                        color: Color(0xFF495057),
                         size: 20,
                       ),
                     ),
@@ -209,21 +216,28 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
               // Tab selector with glassmorphism
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withOpacity(0.8),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.grey.withOpacity(0.2),
                     width: 1,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: TabBar(
-                  controller: _tabController,
-                  indicator: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.white.withOpacity(0.7),
+                                  child: TabBar(
+                    controller: _tabController,
+                    indicator: BoxDecoration(
+                      color: const Color(0xFF007AFF).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    labelColor: const Color(0xFF007AFF),
+                    unselectedLabelColor: const Color(0xFF6C757D),
                   labelStyle: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
