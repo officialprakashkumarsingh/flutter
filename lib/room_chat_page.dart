@@ -602,8 +602,11 @@ class _RoomChatPageState extends State<RoomChatPage> {
 
       // Check if message mentions AI or asks a question
       if (_shouldTriggerAI(content)) {
-        // Get AI response
-        final aiResponse = await _generateAIResponse(content);
+        // Get recent chat history for context
+        final recentMessages = await _collaborationService.getRoomMessages(widget.room.id, limit: 10);
+        
+        // Get AI response with context
+        final aiResponse = await _generateAIResponse(content, recentMessages);
         if (aiResponse.isNotEmpty) {
           // Send AI response to room
           await _collaborationService.sendAIResponse(widget.room.id, aiResponse);
@@ -618,17 +621,52 @@ class _RoomChatPageState extends State<RoomChatPage> {
 
   bool _shouldTriggerAI(String message) {
     final lowercaseMessage = message.toLowerCase();
-    return lowercaseMessage.contains('ahamai') ||
-           lowercaseMessage.contains('ai') ||
-           lowercaseMessage.contains('?') ||
-           lowercaseMessage.contains('explain') ||
-           lowercaseMessage.contains('help') ||
-           lowercaseMessage.contains('what') ||
-           lowercaseMessage.contains('how') ||
-           lowercaseMessage.contains('why');
+    
+    // Explicit AI mentions
+    if (lowercaseMessage.contains('ahamai') || 
+        lowercaseMessage.contains('@ai') ||
+        lowercaseMessage.contains('hey ai') ||
+        lowercaseMessage.contains('ask ai')) {
+      return true;
+    }
+    
+    // Question patterns
+    if (lowercaseMessage.contains('?') ||
+        lowercaseMessage.startsWith('what') ||
+        lowercaseMessage.startsWith('how') ||
+        lowercaseMessage.startsWith('why') ||
+        lowercaseMessage.startsWith('when') ||
+        lowercaseMessage.startsWith('where') ||
+        lowercaseMessage.startsWith('who') ||
+        lowercaseMessage.startsWith('can you') ||
+        lowercaseMessage.startsWith('could you') ||
+        lowercaseMessage.startsWith('would you')) {
+      return true;
+    }
+    
+    // Help requests
+    if (lowercaseMessage.contains('help') ||
+        lowercaseMessage.contains('explain') ||
+        lowercaseMessage.contains('clarify') ||
+        lowercaseMessage.contains('understand') ||
+        lowercaseMessage.contains('confused')) {
+      return true;
+    }
+    
+    // Conversational triggers (only for longer messages to avoid spam)
+    if (message.length > 20 && (
+        lowercaseMessage.contains('think') ||
+        lowercaseMessage.contains('opinion') ||
+        lowercaseMessage.contains('suggest') ||
+        lowercaseMessage.contains('recommend') ||
+        lowercaseMessage.contains('advice'))) {
+      return true;
+    }
+    
+    return false;
   }
 
-  Future<String> _generateAIResponse(String prompt) async {
+  Future<String> _generateAIResponse(String prompt, List<RoomMessage> recentMessages) async {
     try {
       final request = http.Request('POST', Uri.parse('https://ahamai-api.officialprakashkrsingh.workers.dev/v1/chat/completions'));
       request.headers.addAll({
@@ -636,19 +674,53 @@ class _RoomChatPageState extends State<RoomChatPage> {
         'Authorization': 'Bearer ahamaibyprakash25',
       });
 
+      // Build conversation context from recent messages
+      List<Map<String, String>> messages = [
+        {
+          'role': 'system',
+          'content': '''You are AhamAI, an intelligent assistant participating in a collaborative chat room. 
+
+Guidelines:
+- Provide helpful, accurate, and concise responses
+- Engage naturally in conversations with multiple users
+- Reference previous messages when relevant for context
+- Keep responses conversational but informative
+- If users are discussing a topic, contribute meaningfully to that discussion
+- Be friendly and approachable while maintaining professionalism'''
+        }
+      ];
+
+      // Add recent chat history for context (excluding AI's own messages to avoid loops)
+      final contextMessages = recentMessages
+          .where((msg) => msg.messageType != 'ai')
+          .take(8) // Limit context to avoid token overflow
+          .toList()
+          .reversed
+          .toList();
+
+      if (contextMessages.isNotEmpty) {
+        String conversationContext = "Recent conversation:\n";
+        for (final msg in contextMessages) {
+          final speaker = msg.messageType == 'system' ? 'System' : msg.userName;
+          conversationContext += "$speaker: ${msg.content}\n";
+        }
+        conversationContext += "\nCurrent message: $prompt";
+
+        messages.add({
+          'role': 'user',
+          'content': conversationContext
+        });
+      } else {
+        messages.add({
+          'role': 'user',
+          'content': prompt
+        });
+      }
+
       final body = jsonEncode({
         'model': 'claude-3-5-sonnet-20241022',
-        'messages': [
-          {
-            'role': 'system',
-            'content': 'You are AhamAI participating in a collaborative chat room. Provide helpful, concise responses to questions and engage naturally in the conversation. Keep responses focused and conversational.'
-          },
-          {
-            'role': 'user',
-            'content': prompt
-          }
-        ],
-        'max_tokens': 1000,
+        'messages': messages,
+        'max_tokens': 1200,
         'temperature': 0.7,
       });
 
