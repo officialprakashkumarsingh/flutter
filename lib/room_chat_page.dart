@@ -806,8 +806,8 @@ class _RoomChatPageState extends State<RoomChatPage> {
       return relevanceCheck;
     } catch (e) {
       print('Relevance check failed: $e');
-      // Fallback to conservative triggers for conversational content
-      if (message.length > 15 && (
+      // Enhanced fallback triggers for productive content
+      if (message.length > 12 && (
           lowercaseMessage.contains('think') ||
           lowercaseMessage.contains('opinion') ||
           lowercaseMessage.contains('suggest') ||
@@ -816,7 +816,27 @@ class _RoomChatPageState extends State<RoomChatPage> {
           lowercaseMessage.contains('should') ||
           lowercaseMessage.contains('better') ||
           lowercaseMessage.contains('good') ||
-          lowercaseMessage.contains('bad'))) {
+          lowercaseMessage.contains('bad') ||
+          lowercaseMessage.contains('idea') ||
+          lowercaseMessage.contains('plan') ||
+          lowercaseMessage.contains('project') ||
+          lowercaseMessage.contains('task') ||
+          lowercaseMessage.contains('work') ||
+          lowercaseMessage.contains('learn') ||
+          lowercaseMessage.contains('study') ||
+          lowercaseMessage.contains('research') ||
+          lowercaseMessage.contains('solve') ||
+          lowercaseMessage.contains('fix') ||
+          lowercaseMessage.contains('improve') ||
+          lowercaseMessage.contains('optimize') ||
+          lowercaseMessage.contains('create') ||
+          lowercaseMessage.contains('design') ||
+          lowercaseMessage.contains('build') ||
+          lowercaseMessage.contains('develop') ||
+          lowercaseMessage.contains('analyze') ||
+          lowercaseMessage.contains('discuss') ||
+          lowercaseMessage.contains('brainstorm') ||
+          lowercaseMessage.contains('collaborate'))) {
         return true;
       }
       return false;
@@ -836,17 +856,22 @@ class _RoomChatPageState extends State<RoomChatPage> {
 
 Message: "$message"
 
-Context: This is from a collaborative chat room where people discuss various topics.
+Context: This is from a collaborative chat room where people discuss various topics and work together.
 
-Respond with ONLY "true" or "false" based on these criteria:
+Respond with ONLY "true" or "false" based on these enhanced criteria:
 - true: If the message asks for information, seeks advice, mentions a problem, discusses ideas, asks opinions, or would benefit from AI insight
-- true: If the message is educational, technical, or informational in nature
-- true: If the message seems to be seeking help or clarification
-- false: If it's just casual chit-chat, greetings, or simple statements
-- false: If it's personal conversation between specific users
-- false: If it's very short (under 10 characters) unless it's a clear question
+- true: If the message is educational, technical, creative, or informational in nature
+- true: If the message seems to be seeking help, clarification, suggestions, or solutions
+- true: If the message discusses tasks, projects, planning, brainstorming, or collaboration
+- true: If the message mentions learning, studying, research, or knowledge sharing
+- true: If the message contains complex thoughts, debates, or analytical content
+- true: If the message would benefit from additional context, resources, or expert insight
+- true: If the message is about problem-solving, decision-making, or optimization
+- false: If it's just casual chit-chat, basic greetings, or very simple statements
+- false: If it's purely personal conversation between specific users about private matters
+- false: If it's spam, nonsense, or clearly off-topic
 
-Be intelligent and helpful - err on the side of being responsive rather than silent.''';
+Be proactive and intelligent - the AI should actively contribute to meaningful conversations and help users get more things done.''';
 
       request.body = jsonEncode({
         'model': widget.selectedModel,

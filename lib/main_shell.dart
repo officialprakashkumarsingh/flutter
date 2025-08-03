@@ -64,7 +64,7 @@ class MainShell extends StatefulWidget {
   State<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
+class _MainShellState extends State<MainShell> with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   int _selectedIndex = 0;
   int _bottomNavIndex = 0; // 0: Home, 1: Characters, 2: Collabs
   final GlobalKey<ChatPageState> _chatPageKey = GlobalKey<ChatPageState>();
@@ -1121,7 +1121,11 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
   }
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       key: _scaffoldKey,
       extendBody: true,

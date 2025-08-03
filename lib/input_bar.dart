@@ -286,7 +286,7 @@ class InputBar extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
-                            Icons.attach_file_rounded,  // Modern attachment icon
+                            FontAwesomeIcons.puzzlePiece,  // Updated to puzzle-piece
                             color: attachedFiles.isNotEmpty 
                                 ? const Color(0xFF22C55E)
                                 : const Color(0xFF71717A),

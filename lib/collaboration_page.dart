@@ -1011,30 +1011,54 @@ class _ChatsPageState extends State<ChatsPage> {
         itemBuilder: (context, index) {
           final room = _filteredRooms[index];
           return Container(
-            margin: const EdgeInsets.only(bottom: 8),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+              border: Border.all(
+                color: const Color(0xFFF1F1F1),
+                width: 1,
+              ),
+            ),
             child: Material(
               color: Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
               child: InkWell(
                 onTap: () => _joinRoomChat(room),
+                borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      // Small icon
+                      // Modern room icon with gradient
                       Container(
-                        width: 28,
-                        height: 28,
+                        width: 48,
+                        height: 48,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(6),
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xFF6366F1),
+                              Color(0xFF8B5CF6),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
-                          Icons.groups_outlined,
-                          color: Color(0xFF6B7280),
-                          size: 16,
+                          Icons.groups_rounded,
+                          color: Colors.white,
+                          size: 24,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 16),
                       
                       // Room Info
                       Expanded(
@@ -1044,46 +1068,81 @@ class _ChatsPageState extends State<ChatsPage> {
                             Text(
                               room.name,
                               style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
                                 color: const Color(0xFF111827),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: 4),
+                            Text(
+                              room.description ?? 'No description',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: const Color(0xFF6B7280),
+                                fontWeight: FontWeight.w400,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            // Members and status row
                             Row(
                               children: [
-                                Text(
-                                  '${room.memberCount} members',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    color: const Color(0xFF9CA3AF),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF3F4F6),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.people,
+                                        size: 12,
+                                        color: Color(0xFF6B7280),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '${room.memberCount}',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          color: const Color(0xFF6B7280),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                if (room.description != null && room.description!.isNotEmpty) ...[
-                                  const Text(' • ', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 11)),
-                                  Flexible(
-                                    child: Text(
-                                      room.description!,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        color: const Color(0xFF9CA3AF),
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+                                const Spacer(),
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF10B981),
+                                    shape: BoxShape.circle,
                                   ),
-                                ],
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Active',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: const Color(0xFF10B981),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ],
                             ),
                           ],
                         ),
                       ),
                       
-                      // Small arrow
+                      // Arrow icon
                       const Icon(
-                        Icons.chevron_right,
+                        Icons.arrow_forward_ios,
                         size: 16,
                         color: Color(0xFFD1D5DB),
                       ),
