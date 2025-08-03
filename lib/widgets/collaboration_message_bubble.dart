@@ -274,9 +274,9 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
         decoration: BoxDecoration(
           color: _getBubbleColor(),
           borderRadius: _getBubbleBorderRadius(),
-          border: widget.message.messageType == 'ai' || (!widget.isOwnMessage && widget.message.messageType != 'system')
+          border: widget.message.messageType != 'system'
               ? Border.all(
-                  color: const Color(0xFFE4E4E7),
+                  color: const Color(0xFFE4E4E7).withOpacity(0.3),
                   width: 1,
                 )
               : null,
@@ -465,9 +465,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
       case 'system':
         return const Color(0xFFF1F5F9).withOpacity(0.7); // Light gray for system
       default:
-        return widget.isOwnMessage 
-            ? const Color(0xFF25D366) // WhatsApp green for own messages
-            : const Color(0xFFFFFFFF); // White for received messages
+        return Colors.transparent; // Transparent for all messages - no bubble backgrounds
     }
   }
   
@@ -522,9 +520,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
       case 'system':
         return const Color(0xFF71717A); // Subtle gray for system
       default:
-        return widget.isOwnMessage 
-            ? Colors.white // White text for green own messages
-            : const Color(0xFF09090B); // Dark text for white received messages
+        return const Color(0xFF09090B); // Dark text for all transparent messages
     }
   }
 

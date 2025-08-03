@@ -103,7 +103,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA), // Shadcn neutral background
+      backgroundColor: const Color(0xFFE5DDD5), // WhatsApp background color
       appBar: _buildShadcnAppBar(),
       body: Stack(
         children: [
@@ -178,9 +178,9 @@ class _RoomChatPageState extends State<RoomChatPage> {
                   width: 1,
                 ),
               ),
-              child: const Icon(
-                Icons.copy_rounded,
-                size: 16,
+              child: const FaIcon(
+                FontAwesomeIcons.copy,
+                size: 14,
                 color: Color(0xFF09090B),
               ),
             ),
@@ -201,9 +201,9 @@ class _RoomChatPageState extends State<RoomChatPage> {
                   width: 1,
                 ),
               ),
-              child: const Icon(
-                Icons.more_vert_rounded,
-                size: 16,
+              child: const FaIcon(
+                FontAwesomeIcons.ellipsisVertical,
+                size: 14,
                 color: Color(0xFF09090B),
               ),
             ),
@@ -222,24 +222,29 @@ class _RoomChatPageState extends State<RoomChatPage> {
   }
 
   Widget _buildChatInterface() {
-    return Column(
-      children: [
-        // Room info banner
-        if (widget.room.description != null) _buildRoomInfoBanner(),
-        
-        // Messages
-        Expanded(child: _buildMessagesList()),
-        
-        // Reply preview bar
-        if (_replyingTo != null) _buildReplyPreview(),
-        
-        // Input area
-        CollaborationInputBar(
-          controller: _messageController,
-          onSend: _sendMessage,
-          isSending: _isSendingMessage,
-        ),
-      ],
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFFE5DDD5), // WhatsApp background
+      ),
+      child: Column(
+        children: [
+          // Room info banner
+          if (widget.room.description != null) _buildRoomInfoBanner(),
+          
+          // Messages
+          Expanded(child: _buildMessagesList()),
+          
+          // Reply preview bar
+          if (_replyingTo != null) _buildReplyPreview(),
+          
+          // Input area
+          CollaborationInputBar(
+            controller: _messageController,
+            onSend: _sendMessage,
+            isSending: _isSendingMessage,
+          ),
+        ],
+      ),
     );
   }
 
@@ -787,61 +792,97 @@ Guidelines:
     if (_replyingTo == null) return const SizedBox.shrink();
     
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FA),
-        borderRadius: BorderRadius.circular(8),
-        border: const Border(
-          left: BorderSide(
-            color: Color(0xFF09090B),
-            width: 3,
-          ),
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF25D366).withOpacity(0.3),
+          width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
+          // Reply icon
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF25D366).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const FaIcon(
+              FontAwesomeIcons.reply,
+              size: 12,
+              color: Color(0xFF25D366),
+            ),
+          ),
+          const SizedBox(width: 12),
+          
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Replying to ${_replyingTo!.userName}',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF09090B),
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'Replying to ',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: const Color(0xFF71717A),
+                      ),
+                    ),
+                    Text(
+                      _replyingTo!.messageType == 'ai' ? 'AhamAI' : _replyingTo!.userName,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: _replyingTo!.messageType == 'ai' 
+                            ? const Color(0xFF7C3AED) 
+                            : const Color(0xFF25D366),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(
                   _replyingTo!.content,
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: const Color(0xFF71717A),
+                    color: const Color(0xFF09090B),
+                    fontWeight: FontWeight.w400,
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
+          
+          const SizedBox(width: 8),
+          
           GestureDetector(
             onTap: () {
               setState(() {
                 _replyingTo = null;
               });
-              _messageController.clear();
             },
             child: Container(
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: const Color(0xFF71717A).withOpacity(0.1),
+                color: const Color(0xFF71717A).withOpacity(0.08),
                 shape: BoxShape.circle,
               ),
               child: const FaIcon(
                 FontAwesomeIcons.xmark,
-                size: 12,
+                size: 10,
                 color: Color(0xFF71717A),
               ),
             ),
