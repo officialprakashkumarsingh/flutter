@@ -988,32 +988,42 @@ Guidelines:
   }
 
   void _showRoomInfo() {
-    showDialog(
+    showCupertinoDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text(
           'Room Information',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF000000),
+          ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildInfoRow('Name', widget.room.name),
-            if (widget.room.description != null)
-              _buildInfoRow('Description', widget.room.description!),
-            _buildInfoRow('Invite Code', widget.room.inviteCode),
-            _buildInfoRow('Members', '${_members.length}/${widget.room.maxMembers}'),
-            _buildInfoRow('Created', _formatDate(widget.room.createdAt)),
-          ],
+        content: Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildIOSInfoRow('Name', widget.room.name),
+              if (widget.room.description != null)
+                _buildIOSInfoRow('Description', widget.room.description!),
+              _buildIOSInfoRow('Invite Code', widget.room.inviteCode),
+              _buildIOSInfoRow('Members', '${_members.length}/${widget.room.maxMembers}'),
+              _buildIOSInfoRow('Created', _formatDate(widget.room.createdAt)),
+            ],
+          ),
         ),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
+            isDefaultAction: true,
             onPressed: () => Navigator.pop(context),
-            child: Text(
+            child: const Text(
               'Close',
-              style: GoogleFonts.inter(color: const Color(0xFF09090B)),
+              style: TextStyle(
+                color: Color(0xFF007AFF),
+                fontSize: 17,
+              ),
             ),
           ),
         ],
@@ -1021,30 +1031,26 @@ Guidelines:
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildIOSInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              '$label:',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF71717A),
-              ),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF8E8E93),
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF09090B),
-              ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 17,
+              color: Color(0xFF000000),
             ),
           ),
         ],
@@ -1053,31 +1059,46 @@ Guidelines:
   }
 
   Future<void> _leaveRoom() async {
-    final shouldLeave = await showDialog<bool>(
+    final shouldLeave = await showCupertinoDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text(
           'Leave Room',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF000000),
+          ),
         ),
         content: Text(
           'Are you sure you want to leave "${widget.room.name}"?',
-          style: GoogleFonts.inter(fontSize: 14),
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color(0xFF000000),
+          ),
         ),
         actions: [
-          TextButton(
+          CupertinoDialogAction(
+            isDefaultAction: true,
             onPressed: () => Navigator.pop(context, false),
-            child: Text(
+            child: const Text(
               'Cancel',
-              style: GoogleFonts.inter(color: const Color(0xFF71717A)),
+              style: TextStyle(
+                color: Color(0xFF007AFF),
+                fontSize: 17,
+              ),
             ),
           ),
-          TextButton(
+          CupertinoDialogAction(
+            isDestructiveAction: true,
             onPressed: () => Navigator.pop(context, true),
-            child: Text(
+            child: const Text(
               'Leave',
-              style: GoogleFonts.inter(color: const Color(0xFFEF4444)),
+              style: TextStyle(
+                color: Color(0xFFFF3B30),
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
