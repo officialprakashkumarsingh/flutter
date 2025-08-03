@@ -91,6 +91,10 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   }
 
   Widget _buildAvatar() {
+    if (widget.message.messageType == 'system') {
+      return const SizedBox.shrink(); // No avatar for system messages
+    }
+
     IconData avatarIcon;
     Color avatarColor;
     Color backgroundColor;
@@ -98,37 +102,37 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
     switch (widget.message.messageType) {
       case 'ai':
         avatarIcon = FontAwesomeIcons.robot;
-        avatarColor = const Color(0xFF8B5CF6);
-        backgroundColor = const Color(0xFFF3F4F6);
-        break;
-      case 'system':
-        avatarIcon = FontAwesomeIcons.gear;
-        avatarColor = const Color(0xFF71717A);
-        backgroundColor = const Color(0xFFF8F9FA);
+        avatarColor = const Color(0xFF25D366); // WhatsApp green
+        backgroundColor = const Color(0xFFF0F9FF);
         break;
       default:
+        // Generate color based on username for consistency
+        final colorIndex = widget.message.userName.hashCode % 6;
+        final colors = [
+          const Color(0xFF3B82F6), // Blue
+          const Color(0xFF10B981), // Green  
+          const Color(0xFF8B5CF6), // Purple
+          const Color(0xFFF59E0B), // Orange
+          const Color(0xFFEF4444), // Red
+          const Color(0xFF06B6D4), // Cyan
+        ];
+        
         avatarIcon = FontAwesomeIcons.user;
-        avatarColor = widget.isOwnMessage ? Colors.white : const Color(0xFF09090B);
-        backgroundColor = widget.isOwnMessage 
-            ? const Color(0xFF09090B) 
-            : const Color(0xFFF3F4F6);
+        avatarColor = Colors.white;
+        backgroundColor = colors[colorIndex];
     }
 
     return Container(
-      width: 32,
-      height: 32,
+      width: 28,
+      height: 28,
       decoration: BoxDecoration(
         color: backgroundColor,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: const Color(0xFFE4E4E7),
-          width: 1,
-        ),
       ),
       child: Center(
         child: FaIcon(
           avatarIcon,
-          size: 14,
+          size: 12,
           color: avatarColor,
         ),
       ),
@@ -141,15 +145,11 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
         decoration: BoxDecoration(
           color: _getBubbleColor(),
           borderRadius: _getBubbleBorderRadius(),
-          border: Border.all(
-            color: const Color(0xFFE4E4E7),
-            width: 1,
-          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
@@ -172,26 +172,24 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            widget.message.userName,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: widget.isOwnMessage 
-                  ? Colors.white.withOpacity(0.9)
-                  : const Color(0xFF09090B),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            _formatTime(widget.message.createdAt),
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              color: widget.isOwnMessage 
-                  ? Colors.white.withOpacity(0.7)
-                  : const Color(0xFF71717A),
-            ),
-          ),
+                     Text(
+             widget.message.userName,
+             style: GoogleFonts.inter(
+               fontSize: 12,
+               fontWeight: FontWeight.w600,
+               color: widget.message.messageType == 'ai'
+                   ? const Color(0xFF25D366) // Green for AI
+                   : const Color(0xFF1F2937), // Dark gray for users
+             ),
+           ),
+           const SizedBox(width: 6),
+           Text(
+             _formatTime(widget.message.createdAt),
+             style: GoogleFonts.inter(
+               fontSize: 11,
+               color: const Color(0xFF6B7280), // Gray for timestamp
+             ),
+           ),
         ],
       ),
     );
@@ -318,13 +316,13 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   Color _getBubbleColor() {
     switch (widget.message.messageType) {
       case 'ai':
-        return Colors.white;
+        return const Color(0xFFF0F9FF); // Light blue for AI
       case 'system':
-        return const Color(0xFFF8F9FA);
+        return const Color(0xFFFEF3C7); // Light yellow for system
       default:
         return widget.isOwnMessage 
-            ? const Color(0xFF09090B)
-            : Colors.white;
+            ? const Color(0xFFDCF8C6) // WhatsApp green for own messages
+            : Colors.white; // White for others
     }
   }
 
@@ -354,13 +352,11 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   Color _getTextColor() {
     switch (widget.message.messageType) {
       case 'ai':
-        return const Color(0xFF09090B);
+        return const Color(0xFF1F2937); // Dark gray for AI
       case 'system':
-        return const Color(0xFF71717A);
+        return const Color(0xFF92400E); // Amber dark for system
       default:
-        return widget.isOwnMessage 
-            ? Colors.white
-            : const Color(0xFF09090B);
+        return const Color(0xFF1F2937); // Dark gray for all messages
     }
   }
 
