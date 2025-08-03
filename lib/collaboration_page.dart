@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'models/collaboration_models.dart';
 import 'services/collaboration_service.dart';
@@ -109,7 +110,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: CupertinoColors.systemGray6.resolveFrom(context),
+                    color: CupertinoColors.systemGrey6,
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Icon(
@@ -180,11 +181,11 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
           // iOS-style Segmented Control
           Container(
             decoration: BoxDecoration(
-              color: CupertinoColors.systemGray6.resolveFrom(context),
+              color: CupertinoColors.systemGrey6,
               borderRadius: BorderRadius.circular(10),
             ),
             child: CupertinoSlidingSegmentedControl<int>(
-              backgroundColor: CupertinoColors.systemGray6.resolveFrom(context),
+              backgroundColor: CupertinoColors.systemGrey6,
               thumbColor: CupertinoColors.systemBackground.resolveFrom(context),
               padding: const EdgeInsets.all(4),
               groupValue: _tabController.index,
@@ -371,7 +372,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: CupertinoColors.systemGray6.resolveFrom(context),
+                color: CupertinoColors.systemGrey6,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
@@ -509,7 +510,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: CupertinoColors.systemGray6.resolveFrom(context),
+                              color: CupertinoColors.systemGrey6,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -554,8 +555,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildJoinRoomForm() {
