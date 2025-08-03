@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'models/collaboration_models.dart';
 import 'services/collaboration_service.dart';
 import 'room_chat_page.dart';
@@ -63,12 +63,12 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFBFBFB),
-      body: SafeArea(
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.systemGroupedBackground,
+      child: SafeArea(
         child: Column(
           children: [
-            _buildMinimalistHeader(),
+            _buildIOSHeader(),
             Expanded(
               child: _isLoading 
                   ? _buildLoadingState()

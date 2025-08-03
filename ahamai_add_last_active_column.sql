@@ -47,9 +47,9 @@ FROM information_schema.columns
 WHERE table_name = 'room_members' 
   AND column_name = 'last_active';
 
--- Show sample data
+-- Show sample data (fixed column name)
 SELECT 
-  user_name,
+  user_id,
   room_id,
   joined_at,
   last_active,
