@@ -8,15 +8,15 @@
 
 ### 🗄️ **Database Setup SQL Files**
 
-#### **🛡️ Option 1: Bulletproof Zero-Recursion Setup (RECOMMENDED)**
-**File**: `ahamai_bulletproof_no_recursion.sql`
-**Download**: [Download Bulletproof SQL](https://github.com/officialprakashkumarsingh/flutter/raw/fresh-main/ahamai_bulletproof_no_recursion.sql)
+#### **🎯 Option 1: App-Logic Matching Setup (RECOMMENDED)**
+**File**: `ahamai_app_logic_matching_setup.sql`
+**Download**: [Download App-Matching SQL](https://github.com/officialprakashkumarsingh/flutter/raw/fresh-main/ahamai_app_logic_matching_setup.sql)
 - ⚠️ **WARNING: DELETES ALL EXISTING DATA**
-- 🛡️ **BULLETPROOF**: Absolutely NO recursion errors ever
-- 🔥 NO cross-table references in any policy
-- ✅ Simple, reliable, production-ready
-- ✅ Fixes all PostgrestException errors
-- ✅ Works 100% of the time with zero issues
+- 🎯 **DESIGNED FOR YOUR FLUTTER APP**: Matches exactly how your app works
+- 📱 Tables match CollaborationRoom model exactly
+- 🔍 Indexes optimized for your app's query patterns
+- 🚀 App handles security, database provides data
+- ✅ Zero conflicts between app logic and database policies
 
 #### **Option 2: Simple No-Recursion Setup (SAFE UPGRADE)**
 **File**: `ahamai_simple_no_recursion_setup.sql`
@@ -51,12 +51,12 @@
 
 ### **Database Setup:**
 
-#### **🛡️ For Fresh Start (BULLETPROOF - RECOMMENDED):**
-1. Download `ahamai_bulletproof_no_recursion.sql`
+#### **🎯 For Fresh Start (APP-MATCHING - RECOMMENDED):**
+1. Download `ahamai_app_logic_matching_setup.sql`
 2. Open Supabase SQL Editor
 3. Copy & paste the entire file content
 4. Run the script
-5. **Result**: BULLETPROOF setup with ZERO recursion errors EVER!
+5. **Result**: Database designed exactly for your Flutter app!
 
 #### **⚡ For Existing Setup:**
 1. Download `ahamai_simple_no_recursion_setup.sql`
@@ -86,11 +86,11 @@
 - ✅ Automatic uppercase formatting
 
 ### 🗄️ **Database Setup**
-- 🛡️ **BULLETPROOF**: Absolutely NO recursion errors ever
-- ✅ Fixed all PostgrestException errors completely
-- ✅ NO cross-table references in any policy
-- ✅ Simple, reliable, production-ready
-- ✅ Works 100% of the time with zero issues
+- 🎯 **APP-DESIGNED**: Matches exactly how your Flutter app works
+- 📱 Tables match CollaborationRoom model perfectly
+- 🔍 Optimized for your app's specific query patterns
+- 🚀 App handles security, database provides data access
+- ✅ Zero conflicts between app logic and database policies
 
 ---
 
