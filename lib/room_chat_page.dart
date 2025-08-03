@@ -574,14 +574,32 @@ class _RoomChatPageState extends State<RoomChatPage> {
                         color: const Color(0xFF09090B),
                       ),
                     ),
-                    subtitle: Text(
-                      member.isAdmin ? 'Admin' : 'Member',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: member.isAdmin 
-                            ? const Color(0xFF7C3AED)
-                            : const Color(0xFF71717A),
-                      ),
+                    subtitle: Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: member.isActive 
+                                ? const Color(0xFF10B981) 
+                                : const Color(0xFF6B7280),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          member.isAdmin 
+                              ? 'Admin ${member.isActive ? '• Online' : '• Offline'}'
+                              : member.isActive ? 'Online' : 'Offline',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: member.isAdmin 
+                                ? const Color(0xFF7C3AED)
+                                : const Color(0xFF71717A),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                     trailing: member.isAdmin
                         ? const Icon(

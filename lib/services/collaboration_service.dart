@@ -147,6 +147,7 @@ class CollaborationService {
         'room_id': room.id,
         'user_id': _currentUserId,
         'role': 'member',
+        'last_active': DateTime.now().toIso8601String(),
       });
 
       // Send system message
@@ -278,6 +279,13 @@ class CollaborationService {
     if (memberCheck == null) {
       throw Exception('Access denied: You are not a member of this room');
     }
+
+    // Update member activity when sending message
+    await _supabase
+        .from('room_members')
+        .update({'last_active': DateTime.now().toIso8601String()})
+        .eq('room_id', roomId)
+        .eq('user_id', _currentUserId!);
 
     await _supabase.from('room_messages').insert({
       'room_id': roomId,
