@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'main_shell.dart';
 import 'characters_page.dart';
 import 'collaboration_page.dart';
+import 'history_page.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -32,7 +33,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     );
     
     // Create animations for each nav item
-    _iconAnimations = List.generate(3, (index) {
+    _iconAnimations = List.generate(4, (index) {
       return Tween<double>(begin: 0.8, end: 1.0).animate(
         CurvedAnimation(
           parent: _navAnimationController,
@@ -96,6 +97,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
             ), // Home page (current chat interface)
             const CharactersPage(), // Characters page  
             CollaborationPageWrapper(selectedModel: _selectedModel), // Collabs page
+            const HistoryPage(), // History page
           ],
         ),
       ),
@@ -115,20 +117,21 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
           ),
         ],
       ),
-      child: SafeArea(
-        child: Container(
-          height: 65,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(0, _buildHomeIcon(), 'Home'),
-              _buildNavItem(1, _buildCharactersIcon(), 'Characters'),
-              _buildNavItem(2, _buildCollabsIcon(), 'Collabs'),
-            ],
+              child: SafeArea(
+          child: Container(
+            height: 60, // Slightly smaller
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(0, _buildHomeIcon(), 'Home'),
+                _buildNavItem(1, _buildCharactersIcon(), 'Characters'),
+                _buildNavItem(2, _buildCollabsIcon(), 'Collabs'),
+                _buildNavItem(3, _buildHistoryIcon(), 'History'),
+              ],
+            ),
           ),
         ),
-      ),
     );
   }
 
@@ -141,23 +144,25 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
         animation: _navAnimationController,
         builder: (context, child) {
           return AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
+            duration: const Duration(milliseconds: 350),
             curve: Curves.easeInOutCubic,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: isSelected 
-                ? const Color(0xFF09090B).withOpacity(0.08)
-                : Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // iOS-style icon with bounce and scale
                 Transform.scale(
-                  scale: isSelected ? _iconAnimations[index].value : 0.9,
+                  scale: isSelected ? _iconAnimations[index].value : 0.85,
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOutCubic,
+                    duration: const Duration(milliseconds: 350),
+                    curve: isSelected ? Curves.elasticOut : Curves.easeInOut,
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isSelected 
+                        ? _getSelectedColor(index).withOpacity(0.15)
+                        : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: icon,
                   ),
                 ),
@@ -170,36 +175,57 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     );
   }
 
+  Color _getSelectedColor(int index) {
+    switch (index) {
+      case 0: return const Color(0xFF09090B); // Home - Black
+      case 1: return const Color(0xFF7C3AED); // Characters - Purple
+      case 2: return const Color(0xFF22C55E); // Collabs - Green
+      case 3: return const Color(0xFFEF4444); // History - Red
+      default: return const Color(0xFF09090B);
+    }
+  }
+
   Widget _buildHomeIcon() {
     final isSelected = _currentIndex == 0;
     return FaIcon(
-      FontAwesomeIcons.house,
-      size: 20,
+      isSelected ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.house,
+      size: 16, // Smaller icons
       color: isSelected 
         ? const Color(0xFF09090B)
-        : const Color(0xFF71717A),
+        : const Color(0xFF64748B), // Grey to darker grey
     );
   }
 
   Widget _buildCharactersIcon() {
     final isSelected = _currentIndex == 1;
     return FaIcon(
-      FontAwesomeIcons.robot,
-      size: 20,
+      isSelected ? FontAwesomeIcons.solidUser : FontAwesomeIcons.userGear,
+      size: 16, // Smaller icons
       color: isSelected 
         ? const Color(0xFF7C3AED)
-        : const Color(0xFF71717A),
+        : const Color(0xFF64748B), // Grey to darker grey
     );
   }
 
   Widget _buildCollabsIcon() {
     final isSelected = _currentIndex == 2;
     return FaIcon(
-      FontAwesomeIcons.userGroup,
-      size: 20,
+      isSelected ? FontAwesomeIcons.solidComments : FontAwesomeIcons.users,
+      size: 16, // Smaller icons
       color: isSelected 
         ? const Color(0xFF22C55E)
-        : const Color(0xFF71717A),
+        : const Color(0xFF64748B), // Grey to darker grey
+    );
+  }
+
+  Widget _buildHistoryIcon() {
+    final isSelected = _currentIndex == 3;
+    return FaIcon(
+      isSelected ? FontAwesomeIcons.solidClock : FontAwesomeIcons.clockRotateLeft,
+      size: 16, // Smaller icons
+      color: isSelected 
+        ? const Color(0xFFEF4444)
+        : const Color(0xFF64748B), // Grey to darker grey
     );
   }
 }

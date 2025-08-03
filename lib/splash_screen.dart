@@ -63,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen>
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF9F7F4), // Cream background
         body: CustomPaint(
           painter: WhatsAppPatternPainter(),
           child: Center(
@@ -89,8 +89,8 @@ class _SplashScreenState extends State<SplashScreen>
 class WhatsAppPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // Fill with white background
-    final paint = Paint()..color = Colors.white;
+    // Fill with cream background
+    final paint = Paint()..color = const Color(0xFFF9F7F4);
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
     
     // Create dot pattern
