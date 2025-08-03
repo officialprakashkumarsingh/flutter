@@ -163,7 +163,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Connect with your team',
+                    'Connect with friends, family & teams',
                     style: TextStyle(
                       fontSize: 15,
                       color: CupertinoColors.secondaryLabel.resolveFrom(context),
@@ -391,7 +391,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
             ),
             const SizedBox(height: 8),
             Text(
-              'Create your first room to start\ncollaborating with your team',
+              'Create your first room to start\nchatting with friends, family & teams',
               style: TextStyle(
                 fontSize: 16,
                 color: CupertinoColors.secondaryLabel.resolveFrom(context),
