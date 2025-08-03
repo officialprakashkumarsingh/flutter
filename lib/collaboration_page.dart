@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 import 'models/collaboration_models.dart';
 import 'models/chat_models.dart';
@@ -30,6 +33,7 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
   bool _isSearching = false;
   
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _inviteCodeController = TextEditingController();
 
   @override
   void initState() {
@@ -42,6 +46,7 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
   void dispose() {
     _tabController.dispose();
     _searchController.dispose();
+    _inviteCodeController.dispose();
     _directChatService.dispose();
     super.dispose();
   }
@@ -268,6 +273,16 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
     );
   }
 
+  void _showUserSearchDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => _UserSearchDialog(
+        directChatService: _directChatService,
+        selectedModel: widget.selectedModel,
+      ),
+    );
+  }
+
   Widget _buildTabContent() {
     return Column(
       children: [
@@ -388,7 +403,7 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 24),
             _buildSmallButton(
-              onPressed: _initializeCollaboration,
+              onPressed: _initializeChats,
               icon: FontAwesomeIcons.arrowRotateRight,
               text: 'Try Again',
               variant: ButtonVariant.secondary,
@@ -403,16 +418,27 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
     return TabBarView(
       controller: _tabController,
       children: [
-        _buildMyRoomsTab(),
-        _buildJoinRoomTab(),
+        _buildDirectChatsTab(),
+        _buildRoomsTab(),
+        _buildCreateTab(),
       ],
     );
   }
 
-  Widget _buildMyRoomsTab() {
+  Widget _buildDirectChatsTab() {
+    return _directChats.isEmpty 
+        ? _buildEmptyDirectChatsState()
+        : _buildDirectChatsList();
+  }
+
+  Widget _buildRoomsTab() {
     return _rooms.isEmpty 
         ? _buildEmptyRoomsState()
         : _buildModernRoomsList();
+  }
+
+  Widget _buildCreateTab() {
+    return _buildCreateOptions();
   }
 
   Widget _buildJoinRoomTab() {
@@ -501,6 +527,327 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyDirectChatsState() {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(40),
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.chat_bubble_outline,
+              size: 80,
+              color: Colors.white.withOpacity(0.7),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No Direct Chats',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Search for users by email to start chatting directly',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 16,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                _showUserSearchDialog();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.person_search,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Find Users',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDirectChatsList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _directChats.length,
+      itemBuilder: (context, index) {
+        final chat = _directChats[index];
+        return _buildDirectChatCard(chat);
+      },
+    );
+  }
+
+  Widget _buildDirectChatCard(DirectChat chat) {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DirectChatPage(
+              chat: chat,
+              selectedModel: widget.selectedModel,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.4),
+                  width: 1,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  chat.otherUserName?.isNotEmpty == true 
+                      ? chat.otherUserName![0].toUpperCase()
+                      : chat.otherUserEmail?[0].toUpperCase() ?? 'U',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    chat.otherUserName?.isNotEmpty == true 
+                        ? chat.otherUserName!
+                        : chat.otherUserEmail?.split('@')[0] ?? 'User',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (chat.lastMessageContent?.isNotEmpty == true) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      chat.lastMessageContent!,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (chat.unreadCount > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${chat.unreadCount}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCreateOptions() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          
+          // Create Room Option
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _showCreateRoomDialog();
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      Icons.groups,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Create AI Room',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Create a room where multiple users can chat with AI together',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Join Room Option
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              _showJoinRoomDialog();
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      Icons.login,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Join Room',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Enter an invite code to join an existing AI room',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1055,6 +1402,285 @@ class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
 }
 
 enum ButtonVariant { primary, secondary }
+
+// User Search Dialog for Direct Messaging
+class _UserSearchDialog extends StatefulWidget {
+  final DirectChatService directChatService;
+  final String selectedModel;
+
+  const _UserSearchDialog({
+    required this.directChatService,
+    required this.selectedModel,
+  });
+
+  @override
+  State<_UserSearchDialog> createState() => _UserSearchDialogState();
+}
+
+class _UserSearchDialogState extends State<_UserSearchDialog> {
+  final TextEditingController _searchController = TextEditingController();
+  List<UserProfile> _searchResults = [];
+  bool _isSearching = false;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _searchUsers(String query) async {
+    if (query.trim().isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+      return;
+    }
+
+    setState(() => _isSearching = true);
+
+    try {
+      final results = await widget.directChatService.searchUsers(query);
+      setState(() {
+        _searchResults = results;
+        _isSearching = false;
+      });
+    } catch (e) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Search failed: $e')),
+      );
+    }
+  }
+
+  Future<void> _startChatWithUser(UserProfile user) async {
+    try {
+      final chat = await widget.directChatService.getOrCreateChat(user.id);
+      Navigator.of(context).pop(); // Close search dialog
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DirectChatPage(
+            chat: chat,
+            selectedModel: widget.selectedModel,
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to start chat: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.person_search,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Find Users',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Search Field
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'Enter email address...',
+                        hintStyle: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(16),
+                        prefixIcon: Icon(
+                          Icons.email,
+                          color: Colors.white.withOpacity(0.7),
+                        ),
+                      ),
+                      onChanged: _searchUsers,
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Search Results
+                  Flexible(
+                    child: _isSearching
+                        ? const Center(
+                            child: CircularProgressIndicator(color: Colors.white),
+                          )
+                        : _searchResults.isEmpty
+                            ? Container(
+                                padding: const EdgeInsets.all(24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.search_off,
+                                      size: 48,
+                                      color: Colors.white.withOpacity(0.5),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      _searchController.text.isEmpty
+                                          ? 'Type an email to search'
+                                          : 'No users found',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.7),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: _searchResults.length,
+                                itemBuilder: (context, index) {
+                                  final user = _searchResults[index];
+                                  return GestureDetector(
+                                    onTap: () => _startChatWithUser(user),
+                                    child: Container(
+                                      margin: const EdgeInsets.only(bottom: 8),
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.2),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 40,
+                                            height: 40,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.3),
+                                              borderRadius: BorderRadius.circular(20),
+                                            ),
+                                            child: Center(
+                                              child: Text(
+                                                user.displayName[0].toUpperCase(),
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  user.displayName,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w600,
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  user.email,
+                                                  style: TextStyle(
+                                                    color: Colors.white.withOpacity(0.7),
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const Icon(
+                                            Icons.chat_bubble_outline,
+                                            color: Colors.white,
+                                            size: 18,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 // iOS-Style Join Room Modal
 class JoinRoomDialog extends StatefulWidget {

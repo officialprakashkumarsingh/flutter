@@ -289,7 +289,7 @@ class _DirectChatPageState extends State<DirectChatPage> {
       itemBuilder: (context, index) {
         final message = _messages[index];
         final isOwnMessage = message.senderId == 
-            DirectChatService()._supabase.auth.currentUser?.id;
+            DirectChatService().supabase.auth.currentUser?.id;
         
         return _buildMessageBubble(message, isOwnMessage);
       },

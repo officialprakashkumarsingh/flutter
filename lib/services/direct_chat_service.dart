@@ -8,7 +8,7 @@ class DirectChatService {
   factory DirectChatService() => _instance;
   DirectChatService._internal();
 
-  final _supabase = Supabase.instance.client;
+  final supabase = Supabase.instance.client;
   String? _currentUserId;
   
   // Stream controllers for real-time updates
@@ -22,7 +22,7 @@ class DirectChatService {
   Stream<List<DirectMessage>> get messagesStream => _messagesController.stream;
 
   Future<void> initialize() async {
-    _currentUserId = _supabase.auth.currentUser?.id;
+    _currentUserId = supabase.auth.currentUser?.id;
     if (_currentUserId == null) throw Exception('User not authenticated');
     
     // Subscribe to real-time updates
@@ -31,7 +31,7 @@ class DirectChatService {
   }
 
   void _subscribeToChats() {
-    _chatsSubscription = _supabase
+    _chatsSubscription = supabase
         .channel('direct_chats_${_currentUserId}')
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
@@ -46,7 +46,7 @@ class DirectChatService {
   }
 
   void _subscribeToMessages() {
-    _messagesSubscription = _supabase
+    _messagesSubscription = supabase
         .channel('direct_messages_${_currentUserId}')
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
@@ -63,7 +63,7 @@ class DirectChatService {
   Future<List<UserProfile>> searchUsers(String query) async {
     if (query.trim().isEmpty) return [];
     
-    final response = await _supabase
+    final response = await supabase
         .from('profiles')
         .select('id, email, full_name, avatar_url')
         .ilike('email', '%$query%')
@@ -75,7 +75,7 @@ class DirectChatService {
 
   Future<DirectChat> getOrCreateChat(String otherUserId) async {
     // Use the database function to get or create chat
-    final response = await _supabase.rpc(
+    final response = await supabase.rpc(
       'get_or_create_direct_chat',
       params: {
         'user1_id': _currentUserId!,
@@ -86,7 +86,7 @@ class DirectChatService {
     final chatId = response as String;
     
     // Get the full chat details
-    final chatDetails = await _supabase
+    final chatDetails = await supabase
         .from('direct_chats')
         .select('''
           *,
@@ -110,7 +110,7 @@ class DirectChatService {
   }
 
   Future<List<DirectChat>> getUserChats() async {
-    final response = await _supabase
+    final response = await supabase
         .from('direct_chats')
         .select('''
           *,
@@ -128,14 +128,14 @@ class DirectChatService {
           ? chatData['participant_2'] 
           : chatData['participant_1'];
 
-      final otherUserResponse = await _supabase
+      final otherUserResponse = await supabase
           .from('profiles')
           .select('full_name, email')
           .eq('id', otherUserId)
           .single();
 
       // Get unread count
-      final unreadCount = await _supabase
+      final unreadCount = await supabase
           .from('direct_messages')
           .select('id')
           .eq('chat_id', chatData['id'])
@@ -157,7 +157,7 @@ class DirectChatService {
   }
 
   Future<List<DirectMessage>> getChatMessages(String chatId) async {
-    final response = await _supabase
+    final response = await supabase
         .from('direct_messages')
         .select('''
           *,
@@ -179,7 +179,7 @@ class DirectChatService {
   }
 
   Future<DirectMessage> sendMessage(String chatId, String content) async {
-    final response = await _supabase
+    final response = await supabase
         .from('direct_messages')
         .insert({
           'chat_id': chatId,
@@ -194,7 +194,7 @@ class DirectChatService {
   }
 
   Future<void> markMessagesAsRead(String chatId) async {
-    await _supabase
+    await supabase
         .from('direct_messages')
         .update({'is_read': true})
         .eq('chat_id', chatId)
@@ -202,7 +202,7 @@ class DirectChatService {
   }
 
   Future<void> deleteChat(String chatId) async {
-    await _supabase
+    await supabase
         .from('direct_chats')
         .delete()
         .eq('id', chatId);
