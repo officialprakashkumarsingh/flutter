@@ -562,7 +562,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE4E4E7)),
+
           ),
           child: TextField(
             controller: _inviteCodeController,
@@ -623,7 +623,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
           decoration: BoxDecoration(
             color: isPrimary ? CupertinoColors.systemBlue : CupertinoColors.systemBackground,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: isPrimary ? Colors.transparent : CupertinoColors.separator),
+
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -796,19 +796,21 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
                 controller: _nameController,
                 decoration: InputDecoration(
                   hintText: 'e.g., Project Planning',
-                  hintStyle: GoogleFonts.inter(color: const Color(0xFF71717A)),
+                  hintStyle: GoogleFonts.inter(color: CupertinoColors.placeholderText),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFE4E4E7)),
+                    borderSide: BorderSide.none,
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFE4E4E7)),
+                    borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF09090B)),
+                    borderSide: const BorderSide(color: CupertinoColors.systemBlue, width: 2),
                   ),
+                  filled: true,
+                  fillColor: CupertinoColors.systemGrey6,
                   contentPadding: const EdgeInsets.all(12),
                 ),
                 validator: (value) {
@@ -835,19 +837,21 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
                 maxLines: 3,
                 decoration: InputDecoration(
                   hintText: 'What will you be working on together?',
-                  hintStyle: GoogleFonts.inter(color: const Color(0xFF71717A)),
+                  hintStyle: GoogleFonts.inter(color: CupertinoColors.placeholderText),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFE4E4E7)),
+                    borderSide: BorderSide.none,
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFE4E4E7)),
+                    borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFF09090B)),
+                    borderSide: const BorderSide(color: CupertinoColors.systemBlue, width: 2),
                   ),
+                  filled: true,
+                  fillColor: CupertinoColors.systemGrey6,
                   contentPadding: const EdgeInsets.all(12),
                 ),
               ),
@@ -863,7 +867,7 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
-                          side: const BorderSide(color: Color(0xFFE4E4E7)),
+                          side: BorderSide.none,
                         ),
                       ),
                       child: Text(

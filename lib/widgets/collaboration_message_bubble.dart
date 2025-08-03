@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -200,31 +201,47 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
       return const SizedBox.shrink(); // No avatar for system messages
     }
 
-    IconData avatarIcon;
-    Color avatarColor;
     Color backgroundColor;
+    Widget avatarChild;
 
     switch (widget.message.messageType) {
       case 'ai':
-        avatarIcon = FontAwesomeIcons.robot;
-        avatarColor = Colors.white;
-        backgroundColor = const Color(0xFF09090B); // Your app's dark color
+        backgroundColor = CupertinoColors.systemBlue;
+        avatarChild = const FaIcon(
+          FontAwesomeIcons.robot,
+          size: 12,
+          color: Colors.white,
+        );
         break;
       default:
         // Generate color based on username for consistency
-        final colorIndex = widget.message.userName.hashCode % 6;
+        final colorIndex = widget.message.userName.hashCode % 8;
         final colors = [
-          const Color(0xFF3B82F6), // Blue
-          const Color(0xFF10B981), // Green  
-          const Color(0xFF8B5CF6), // Purple
-          const Color(0xFFF59E0B), // Orange
-          const Color(0xFFEF4444), // Red
-          const Color(0xFF06B6D4), // Cyan
+          const Color(0xFF34C759), // Green
+          const Color(0xFFFF9500), // Orange  
+          const Color(0xFF5856D6), // Purple
+          const Color(0xFFFF2D92), // Pink
+          const Color(0xFF32D74B), // Light Green
+          const Color(0xFFFF6482), // Coral
+          const Color(0xFF64D2FF), // Light Blue
+          const Color(0xFFBF5AF2), // Light Purple
         ];
         
-        avatarIcon = FontAwesomeIcons.user;
-        avatarColor = Colors.white;
         backgroundColor = colors[colorIndex];
+        
+        // Use first character of userName (which often comes from email)
+        final firstChar = widget.message.userName.isNotEmpty 
+            ? widget.message.userName[0].toUpperCase()
+            : '?';
+        
+        avatarChild = Text(
+          firstChar,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        );
     }
 
     return Container(
@@ -235,11 +252,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
         shape: BoxShape.circle,
       ),
       child: Center(
-        child: FaIcon(
-          avatarIcon,
-          size: 12,
-          color: avatarColor,
-        ),
+        child: avatarChild,
       ),
     );
   }
