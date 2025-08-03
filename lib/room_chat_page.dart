@@ -89,84 +89,111 @@ class _RoomChatPageState extends State<RoomChatPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: _buildAppBar(),
-      body: _isLoading ? _buildLoadingState() : _buildChatInterface(),
-      endDrawer: _showMembers ? _buildMembersDrawer() : null,
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.systemGroupedBackground,
+      navigationBar: _buildIOSNavigationBar(),
+      child: Stack(
+        children: [
+          _isLoading ? _buildLoadingState() : _buildChatInterface(),
+          if (_showMembers) _buildMembersDrawer(),
+        ],
+      ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      leading: IconButton(
-        onPressed: () => Navigator.pop(context),
-        icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Color(0xFF09090B), size: 18),
-      ),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.room.name,
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF09090B),
-            ),
-          ),
-          Text(
-            '${_members.length} member${_members.length == 1 ? '' : 's'}',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: const Color(0xFF71717A),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        // Copy invite code
-        IconButton(
-          onPressed: _copyInviteCode,
-          icon: const FaIcon(FontAwesomeIcons.copy, color: Color(0xFF09090B), size: 16),
-          tooltip: 'Copy invite code',
+  CupertinoNavigationBar _buildIOSNavigationBar() {
+    return CupertinoNavigationBar(
+      backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
+      border: Border(
+        bottom: BorderSide(
+          color: CupertinoColors.separator.resolveFrom(context).withOpacity(0.3),
+          width: 0.5,
         ),
-        // Show members
-        IconButton(
-          onPressed: () => setState(() => _showMembers = !_showMembers),
-          icon: const FaIcon(FontAwesomeIcons.users, color: Color(0xFF09090B), size: 16),
-          tooltip: 'Members',
-        ),
-        // Room menu
-        PopupMenuButton<String>(
-          onSelected: _handleMenuAction,
-          icon: const FaIcon(FontAwesomeIcons.ellipsisVertical, color: Color(0xFF09090B), size: 16),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'info',
-              child: Row(
-                children: [
-                  FaIcon(FontAwesomeIcons.circleInfo, size: 16, color: Color(0xFF09090B)),
-                  SizedBox(width: 12),
-                  Text('Room Info'),
-                ],
-              ),
+      ),
+      leading: CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          Navigator.pop(context);
+        },
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              CupertinoIcons.back,
+              size: 20,
+              color: CupertinoColors.systemBlue.resolveFrom(context),
             ),
-            const PopupMenuItem(
-              value: 'leave',
-              child: Row(
-                children: [
-                  FaIcon(FontAwesomeIcons.rightFromBracket, size: 16, color: Color(0xFFEF4444)),
-                  SizedBox(width: 12),
-                  Text('Leave Room', style: TextStyle(color: Color(0xFFEF4444))),
-                ],
+            const SizedBox(width: 4),
+            Text(
+              'Messages',
+              style: TextStyle(
+                fontSize: 17,
+                color: CupertinoColors.systemBlue.resolveFrom(context),
               ),
             ),
           ],
         ),
-      ],
+      ),
+      middle: CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          setState(() => _showMembers = !_showMembers);
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.room.name,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: CupertinoColors.label.resolveFrom(context),
+              ),
+            ),
+            Text(
+              '${_members.length} member${_members.length == 1 ? '' : 's'}',
+              style: TextStyle(
+                fontSize: 13,
+                color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Copy invite code
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _copyInviteCode();
+            },
+            child: Icon(
+              CupertinoIcons.doc_on_clipboard,
+              size: 20,
+              color: CupertinoColors.systemBlue.resolveFrom(context),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Room menu
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _showIOSActionSheet(context);
+            },
+            child: Icon(
+              CupertinoIcons.ellipsis,
+              size: 20,
+              color: CupertinoColors.systemBlue.resolveFrom(context),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -897,6 +924,58 @@ Guidelines:
   void _copyInviteCode() {
     Clipboard.setData(ClipboardData(text: widget.room.inviteCode));
     _showSnackBar('Invite code copied: ${widget.room.inviteCode}');
+  }
+
+  void _showIOSActionSheet(BuildContext context) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _showRoomInfo();
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  CupertinoIcons.info,
+                  size: 20,
+                  color: CupertinoColors.systemBlue.resolveFrom(context),
+                ),
+                const SizedBox(width: 8),
+                const Text('Room Info'),
+              ],
+            ),
+          ),
+          CupertinoActionSheetAction(
+            isDestructiveAction: true,
+            onPressed: () {
+              Navigator.pop(context);
+              _leaveRoom();
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  CupertinoIcons.arrow_right_square,
+                  size: 20,
+                  color: CupertinoColors.destructiveRed,
+                ),
+                const SizedBox(width: 8),
+                const Text('Leave Room'),
+              ],
+            ),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
   }
 
   void _handleMenuAction(String action) {
