@@ -196,13 +196,78 @@ class _ChatsPageState extends State<ChatsPage> {
                         fontSize: 16,
                         color: const Color(0xFF111827),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Content Area
+                                         ),
+                   ),
+                   const SizedBox(height: 16),
+                   // Action buttons row
+                   Row(
+                     children: [
+                       Expanded(
+                         child: ElevatedButton(
+                           onPressed: _showCreateRoomDialog,
+                           style: ElevatedButton.styleFrom(
+                             backgroundColor: const Color(0xFF374151),
+                             foregroundColor: Colors.white,
+                             padding: const EdgeInsets.symmetric(vertical: 12),
+                             shape: RoundedRectangleBorder(
+                               borderRadius: BorderRadius.circular(8),
+                             ),
+                             elevation: 0,
+                           ),
+                           child: Row(
+                             mainAxisAlignment: MainAxisAlignment.center,
+                             children: [
+                               const Icon(Icons.add, size: 18),
+                               const SizedBox(width: 8),
+                               Text(
+                                 'Create Room',
+                                 style: GoogleFonts.inter(
+                                   fontSize: 14,
+                                   fontWeight: FontWeight.w600,
+                                 ),
+                               ),
+                             ],
+                           ),
+                         ),
+                       ),
+                       const SizedBox(width: 12),
+                       Expanded(
+                         child: OutlinedButton(
+                           onPressed: _showJoinRoomDialog,
+                           style: OutlinedButton.styleFrom(
+                             foregroundColor: const Color(0xFF374151),
+                             padding: const EdgeInsets.symmetric(vertical: 12),
+                             shape: RoundedRectangleBorder(
+                               borderRadius: BorderRadius.circular(8),
+                             ),
+                             side: const BorderSide(
+                               color: Color(0xFFE5E7EB),
+                               width: 1,
+                             ),
+                           ),
+                           child: Row(
+                             mainAxisAlignment: MainAxisAlignment.center,
+                             children: [
+                               const Icon(Icons.login, size: 18),
+                               const SizedBox(width: 8),
+                               Text(
+                                 'Join Room',
+                                 style: GoogleFonts.inter(
+                                   fontSize: 14,
+                                   fontWeight: FontWeight.w600,
+                                 ),
+                               ),
+                             ],
+                           ),
+                         ),
+                       ),
+                     ],
+                   ),
+                 ],
+               ),
+             ),
+             
+             // Content Area
             Expanded(
               child: Container(
                 color: const Color(0xFFF9F7F4),

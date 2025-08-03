@@ -52,13 +52,7 @@ class InputBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(bottom: 16),
       decoration: const BoxDecoration(
-        color: Colors.white, // Keep input area completely white
-        border: Border(
-          top: BorderSide(
-            color: Color(0xFFE5E7EB),
-            width: 1,
-          ),
-        ),
+        color: Color(0xFFF9F7F4), // Cream background for surrounding area
       ),
       child: Column(
         children: [

@@ -142,17 +142,199 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Row(
-        mainAxisAlignment: widget.message.sender == Sender.user 
-            ? MainAxisAlignment.end 
-            : MainAxisAlignment.start,
-        children: [
-          Flexible(
-            child: widget.message.sender == Sender.user 
-                ? _buildUserMessage() 
-                : _buildBotMessage(),
+      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+      child: widget.message.sender == Sender.user 
+          ? _buildPerplexityUserMessage() 
+          : _buildPerplexityBotMessage(),
+    );
+  }
+
+  Widget _buildPerplexityUserMessage() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Flexible(
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.75,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF374151),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              widget.message.text,
+              style: GoogleFonts.inter(
+                fontSize: 15,
+                color: Colors.white,
+                fontWeight: FontWeight.w400,
+                height: 1.4,
+              ),
+            ),
           ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: const Color(0xFF374151),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Icon(
+            Icons.person,
+            size: 18,
+            color: Colors.white,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPerplexityBotMessage() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: const Color(0xFF374151),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Icon(
+            Icons.auto_awesome,
+            size: 18,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFE5E7EB),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.message.text.isNotEmpty)
+                  MarkdownBody(
+                    data: widget.message.text,
+                    styleSheet: MarkdownStyleSheet(
+                      p: GoogleFonts.inter(
+                        fontSize: 15,
+                        color: const Color(0xFF111827),
+                        fontWeight: FontWeight.w400,
+                        height: 1.5,
+                      ),
+                      h1: GoogleFonts.inter(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF111827),
+                      ),
+                      h2: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF111827),
+                      ),
+                      h3: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF111827),
+                      ),
+                      code: GoogleFonts.jetBrainsMono(
+                        fontSize: 14,
+                        backgroundColor: const Color(0xFFF3F4F6),
+                        color: const Color(0xFF374151),
+                      ),
+                      codeblockDecoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      blockquote: GoogleFonts.inter(
+                        fontSize: 15,
+                        color: const Color(0xFF6B7280),
+                        fontStyle: FontStyle.italic,
+                      ),
+                      listBullet: GoogleFonts.inter(
+                        fontSize: 15,
+                        color: const Color(0xFF374151),
+                      ),
+                    ),
+                  ),
+                // Add thinking section if needed
+                if (widget.message.thinkingProcess != null && widget.message.thinkingProcess!.isNotEmpty)
+                  _buildPerplexityThinking(),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPerplexityThinking() {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: _toggleThinking,
+            child: Row(
+              children: [
+                Icon(
+                  _isThinkingExpanded ? Icons.expand_less : Icons.expand_more,
+                  size: 18,
+                  color: const Color(0xFF6B7280),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'View thinking process',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: const Color(0xFF6B7280),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_isThinkingExpanded) ...[
+            const SizedBox(height: 12),
+            Text(
+              widget.message.thinkingProcess!,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: const Color(0xFF4B5563),
+                height: 1.4,
+              ),
+            ),
+          ],
         ],
       ),
     );
