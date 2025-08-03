@@ -6,6 +6,20 @@ import 'models/collaboration_models.dart';
 import 'services/collaboration_service.dart';
 import 'room_chat_page.dart';
 
+// Custom text formatter for uppercase input
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
+    );
+  }
+}
+
 class ChatsPage extends StatefulWidget {
   final String selectedModel;
   
@@ -415,7 +429,7 @@ class _ChatsPageState extends State<ChatsPage> {
       onRefresh: _loadRooms,
       color: const Color(0xFF09090B),
       child: ListView.builder(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
         itemCount: _filteredRooms.length,
         itemBuilder: (context, index) => _buildRoomCard(_filteredRooms[index]),
       ),
@@ -730,48 +744,51 @@ class _JoinRoomDialogState extends State<JoinRoomDialog> {
               const SizedBox(height: 24),
               
               Container(
-                height: 48,
+                height: 60,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: const Color(0xFFE4E4E7),
-                    width: 1,
+                    width: 2,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF09090B).withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: TextField(
                   controller: _codeController,
                   textAlign: TextAlign.center,
+                  textCapitalization: TextCapitalization.characters,
                   style: GoogleFonts.spaceMono(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF09090B),
-                    letterSpacing: 4,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF000000), // Pure black for better visibility
+                    letterSpacing: 6,
                   ),
                   inputFormatters: [
                     LengthLimitingTextInputFormatter(6),
                     FilteringTextInputFormatter.allow(RegExp(r'[A-Z0-9]')),
+                    UpperCaseTextFormatter(), // Custom formatter for uppercase
                   ],
                   decoration: InputDecoration(
                     hintText: 'ABC123',
                     hintStyle: GoogleFonts.spaceMono(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF71717A),
-                      letterSpacing: 4,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFFBBBBBB), // Lighter hint color
+                      letterSpacing: 6,
                     ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
-                      vertical: 12,
+                      vertical: 18,
                     ),
                   ),
-                  onChanged: (value) {
-                    _codeController.value = _codeController.value.copyWith(
-                      text: value.toUpperCase(),
-                      selection: TextSelection.collapsed(offset: value.length),
-                    );
-                  },
                 ),
               ),
               
