@@ -23,6 +23,7 @@ import 'chat_utils.dart';
 import 'supabase_chat_service.dart';
 import 'supabase_auth_service.dart';
 import 'agents.dart';
+import 'agents/web_search_agent.dart';
 
 
 
@@ -391,6 +392,25 @@ class ChatPageState extends State<ChatPage> {
     return 'Previous conversation context:\n${_conversationMemory.join('\n\n')}\n\nCurrent conversation:';
   }
 
+  /// Extract web search data content for AI processing (simplified)
+  String _extractWebSearchData(String webSearchResult) {
+    try {
+      final startIndex = webSearchResult.indexOf('**WEB_SEARCH_DATA_START**');
+      final endIndex = webSearchResult.indexOf('**WEB_SEARCH_DATA_END**');
+      
+      if (startIndex == -1 || endIndex == -1) {
+        return '';
+      }
+      
+      // Since we simplified web search, the AI context is already included in the response
+      // No need for additional processing
+      return '';
+    } catch (e) {
+      print('Error extracting web search data: $e');
+      return '';
+    }
+  }
+
   Future<void> _generateResponse(String prompt, {bool hasVision = false}) async {
     if (widget.selectedModel.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -410,7 +430,24 @@ class ChatPageState extends State<ChatPage> {
 
     _httpClient = http.Client();
     final memoryContext = _getMemoryContext();
-    final fullPrompt = memoryContext.isNotEmpty ? '$memoryContext\n\nUser: $prompt' : prompt;
+    
+    // Check if we need web search for current data
+    final webSearchResult = await AgentsService.processAgentRequest(prompt, '');
+    String finalPrompt = prompt;
+    
+    if (webSearchResult != null) {
+      // Extract and inject web search data into AI context
+      final searchData = _extractWebSearchData(webSearchResult);
+      if (searchData.isNotEmpty) {
+        finalPrompt = '''$searchData
+
+User Question: $prompt
+
+Instructions: Use ONLY the above current web search results to answer the user's question. Do not use outdated information from your training data. Base your response entirely on these fresh search results and clearly indicate that you're using current web search data.''';
+      }
+    }
+    
+    final fullPrompt = memoryContext.isNotEmpty ? '$memoryContext\n\nUser: $finalPrompt' : finalPrompt;
 
     try {
       final request = http.Request('POST', Uri.parse('https://ahamai-api.officialprakashkrsingh.workers.dev/v1/chat/completions'));
@@ -558,10 +595,17 @@ ${AgentsService.getSystemPromptAddition()}
         // Process agents (screenshot generation, etc.)
         String finalText = textToUse;
         try {
-          final agentResult = await AgentsService.processAgentRequest(prompt, textToUse);
-          if (agentResult != null) {
-            finalText = textToUse + agentResult;
-            print('🤖 AGENTS: Added agent content to response');
+          // If we already have web search result, append it to the response
+          if (webSearchResult != null) {
+            finalText = textToUse + webSearchResult;
+            print('🌐 WEB SEARCH: Added web search results to response');
+          } else {
+            // Otherwise, check for other agent requests
+            final agentResult = await AgentsService.processAgentRequest(prompt, textToUse);
+            if (agentResult != null) {
+              finalText = textToUse + agentResult;
+              print('🤖 AGENTS: Added agent content to response');
+            }
           }
         } catch (e) {
           print('❌ AGENTS: Error processing agents: $e');

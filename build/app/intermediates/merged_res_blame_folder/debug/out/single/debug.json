@@ -1,0 +1,10 @@
+[
+    {
+        "merged": "com.aham.app-merged_res-42:/drawable_launch_background.xml.flat",
+        "source": "com.aham.app-main-37:/drawable/launch_background.xml"
+    },
+    {
+        "merged": "com.aham.app-merged_res-42:/drawable_ic_launcher.xml.flat",
+        "source": "com.aham.app-main-37:/drawable/ic_launcher.xml"
+    }
+]

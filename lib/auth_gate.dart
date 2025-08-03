@@ -44,7 +44,7 @@ class _AuthGateState extends State<AuthGate> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF4F3F0),
+        backgroundColor: Colors.white,
         body: Center(
           child: CircularProgressIndicator(
             color: Colors.black,

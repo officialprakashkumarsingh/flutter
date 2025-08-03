@@ -11,7 +11,7 @@ import 'dart:math' as math;
 
 import 'models.dart';
 import 'file_attachment_widget.dart';
-import 'agents/flashcard_agent.dart';
+import 'agents/web_search_agent.dart';
 
 import 'chat_page.dart'; // For accessing ChatPageState
 
@@ -481,29 +481,29 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
       }
     }
     
-    // Check for flashcard data first (for completed messages)
-    final flashcardWidget = _buildFlashcardWidget(originalText);
-    if (flashcardWidget != null && !isStreaming) {
-      // Extract text before flashcard data
-      final flashcardStartIndex = originalText.indexOf('**FLASHCARD_DATA_START**');
-      if (flashcardStartIndex > 0) {
-        final textBeforeFlashcard = originalText.substring(0, flashcardStartIndex).trim();
-        final cleanText = _cleanText(textBeforeFlashcard);
+    // Check for web search data first (for completed messages)
+    final webSearchWidget = _buildWebSearchWidget(originalText);
+    if (webSearchWidget != null && !isStreaming) {
+      // Extract text before web search data
+      final webSearchStartIndex = originalText.indexOf('**WEB_SEARCH_DATA_START**');
+      if (webSearchStartIndex > 0) {
+        final textBeforeWebSearch = originalText.substring(0, webSearchStartIndex).trim();
+        final cleanText = _cleanText(textBeforeWebSearch);
         if (cleanText.isNotEmpty) {
           widgets.add(_buildMarkdownContent(cleanText));
           widgets.add(const SizedBox(height: 16));
         }
       }
       
-      // Add the flashcard widget
-      widgets.add(flashcardWidget);
+      // Add the web search widget
+      widgets.add(webSearchWidget);
       widgets.add(const SizedBox(height: 16));
       
-      // Extract text after flashcard data
-      final flashcardEndIndex = originalText.indexOf('**FLASHCARD_DATA_END**');
-      if (flashcardEndIndex != -1) {
-        final textAfterFlashcard = originalText.substring(flashcardEndIndex + '**FLASHCARD_DATA_END**'.length).trim();
-        final cleanText = _cleanText(textAfterFlashcard);
+      // Extract text after web search data
+      final webSearchEndIndex = originalText.indexOf('**WEB_SEARCH_DATA_END**');
+      if (webSearchEndIndex != -1) {
+        final textAfterWebSearch = originalText.substring(webSearchEndIndex + '**WEB_SEARCH_DATA_END**'.length).trim();
+        final cleanText = _cleanText(textAfterWebSearch);
         if (cleanText.isNotEmpty) {
           widgets.add(_buildMarkdownContent(cleanText));
         }
@@ -517,10 +517,10 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
           _typingAnimationController.stop();
           _typingAnimationController.reset();
         }
-        // Remove flashcard data markers from display during streaming
+        // Remove web search data markers from display during streaming
         String displayContent = originalText;
-        if (displayContent.contains('**FLASHCARD_DATA_START**')) {
-          displayContent = displayContent.split('**FLASHCARD_DATA_START**')[0].trim();
+        if (displayContent.contains('**WEB_SEARCH_DATA_START**')) {
+          displayContent = displayContent.split('**WEB_SEARCH_DATA_START**')[0].trim();
         }
         widgets.add(_buildMarkdownContent(displayContent));
       } else if (isStreaming) {
@@ -551,36 +551,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     final widgets = <Widget>[];
     String remainingText = originalText;
     
-    // Check for flashcard data first
-    final flashcardWidget = _buildFlashcardWidget(originalText);
-    if (flashcardWidget != null) {
-      // Extract text before flashcard data
-      final flashcardStartIndex = originalText.indexOf('**FLASHCARD_DATA_START**');
-      if (flashcardStartIndex > 0) {
-        final textBeforeFlashcard = originalText.substring(0, flashcardStartIndex).trim();
-        final cleanText = _cleanText(textBeforeFlashcard);
-        if (cleanText.isNotEmpty) {
-          widgets.add(_buildMarkdownContent(cleanText));
-          widgets.add(const SizedBox(height: 16));
-        }
-      }
-      
-      // Add the flashcard widget
-      widgets.add(flashcardWidget);
-      widgets.add(const SizedBox(height: 16));
-      
-      // Extract text after flashcard data
-      final flashcardEndIndex = originalText.indexOf('**FLASHCARD_DATA_END**');
-      if (flashcardEndIndex != -1) {
-        final textAfterFlashcard = originalText.substring(flashcardEndIndex + '**FLASHCARD_DATA_END**'.length).trim();
-        final cleanText = _cleanText(textAfterFlashcard);
-        if (cleanText.isNotEmpty) {
-          widgets.add(_buildMarkdownContent(cleanText));
-        }
-      }
-      
-      return widgets;
-    }
+
     
     for (int i = 0; i < codes.length; i++) {
       final code = codes[i];
@@ -621,36 +592,32 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     return widgets;
   }
 
-  // Build flashcard widget from JSON data
-  Widget? _buildFlashcardWidget(String text) {
+
+
+  // Build web search widget from JSON data (simplified for iOS-style favicons)
+  Widget? _buildWebSearchWidget(String text) {
     try {
-      final startIndex = text.indexOf('**FLASHCARD_DATA_START**');
-      final endIndex = text.indexOf('**FLASHCARD_DATA_END**');
+      final startIndex = text.indexOf('**WEB_SEARCH_DATA_START**');
+      final endIndex = text.indexOf('**WEB_SEARCH_DATA_END**');
       
       if (startIndex == -1 || endIndex == -1) {
         return null;
       }
       
       final jsonString = text.substring(
-        startIndex + '**FLASHCARD_DATA_START**'.length,
+        startIndex + '**WEB_SEARCH_DATA_START**'.length,
         endIndex,
       ).trim();
       
       final jsonData = jsonDecode(jsonString);
-      if (jsonData['type'] != 'flashcards') {
+      if (jsonData['type'] != 'web_search_results') {
         return null;
       }
       
-      final flashcards = (jsonData['cards'] as List)
-          .map((cardJson) => FlashcardData.fromJson(cardJson))
-          .toList();
-      
-      return FlashcardGrid(
-        flashcards: flashcards,
-        topic: jsonData['topic'],
-      );
+      // Pass the raw JSON data directly to the simplified widget
+      return WebSearchResultsWidget(results: jsonData);
     } catch (e) {
-      print('Error parsing flashcard data: $e');
+      print('Error parsing web search data: $e');
       return null;
     }
   }
