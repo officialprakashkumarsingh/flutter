@@ -1,10 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'models/collaboration_models.dart';
 import 'services/collaboration_service.dart';
-import 'supabase_service.dart';
+import 'package:http/http.dart' as http;
 
 class RoomChatPage extends StatefulWidget {
   final CollaborationRoom room;
@@ -17,7 +18,6 @@ class RoomChatPage extends StatefulWidget {
 
 class _RoomChatPageState extends State<RoomChatPage> {
   final _collaborationService = CollaborationService();
-  final _supabaseService = SupabaseService();
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   
@@ -603,15 +603,11 @@ class _RoomChatPageState extends State<RoomChatPage> {
       // Check if message mentions AI or asks a question
       if (_shouldTriggerAI(content)) {
         // Get AI response
-        final aiResponse = await _supabaseService.sendMessage(
-          content,
-          isImageGenerationMode: false,
-          useGroq: false,
-          selectedModel: 'claude-3-5-sonnet-20241022',
-        );
-
-        // Send AI response to room
-        await _collaborationService.sendAIResponse(widget.room.id, aiResponse);
+        final aiResponse = await _generateAIResponse(content);
+        if (aiResponse.isNotEmpty) {
+          // Send AI response to room
+          await _collaborationService.sendAIResponse(widget.room.id, aiResponse);
+        }
       }
     } catch (e) {
       _showSnackBar('Failed to send message: ${e.toString()}', isError: true);
@@ -630,6 +626,48 @@ class _RoomChatPageState extends State<RoomChatPage> {
            lowercaseMessage.contains('what') ||
            lowercaseMessage.contains('how') ||
            lowercaseMessage.contains('why');
+  }
+
+  Future<String> _generateAIResponse(String prompt) async {
+    try {
+      final request = http.Request('POST', Uri.parse('https://ahamai-api.officialprakashkrsingh.workers.dev/v1/chat/completions'));
+      request.headers.addAll({
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ahamaibyprakash25',
+      });
+
+      final body = jsonEncode({
+        'model': 'claude-3-5-sonnet-20241022',
+        'messages': [
+          {
+            'role': 'system',
+            'content': 'You are AhamAI participating in a collaborative chat room. Provide helpful, concise responses to questions and engage naturally in the conversation. Keep responses focused and conversational.'
+          },
+          {
+            'role': 'user',
+            'content': prompt
+          }
+        ],
+        'max_tokens': 1000,
+        'temperature': 0.7,
+      });
+
+      request.body = body;
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final content = jsonResponse['choices']?[0]?['message']?['content'] ?? '';
+        return content.toString().trim();
+      } else {
+        print('AI API Error: ${response.statusCode} - ${response.body}');
+        return '';
+      }
+    } catch (e) {
+      print('Error generating AI response: $e');
+      return '';
+    }
   }
 
   void _copyInviteCode() {

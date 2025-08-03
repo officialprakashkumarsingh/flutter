@@ -126,16 +126,17 @@ class CollaborationService {
         .from('room_members')
         .select('id')
         .eq('room_id', room.id)
-        .eq('user_id', _currentUserId)
+        .eq('user_id', _currentUserId!)
         .maybeSingle();
 
     if (existingMember == null) {
       // Check room capacity
       final memberCount = await _supabase
           .from('room_members')
-          .select('id', const FetchOptions(count: CountOption.exact))
+          .select('id')
           .eq('room_id', room.id)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .count();
 
       if (memberCount.count >= room.maxMembers) {
         throw Exception('Room is full');
@@ -165,7 +166,7 @@ class CollaborationService {
           *,
           room_members!inner(*)
         ''')
-        .eq('room_members.user_id', _currentUserId)
+        .eq('room_members.user_id', _currentUserId!)
         .eq('room_members.is_active', true)
         .order('last_activity', ascending: false);
 
@@ -318,7 +319,7 @@ class CollaborationService {
         .from('room_members')
         .update({'is_active': false})
         .eq('room_id', roomId)
-        .eq('user_id', _currentUserId);
+        .eq('user_id', _currentUserId!);
 
     await _sendSystemMessage(roomId, '${_currentUserName} left the room');
   }
@@ -331,7 +332,7 @@ class CollaborationService {
         .from('collaboration_rooms')
         .update({'is_active': false})
         .eq('id', roomId)
-        .eq('created_by', _currentUserId);
+        .eq('created_by', _currentUserId!);
   }
 
   /// Send typing indicator
@@ -346,8 +347,7 @@ class CollaborationService {
     );
 
     // Send through realtime channel for instant delivery
-    _messagesSubscription?.send(
-      type: RealtimeListenTypes.broadcast,
+    _messagesSubscription?.sendBroadcastMessage(
       event: 'typing',
       payload: typingData.toJson(),
     );
