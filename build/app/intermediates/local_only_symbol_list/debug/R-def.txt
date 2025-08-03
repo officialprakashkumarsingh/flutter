@@ -1,0 +1,6 @@
+R_DEF: Internal format may change without notice
+local
+drawable ic_launcher
+drawable launch_background
+style LaunchTheme
+style NormalTheme
