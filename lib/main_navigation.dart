@@ -55,12 +55,8 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
       _currentIndex = index;
     });
     
-    // Smooth page transition
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeInOutCubic,
-    );
+    // Direct page jump - no swiping through pages
+    _pageController.jumpToPage(index);
     
     // Icon animation
     _navAnimationController.reset();
@@ -78,6 +74,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
         painter: MainPatternPainter(),
         child: PageView(
           controller: _pageController,
+          physics: const NeverScrollableScrollPhysics(), // Disable swiping
           onPageChanged: (index) {
             setState(() {
               _currentIndex = index;
