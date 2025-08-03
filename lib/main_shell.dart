@@ -916,7 +916,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                         const SizedBox(width: 16),
                         const Expanded(
                           child: Text(
-                            'Chats',
+                            'Collabs',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
