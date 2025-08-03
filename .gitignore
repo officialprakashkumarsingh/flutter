@@ -57,6 +57,7 @@ commandlinetools-linux-*
 !aham-app-release.apk
 !aham-app-v6.1-latest-build.apk
 !aham-ai-*-agents-*.apk
+!aham-ai-collaboration-*.apk
 
 # Build outputs
 build/core
