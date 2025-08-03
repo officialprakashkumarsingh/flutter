@@ -1177,78 +1177,84 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
         centerTitle: true,
         automaticallyImplyLeading: false, // Remove drawer button
         actions: [
-          // Temporary chat toggle button with incognito icon
-          Container(
-            margin: const EdgeInsets.only(right: 8),
-            child: ScaleTransition(
-              scale: _fabAnimation,
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: _isTemporaryChatMode ? const Color(0xFF09090B) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      setState(() {
-                        _isTemporaryChatMode = !_isTemporaryChatMode;
-                      });
-                      
-                      // Clear current chat and reload based on new mode
-                      _chatPageKey.currentState?.startNewChat();
-                      
-                      // Show feedback to user
-                      showRoundedSnackBar(
-                        context,
-                        _isTemporaryChatMode 
-                          ? '🎭 Temporary chat mode enabled - conversations won\'t be saved'
-                          : '💾 Normal chat mode enabled - conversations will be saved'
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(8),
-                    child: Icon(
-                      Icons.shield_outlined,
-                      color: _isTemporaryChatMode ? Colors.white : const Color(0xFF71717A),
-                      size: 20,
+          // Aligned action buttons row
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Temporary chat toggle button
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                child: ScaleTransition(
+                  scale: _fabAnimation,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: _isTemporaryChatMode ? const Color(0xFF09090B) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          setState(() {
+                            _isTemporaryChatMode = !_isTemporaryChatMode;
+                          });
+                          
+                          // Clear current chat and reload based on new mode
+                          _chatPageKey.currentState?.startNewChat();
+                          
+                          // Show feedback to user
+                          showRoundedSnackBar(
+                            context,
+                            _isTemporaryChatMode 
+                              ? '🎭 Temporary chat mode enabled - conversations won\'t be saved'
+                              : '💾 Normal chat mode enabled - conversations will be saved'
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Icon(
+                          Icons.shield_outlined,
+                          color: _isTemporaryChatMode ? Colors.white : const Color(0xFF71717A),
+                          size: 20,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ),
-          // New chat button
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            child: ScaleTransition(
-              scale: _fabAnimation,
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      HapticFeedback.mediumImpact();
-                      _saveAndStartNewChat();
-                    },
-                    borderRadius: BorderRadius.circular(8),
-                    child: const FaIcon(
-                      FontAwesomeIcons.squarePlus, // Updated to square-plus
-                      color: Color(0xFF71717A),
-                      size: 20,
+              // New chat button
+              Container(
+                margin: const EdgeInsets.only(right: 16),
+                child: ScaleTransition(
+                  scale: _fabAnimation,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          _saveAndStartNewChat();
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: const FaIcon(
+                          FontAwesomeIcons.squarePlus,
+                          color: Color(0xFF71717A),
+                          size: 20,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),
