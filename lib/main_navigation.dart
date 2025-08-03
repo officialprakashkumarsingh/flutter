@@ -138,16 +138,16 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // Smaller padding
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: AnimatedScale(
-          scale: isSelected ? 1.25 : 1.0, // More pronounced alive animation
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.elasticOut, // More bouncy alive feeling
+          scale: isSelected ? 1.25 : 1.0,
+          duration: const Duration(milliseconds: 200), // Shorter for quick return
+          curve: Curves.easeOutBack, // Better curve for returning to original
           child: AnimatedRotation(
-            turns: isSelected ? 0.05 : 0.0, // Slight rotation for alive feel
-            duration: const Duration(milliseconds: 300),
+            turns: isSelected ? 0.0 : 0.0, // Remove rotation, keep original state
+            duration: const Duration(milliseconds: 200),
             child: Container(
-              padding: const EdgeInsets.all(6), // Smaller padding
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
@@ -175,32 +175,32 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     );
   }
 
-  // Better character icon (brain/user-graduate for AI characters)
+  // Better character icon (masks-theater)
   Widget _buildCharactersIcon() {
     final isSelected = _currentIndex == 1;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       child: FaIcon(
-        FontAwesomeIcons.userGraduate, // Better character icon
-        size: 16, // Smaller size
+        FontAwesomeIcons.masksTheater, // Updated to masks-theater
+        size: 16,
         color: isSelected 
-          ? const Color(0xFF374151) // Active color
-          : const Color(0xFF9CA3AF), // Inactive color
+          ? const Color(0xFF374151)
+          : const Color(0xFF9CA3AF),
       ),
     );
   }
 
-  // FontAwesome collabs icon
+  // Better collabs icon (people-group)
   Widget _buildCollabsIcon() {
     final isSelected = _currentIndex == 2;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       child: FaIcon(
-        FontAwesomeIcons.users,
-        size: 16, // Smaller size
+        FontAwesomeIcons.peopleGroup, // Updated to people-group
+        size: 16,
         color: isSelected 
-          ? const Color(0xFF374151) // Active color
-          : const Color(0xFF9CA3AF), // Inactive color
+          ? const Color(0xFF374151)
+          : const Color(0xFF9CA3AF),
       ),
     );
   }

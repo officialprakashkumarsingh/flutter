@@ -207,9 +207,90 @@ class _RoomChatPageState extends State<RoomChatPage> {
   }
 
   Widget _buildLoadingState() {
-    return const Center(
-      child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF09090B)),
+    return _buildChatShimmerLoading();
+  }
+
+  Widget _buildChatShimmerLoading() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: List.generate(8, (index) => _buildChatShimmerItem(index)),
+      ),
+    );
+  }
+
+  Widget _buildChatShimmerItem(int index) {
+    final isLeft = index % 2 == 0; // Alternate left/right like chat
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        mainAxisAlignment: isLeft ? MainAxisAlignment.start : MainAxisAlignment.end,
+        children: [
+          if (isLeft) ...[
+            // Left side shimmer (AI message style)
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.only(right: 60),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildShimmerBox(double.infinity, 16),
+                    const SizedBox(height: 4),
+                    _buildShimmerBox(200, 16),
+                    const SizedBox(height: 4),
+                    _buildShimmerBox(150, 16),
+                  ],
+                ),
+              ),
+            ),
+          ] else ...[
+            // Right side shimmer (User message style)
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.only(left: 60),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFFE5E7EB),
+                            Color(0xFFF3F4F6),
+                            Color(0xFFE5E7EB),
+                          ],
+                        ),
+                      ),
+                      child: _buildShimmerBox(120, 16),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShimmerBox(double width, double height) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4),
+        gradient: const LinearGradient(
+          begin: Alignment(-1.0, 0.0),
+          end: Alignment(1.0, 0.0),
+          colors: [
+            Color(0xFFF3F4F6),
+            Color(0xFFE5E7EB),
+            Color(0xFFF3F4F6),
+          ],
+          stops: [0.0, 0.5, 1.0],
+        ),
       ),
     );
   }

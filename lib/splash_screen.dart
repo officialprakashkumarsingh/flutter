@@ -65,19 +65,19 @@ class _SplashScreenState extends State<SplashScreen>
       child: Scaffold(
         backgroundColor: const Color(0xFFF9F7F4), // Cream background
         body: CustomPaint(
-          painter: WhatsAppPatternPainter(),
+          painter: SplashPatternPainter(),
           child: Center(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: Text(
-              'AhamAI',
-              style: GoogleFonts.spaceMono(
-                fontSize: 42,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF09090B),
-                letterSpacing: -1.0,
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: Text(
+                'AhamAI',
+                style: GoogleFonts.spaceMono(
+                  fontSize: 42,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF09090B),
+                  letterSpacing: -1.0,
+                ),
               ),
-            ),
             ),
           ),
         ),
@@ -86,28 +86,20 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-class WhatsAppPatternPainter extends CustomPainter {
+class SplashPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // Fill with cream background
-    final paint = Paint()..color = const Color(0xFFF9F7F4);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
-    
-    // Create dot pattern
+    // Create subtle dot pattern like homescreen
     final dotPaint = Paint()
-      ..color = Colors.grey.withOpacity(0.08)
+      ..color = const Color(0xFFF5F5DC).withOpacity(0.2)
       ..style = PaintingStyle.fill;
     
-    const dotSize = 1.5;
-    const spacing = 20.0;
+    const dotSize = 1.0;
+    const spacing = 25.0;
     
     for (double x = 0; x < size.width; x += spacing) {
       for (double y = 0; y < size.height; y += spacing) {
         canvas.drawCircle(Offset(x, y), dotSize, dotPaint);
-        // Add smaller dots for more WhatsApp-like pattern
-        if ((x / spacing) % 2 == 0 && (y / spacing) % 2 == 0) {
-          canvas.drawCircle(Offset(x + spacing/2, y + spacing/2), dotSize * 0.5, dotPaint);
-        }
       }
     }
   }

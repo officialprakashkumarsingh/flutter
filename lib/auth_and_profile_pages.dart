@@ -227,16 +227,19 @@ class _AuthAndProfilePagesState extends State<AuthAndProfilePages> {
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: Colors.white, // Changed from cream to white
-        body: Center(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 0.0), // Remove horizontal padding
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: showLoginPage 
-                    ? LoginPage(onToggle: togglePage)
-                    : SignUpPage(onToggle: togglePage),
+        backgroundColor: const Color(0xFFF9F7F4), // Match app cream background
+        body: CustomPaint(
+          painter: AuthPatternPainter(),
+          child: Center(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0), // Add padding for mobile
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: showLoginPage 
+                      ? LoginPage(onToggle: togglePage)
+                      : SignUpPage(onToggle: togglePage),
+                ),
               ),
             ),
           ),
@@ -1012,4 +1015,26 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+}
+
+class AuthPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Create subtle dot pattern like homescreen
+    final dotPaint = Paint()
+      ..color = const Color(0xFFF5F5DC).withOpacity(0.2)
+      ..style = PaintingStyle.fill;
+    
+    const dotSize = 1.0;
+    const spacing = 25.0;
+    
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        canvas.drawCircle(Offset(x, y), dotSize, dotPaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

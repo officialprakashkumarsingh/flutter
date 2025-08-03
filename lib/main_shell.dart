@@ -1157,7 +1157,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                                          Text(
                        'AhamAI',
                        style: GoogleFonts.spaceMono(
-                         fontSize: 22, // Bigger logo
+                         fontSize: 20, // Slightly smaller
                          fontWeight: FontWeight.w600,
                          color: const Color(0xFF09090B),
                        ),
@@ -1240,10 +1240,10 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                       _saveAndStartNewChat();
                     },
                     borderRadius: BorderRadius.circular(8),
-                    child: const Icon(
-                      Icons.add_rounded,
+                    child: const FaIcon(
+                      FontAwesomeIcons.squarePlus, // Updated to square-plus
                       color: Color(0xFF71717A),
-                      size: 22,
+                      size: 20,
                     ),
                   ),
                 ),
