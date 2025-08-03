@@ -1,46 +1,52 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'dart:ui';
 import 'models/collaboration_models.dart';
+import 'models/chat_models.dart';
 import 'services/collaboration_service.dart';
+import 'services/direct_chat_service.dart';
 import 'room_chat_page.dart';
+import 'direct_chat_page.dart';
 
-class CollaborationPage extends StatefulWidget {
+class ChatsPage extends StatefulWidget {
   final String selectedModel;
   
-  const CollaborationPage({super.key, required this.selectedModel});
+  const ChatsPage({super.key, required this.selectedModel});
 
   @override
-  State<CollaborationPage> createState() => _CollaborationPageState();
+  State<ChatsPage> createState() => _ChatsPageState();
 }
 
-class _CollaborationPageState extends State<CollaborationPage> with TickerProviderStateMixin {
+class _ChatsPageState extends State<ChatsPage> with TickerProviderStateMixin {
   final _collaborationService = CollaborationService();
+  final _directChatService = DirectChatService();
   late TabController _tabController;
   
   List<CollaborationRoom> _rooms = [];
+  List<DirectChat> _directChats = [];
+  List<UserProfile> _searchResults = [];
   bool _isLoading = true;
   String? _error;
+  bool _isSearching = false;
   
-  final TextEditingController _inviteCodeController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _initializeCollaboration();
+    _tabController = TabController(length: 3, vsync: this);
+    _initializeChats();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    _inviteCodeController.dispose();
+    _searchController.dispose();
+    _directChatService.dispose();
     super.dispose();
   }
 
-  Future<void> _initializeCollaboration() async {
+  Future<void> _initializeChats() async {
     try {
       setState(() {
         _isLoading = true;
@@ -48,10 +54,14 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
       });
 
       await _collaborationService.initialize();
+      await _directChatService.initialize();
 
       final rooms = await _collaborationService.getUserRooms();
+      final directChats = await _directChatService.getUserChats();
+      
       setState(() {
         _rooms = rooms;
+        _directChats = directChats;
         _isLoading = false;
       });
     } catch (e) {
@@ -65,122 +75,195 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7), // iOS systemGroupedBackground
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildIOSHeader(),
-            Expanded(
-              child: _isLoading 
-                  ? _buildLoadingState()
-                  : _error != null 
-                      ? _buildErrorState()
-                      : Column(
-                          children: [
-                            _buildTabContent(),
-                            Expanded(child: _buildMainContent()),
-                          ],
-                        ),
-            ),
-          ],
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF667eea),
+              Color(0xFF764ba2),
+              Color(0xFFf093fb),
+              Color(0xFFf5576c),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildGlassmorphismHeader(),
+              Expanded(
+                child: _isLoading 
+                    ? _buildLoadingState()
+                    : _error != null 
+                        ? _buildErrorState()
+                        : _buildMainContent(),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildIOSHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-      decoration: BoxDecoration(
-        color: CupertinoColors.systemBackground.resolveFrom(context),
-        border: Border(
-          bottom: BorderSide(
-            color: CupertinoColors.separator.resolveFrom(context).withOpacity(0.2),
-            width: 0.5,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          // Back button
-          CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              Navigator.pop(context);
-            },
-            child: Icon(
-              CupertinoIcons.chevron_left,
-              size: 24,
-              color: CupertinoColors.systemBlue.resolveFrom(context),
-            ),
-          ),
-          
-          // Title
-          Expanded(
-            child: Text(
-              'Collaborate',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: CupertinoColors.label.resolveFrom(context),
+  Widget _buildGlassmorphismHeader() {
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.15),
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
               ),
             ),
           ),
-          
-          // Action buttons
-          Row(
-            mainAxisSize: MainAxisSize.min,
+          child: Column(
             children: [
-              // Join room button
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  _showJoinRoomDialog();
-                },
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.systemGreen.resolveFrom(context),
-                    borderRadius: BorderRadius.circular(16),
+              Row(
+                children: [
+                  // Back button with glassmorphism
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(context);
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
                   ),
-                  child: const Icon(
-                    CupertinoIcons.arrow_down_right_arrow_up_left,
-                    size: 16,
-                    color: CupertinoColors.white,
+                  
+                  // Title
+                  Expanded(
+                    child: Text(
+                      'Chats',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(
+                            offset: const Offset(0, 1),
+                            blurRadius: 3,
+                            color: Colors.black.withOpacity(0.3),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  // Search button
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _showUserSearchDialog();
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.person_add,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 20),
+              
+              // Tab selector with glassmorphism
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                    width: 1,
                   ),
                 ),
-              ),
-              
-              const SizedBox(width: 12),
-              
-              // Create room button
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  _showCreateRoomDialog();
-                },
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.systemBlue.resolveFrom(context),
-                    borderRadius: BorderRadius.circular(16),
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    color: Colors.white.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Icon(
-                    CupertinoIcons.add,
-                    size: 16,
-                    color: CupertinoColors.white,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white.withOpacity(0.7),
+                  labelStyle: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
                   ),
+                  unselectedLabelStyle: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                  tabs: const [
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.chat_bubble_outline, size: 16),
+                          SizedBox(width: 6),
+                          Text('Direct'),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.groups_outlined, size: 16),
+                          SizedBox(width: 6),
+                          Text('Rooms'),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_circle_outline, size: 16),
+                          SizedBox(width: 6),
+                          Text('Create'),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

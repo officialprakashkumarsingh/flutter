@@ -877,7 +877,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
               ),
             ),
 
-            // Collaborate option
+            // Chats option
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
               child: Material(
@@ -890,7 +890,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                       context,
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) =>
-                            CollaborationPage(selectedModel: _selectedModel),
+                            ChatsPage(selectedModel: _selectedModel),
                         transitionsBuilder: (context, animation, secondaryAnimation, child) {
                           return SlideTransition(
                             position: Tween<Offset>(
@@ -912,11 +912,11 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     child: Row(
                       children: [
-                        const Icon(Icons.group_outlined, color: Color(0xFF09090B), size: 22),
+                        const Icon(Icons.chat_bubble_outline, color: Color(0xFF09090B), size: 22),
                         const SizedBox(width: 16),
                         const Expanded(
                           child: Text(
-                            'Collaborate',
+                            'Chats',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
