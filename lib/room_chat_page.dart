@@ -29,6 +29,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
   bool _isLoading = true;
   bool _isSendingMessage = false;
   bool _showMembers = false;
+  RoomMessage? _replyingTo;
 
   @override
   void initState() {
@@ -187,6 +188,9 @@ class _RoomChatPageState extends State<RoomChatPage> {
         // Messages
         Expanded(child: _buildMessagesList()),
         
+        // Reply preview bar
+        if (_replyingTo != null) _buildReplyPreview(),
+        
         // Input area
         CollaborationInputBar(
           controller: _messageController,
@@ -249,10 +253,11 @@ class _RoomChatPageState extends State<RoomChatPage> {
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final message = _messages[index];
-        return CollaborationMessageBubble(
-          message: message,
-          isOwnMessage: message.isOwnMessage,
-        );
+                                return CollaborationMessageBubble(
+                          message: message,
+                          isOwnMessage: message.isOwnMessage,
+                          onReply: _handleReply,
+                        );
       },
     );
   }
@@ -633,6 +638,12 @@ class _RoomChatPageState extends State<RoomChatPage> {
           _showSnackBar('AI response failed: ${aiError.toString()}', isError: true);
         }
       }
+      
+      // Clear reply context after sending
+      setState(() {
+        _replyingTo = null;
+      });
+      
     } catch (e) {
       _showSnackBar('Failed to send message: ${e.toString()}', isError: true);
     } finally {
@@ -772,6 +783,84 @@ Guidelines:
       print('Error generating AI response: $e');
       return '';
     }
+  }
+
+  void _handleReply(RoomMessage message) {
+    setState(() {
+      _replyingTo = message;
+    });
+    _messageController.text = '@${message.userName} ';
+    _messageController.selection = TextSelection.fromPosition(
+      TextPosition(offset: _messageController.text.length),
+    );
+  }
+
+  Widget _buildReplyPreview() {
+    if (_replyingTo == null) return const SizedBox.shrink();
+    
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(8),
+        border: const Border(
+          left: BorderSide(
+            color: Color(0xFF09090B),
+            width: 3,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Replying to ${_replyingTo!.userName}',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF09090B),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _replyingTo!.content,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: const Color(0xFF71717A),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _replyingTo = null;
+              });
+              _messageController.clear();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF71717A).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const FaIcon(
+                FontAwesomeIcons.xmark,
+                size: 12,
+                color: Color(0xFF71717A),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _copyInviteCode() {

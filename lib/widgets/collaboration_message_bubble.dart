@@ -8,11 +8,13 @@ import '../models/collaboration_models.dart';
 class CollaborationMessageBubble extends StatefulWidget {
   final RoomMessage message;
   final bool isOwnMessage;
+  final Function(RoomMessage)? onReply;
 
   const CollaborationMessageBubble({
     super.key,
     required this.message,
     required this.isOwnMessage,
+    this.onReply,
   });
 
   @override
@@ -23,6 +25,10 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   bool _showActions = false;
   late AnimationController _actionsAnimationController;
   late Animation<double> _actionsAnimation;
+  
+  // Slide to reply variables
+  double _slideOffset = 0.0;
+  bool _isSliding = false;
 
   @override
   void initState() {
@@ -69,21 +75,89 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
           }
         });
       },
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: widget.isOwnMessage ? [
-            _buildMessageBubble(),
-            const SizedBox(width: 8),
-            _buildAvatar(),
-          ] : [
-            _buildAvatar(),
-            const SizedBox(width: 8),
-            _buildMessageBubble(),
+      onPanStart: widget.onReply != null && widget.message.messageType != 'system' 
+          ? (_) => setState(() => _isSliding = true)
+          : null,
+      onPanUpdate: widget.onReply != null && widget.message.messageType != 'system'
+          ? (details) {
+              if (_isSliding) {
+                setState(() {
+                  // Limit slide distance and make it feel natural
+                  _slideOffset = (details.delta.dx * 0.5).clamp(-60.0, 0.0);
+                });
+              }
+            }
+          : null,
+      onPanEnd: widget.onReply != null && widget.message.messageType != 'system'
+          ? (_) {
+              if (_isSliding) {
+                setState(() => _isSliding = false);
+                
+                // Trigger reply if slid enough
+                if (_slideOffset <= -30.0) {
+                  widget.onReply!(widget.message);
+                  HapticFeedback.mediumImpact();
+                }
+                
+                // Reset slide offset with animation
+                setState(() => _slideOffset = 0.0);
+              }
+            }
+          : null,
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: _isSliding ? 0 : 200),
+        transform: Matrix4.translationValues(_slideOffset, 0, 0),
+        child: Stack(
+          children: [
+            // Reply icon that appears when sliding
+            if (_slideOffset < -10.0)
+              Positioned(
+                right: widget.isOwnMessage ? null : 10,
+                left: widget.isOwnMessage ? 10 : null,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: AnimatedOpacity(
+                    opacity: (-_slideOffset / 60.0).clamp(0.0, 1.0),
+                    duration: const Duration(milliseconds: 100),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF09090B).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: FaIcon(
+                          FontAwesomeIcons.reply,
+                          size: 16,
+                          color: Color(0xFF09090B),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            
+            // Message content
+            Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.75,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: widget.isOwnMessage ? [
+                  _buildMessageBubble(),
+                  const SizedBox(width: 8),
+                  _buildAvatar(),
+                ] : [
+                  _buildAvatar(),
+                  const SizedBox(width: 8),
+                  _buildMessageBubble(),
+                ],
+              ),
+            ),
           ],
         ),
       ),
