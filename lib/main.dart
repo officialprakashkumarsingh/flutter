@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'splash_screen.dart';
 import 'auth_gate.dart';
+import 'main_navigation.dart';
 import 'smooth_scroll_behavior.dart';
 
 void main() async {

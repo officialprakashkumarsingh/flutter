@@ -836,7 +836,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                       context,
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) =>
-                            CharactersPage(selectedModel: _selectedModel),
+                            const CharactersPage(),
                         transitionsBuilder: (context, animation, secondaryAnimation, child) {
                           return SlideTransition(
                             position: Tween<Offset>(
@@ -1122,7 +1122,6 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
     return Scaffold(
       key: _scaffoldKey,
       extendBody: true,
-      drawer: _buildSidebar(),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -1169,32 +1168,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
           ),
         ),
         centerTitle: true,
-        leading: Builder(
-          builder: (context) => Padding(
-            padding: const EdgeInsets.only(left: 16.0),
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                Scaffold.of(context).openDrawer();
-              },
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.menu_open_rounded,
-                    color: Color(0xFF09090B),
-                    size: 22,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
+        automaticallyImplyLeading: false, // Remove drawer button
         actions: [
           // Temporary chat toggle button with incognito icon
           Container(

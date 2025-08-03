@@ -203,7 +203,7 @@ class CollaborationPageWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const CollaborationPage();
+    return const ChatsPage(selectedModel: 'claude-3-7-sonnet');
   }
 }
 

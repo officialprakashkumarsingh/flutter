@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_auth_service.dart';
 import 'auth_and_profile_pages.dart';
-import 'main_shell.dart';
+import 'main_navigation.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -55,7 +55,7 @@ class _AuthGateState extends State<AuthGate> {
     
     // Check if user is signed in
     if (SupabaseAuthService.isSignedIn) {
-      return const MainShell();
+      return const MainNavigation();
     } else {
       return const AuthAndProfilePages();
     }
