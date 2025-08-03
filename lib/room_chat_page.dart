@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'models/collaboration_models.dart';
 import 'services/collaboration_service.dart';
+import 'widgets/collaboration_input_bar.dart';
+import 'widgets/collaboration_message_bubble.dart';
 import 'package:http/http.dart' as http;
 
 class RoomChatPage extends StatefulWidget {
@@ -102,7 +104,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
       scrolledUnderElevation: 0,
       leading: IconButton(
         onPressed: () => Navigator.pop(context),
-        icon: const Icon(Icons.arrow_back_ios_rounded, color: Color(0xFF09090B), size: 20),
+        icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Color(0xFF09090B), size: 18),
       ),
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,25 +130,25 @@ class _RoomChatPageState extends State<RoomChatPage> {
         // Copy invite code
         IconButton(
           onPressed: _copyInviteCode,
-          icon: const Icon(Icons.content_copy_rounded, color: Color(0xFF09090B), size: 20),
+          icon: const FaIcon(FontAwesomeIcons.copy, color: Color(0xFF09090B), size: 16),
           tooltip: 'Copy invite code',
         ),
         // Show members
         IconButton(
           onPressed: () => setState(() => _showMembers = !_showMembers),
-          icon: const Icon(Icons.people_outlined, color: Color(0xFF09090B), size: 20),
+          icon: const FaIcon(FontAwesomeIcons.users, color: Color(0xFF09090B), size: 16),
           tooltip: 'Members',
         ),
         // Room menu
         PopupMenuButton<String>(
           onSelected: _handleMenuAction,
-          icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF09090B), size: 20),
+          icon: const FaIcon(FontAwesomeIcons.ellipsisVertical, color: Color(0xFF09090B), size: 16),
           itemBuilder: (context) => [
             const PopupMenuItem(
               value: 'info',
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, size: 18, color: Color(0xFF09090B)),
+                  FaIcon(FontAwesomeIcons.circleInfo, size: 16, color: Color(0xFF09090B)),
                   SizedBox(width: 12),
                   Text('Room Info'),
                 ],
@@ -156,7 +158,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
               value: 'leave',
               child: Row(
                 children: [
-                  Icon(Icons.exit_to_app, size: 18, color: Color(0xFFEF4444)),
+                  FaIcon(FontAwesomeIcons.rightFromBracket, size: 16, color: Color(0xFFEF4444)),
                   SizedBox(width: 12),
                   Text('Leave Room', style: TextStyle(color: Color(0xFFEF4444))),
                 ],
@@ -186,7 +188,11 @@ class _RoomChatPageState extends State<RoomChatPage> {
         Expanded(child: _buildMessagesList()),
         
         // Input area
-        _buildInputArea(),
+        CollaborationInputBar(
+          controller: _messageController,
+          onSend: _sendMessage,
+          isSending: _isSendingMessage,
+        ),
       ],
     );
   }
@@ -239,15 +245,14 @@ class _RoomChatPageState extends State<RoomChatPage> {
 
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       itemCount: _messages.length,
       itemBuilder: (context, index) {
         final message = _messages[index];
-        final isFirstInGroup = index == 0 || 
-            _messages[index - 1].userId != message.userId ||
-            _messages[index].createdAt.difference(_messages[index - 1].createdAt).inMinutes > 5;
-        
-        return _buildMessageBubble(message, isFirstInGroup);
+        return CollaborationMessageBubble(
+          message: message,
+          isOwnMessage: message.isOwnMessage,
+        );
       },
     );
   }
@@ -265,9 +270,9 @@ class _RoomChatPageState extends State<RoomChatPage> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFFE4E4E7)),
             ),
-            child: const Icon(
-              Icons.chat_bubble_outline_rounded,
-              size: 32,
+            child: const FaIcon(
+              FontAwesomeIcons.comments,
+              size: 28,
               color: Color(0xFF71717A),
             ),
           ),
