@@ -154,7 +154,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Messages',
+                    'Collaborate',
                     style: TextStyle(
                       fontSize: 34,
                       fontWeight: FontWeight.w700,
@@ -624,9 +624,9 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: isPrimary ? const Color(0xFF09090B) : Colors.white,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: isPrimary ? Colors.transparent : const Color(0xFFE4E4E7)),
+            color: isPrimary ? CupertinoColors.systemBlue : CupertinoColors.systemBackground,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: isPrimary ? Colors.transparent : CupertinoColors.separator),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -634,7 +634,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
               FaIcon(
                 icon,
                 size: 12,
-                color: isPrimary ? Colors.white : const Color(0xFF71717A),
+                color: isPrimary ? Colors.white : CupertinoColors.secondaryLabel,
               ),
               const SizedBox(width: 8),
               Text(
@@ -642,7 +642,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: isPrimary ? Colors.white : const Color(0xFF09090B),
+                  color: isPrimary ? Colors.white : CupertinoColors.label,
                 ),
               ),
             ],

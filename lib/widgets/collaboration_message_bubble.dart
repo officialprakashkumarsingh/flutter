@@ -443,7 +443,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
       const Color(0xFF5856D6), // Purple
       const Color(0xFFFF2D92), // Pink
       const Color(0xFF32D74B), // Light Green
-      const Color(0xFFFFD60A), // Yellow
+      const Color(0xFFFF6482), // Coral (replacing yellow)
       const Color(0xFF64D2FF), // Light Blue
       const Color(0xFFBF5AF2), // Light Purple
     ];
