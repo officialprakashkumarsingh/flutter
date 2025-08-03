@@ -145,25 +145,36 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
             // Reply icon that appears when sliding
             if (_slideOffset < -10.0)
               Positioned(
-                right: 20,
+                right: 60, // More space from bubble
                 top: 0,
                 bottom: 0,
                 child: Center(
                   child: AnimatedOpacity(
-                    opacity: (-_slideOffset / 80.0).clamp(0.0, 1.0),
-                    duration: const Duration(milliseconds: 50),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF007AFF).withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: FaIcon(
-                          FontAwesomeIcons.reply,
-                          size: 18,
-                          color: Color(0xFF007AFF),
+                    opacity: (-_slideOffset / 60.0).clamp(0.0, 1.0), // Smoother fade-in
+                    duration: const Duration(milliseconds: 100),
+                    child: AnimatedScale(
+                      scale: (-_slideOffset / 60.0).clamp(0.5, 1.0), // Scale animation
+                      duration: const Duration(milliseconds: 100),
+                      child: Container(
+                        width: 44, // Larger touch target
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF007AFF).withOpacity(0.15),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF007AFF).withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: FaIcon(
+                            FontAwesomeIcons.reply,
+                            size: 20,
+                            color: Color(0xFF007AFF),
+                          ),
                         ),
                       ),
                     ),
