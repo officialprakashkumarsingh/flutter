@@ -96,8 +96,8 @@ DELETE FROM auth.users;
 -- STEP 2: CREATE MAIN APP TABLES
 -- ==========================================
 
--- Create profiles table for user data
-CREATE TABLE public.profiles (
+-- Create profiles table for user data (only if not exists)
+CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
@@ -106,8 +106,8 @@ CREATE TABLE public.profiles (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Create characters table (for AI characters)
-CREATE TABLE public.characters (
+-- Create characters table (for AI characters, only if not exists)
+CREATE TABLE IF NOT EXISTS public.characters (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     name TEXT NOT NULL,
@@ -123,8 +123,8 @@ CREATE TABLE public.characters (
     UNIQUE(user_id, name) -- Prevent duplicate character names per user
 );
 
--- Create chat conversations table with pin functionality (for AI chat history)
-CREATE TABLE public.chat_conversations (
+-- Create chat conversations table with pin functionality (for AI chat history, only if not exists)
+CREATE TABLE IF NOT EXISTS public.chat_conversations (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     title TEXT DEFAULT 'New Chat',
@@ -140,8 +140,8 @@ CREATE TABLE public.chat_conversations (
 -- STEP 3: CREATE COLLABORATION TABLES
 -- ==========================================
 
--- Create collaboration rooms table
-CREATE TABLE public.collaboration_rooms (
+-- Create collaboration rooms table (only if not exists)
+CREATE TABLE IF NOT EXISTS public.collaboration_rooms (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT,
@@ -155,8 +155,8 @@ CREATE TABLE public.collaboration_rooms (
     updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Create room members table
-CREATE TABLE public.room_members (
+-- Create room members table (only if not exists)
+CREATE TABLE IF NOT EXISTS public.room_members (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     room_id UUID REFERENCES public.collaboration_rooms(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
@@ -167,8 +167,8 @@ CREATE TABLE public.room_members (
     UNIQUE(room_id, user_id) -- Prevent duplicate memberships
 );
 
--- Create room messages table
-CREATE TABLE public.room_messages (
+-- Create room messages table (only if not exists)
+CREATE TABLE IF NOT EXISTS public.room_messages (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     room_id UUID REFERENCES public.collaboration_rooms(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
