@@ -115,12 +115,10 @@ class _ChatsPageState extends State<ChatsPage> {
     ));
 
     if (_isInitializing) {
-      return const Scaffold(
-        backgroundColor: Colors.white,
+      return Scaffold(
+        backgroundColor: const Color(0xFFF9F7F4),
         body: Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF09090B)),
-          ),
+          child: _buildFullPageShimmer(),
         ),
       );
     }
@@ -140,8 +138,8 @@ class _ChatsPageState extends State<ChatsPage> {
                   // Title
                   Text(
                     'Collabs',
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
+                    style: GoogleFonts.spaceMono( // Same font as AhamAI
+                      fontSize: 20, // Consistent size
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF111827),
                     ),
@@ -203,32 +201,32 @@ class _ChatsPageState extends State<ChatsPage> {
                    Row(
                      children: [
                        Expanded(
-                                                 child: ElevatedButton(
-                          onPressed: _showCreateRoomDialog,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF374151),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.add, size: 14),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Create',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                                                           child: ElevatedButton(
+                            onPressed: _showCreateRoomDialog,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF374151),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 6), // Smaller padding
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12), // More rounded
                               ),
-                            ],
+                              elevation: 0,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.add, size: 12), // Smaller icon
+                                const SizedBox(width: 4), // Smaller spacing
+                                Text(
+                                  'Create',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11, // Smaller text
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
                        ),
                        const SizedBox(width: 12),
                        Expanded(
@@ -236,9 +234,9 @@ class _ChatsPageState extends State<ChatsPage> {
                             onPressed: _showJoinRoomDialog,
                             style: OutlinedButton.styleFrom(
                               foregroundColor: const Color(0xFF374151),
-                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              padding: const EdgeInsets.symmetric(vertical: 6), // Smaller padding
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(12), // More rounded
                               ),
                               side: const BorderSide(
                                 color: Color(0xFFE5E7EB),
@@ -248,12 +246,12 @@ class _ChatsPageState extends State<ChatsPage> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.login, size: 14),
-                                const SizedBox(width: 6),
+                                const Icon(Icons.login, size: 12), // Smaller icon
+                                const SizedBox(width: 4), // Smaller spacing
                                 Text(
                                   'Join',
                                   style: GoogleFonts.inter(
-                                    fontSize: 12,
+                                    fontSize: 11, // Smaller text
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -1196,6 +1194,60 @@ class _ChatsPageState extends State<ChatsPage> {
             Color(0xFFF3F4F6),
             Color(0xFFE5E7EB),
             Color(0xFFF3F4F6),
+          ],
+          stops: [0.0, 0.5, 1.0],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFullPageShimmer() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Logo shimmer
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: const LinearGradient(
+                begin: Alignment(-1.0, -1.0),
+                end: Alignment(1.0, 1.0),
+                colors: [
+                  Color(0xFFE5E7EB),
+                  Color(0xFFF3F4F6),
+                  Color(0xFFE5E7EB),
+                ],
+                stops: [0.0, 0.5, 1.0],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Text shimmers
+          _buildShimmerBox(120, 16),
+          const SizedBox(height: 8),
+          _buildShimmerBox(80, 12),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildButtonShimmer() {
+    return Container(
+      width: 80,
+      height: 20,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        gradient: const LinearGradient(
+          begin: Alignment(-1.0, 0.0),
+          end: Alignment(1.0, 0.0),
+          colors: [
+            Color(0xFFD1D5DB),
+            Color(0xFFE5E7EB),
+            Color(0xFFD1D5DB),
           ],
           stops: [0.0, 0.5, 1.0],
         ),

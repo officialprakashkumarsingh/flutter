@@ -1154,14 +1154,14 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'AhamAI',
-                      style: GoogleFonts.spaceMono(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF09090B),
-                      ),
-                    ),
+                                         Text(
+                       'AhamAI',
+                       style: GoogleFonts.spaceMono(
+                         fontSize: 22, // Bigger logo
+                         fontWeight: FontWeight.w600,
+                         color: const Color(0xFF09090B),
+                       ),
+                     ),
                     const SizedBox(width: 6),
                     const Icon(
                       Icons.keyboard_arrow_down_rounded,

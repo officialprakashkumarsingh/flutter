@@ -123,37 +123,37 @@ class _RoomChatPageState extends State<RoomChatPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9F7F4), // Cream background
-      appBar: _buildShadcnAppBar(),
-      body: Stack(
-        children: [
-          _isLoading ? _buildLoadingState() : _buildChatInterface(),
-          // Removed member drawer - count already shown in room list
-        ],
+      extendBody: true,
+      appBar: _buildHomeStyleAppBar(),
+      body: CustomPaint(
+        painter: RoomPatternPainter(),
+        child: Stack(
+          children: [
+            _isLoading ? _buildLoadingState() : _buildChatInterface(),
+            // Removed member drawer - count already shown in room list
+          ],
+        ),
       ),
     );
   }
 
-  PreferredSizeWidget _buildShadcnAppBar() {
-    return PreferredSize(
-      preferredSize: Size.fromHeight(kToolbarHeight + MediaQuery.of(context).padding.top),
-      child: CustomPaint(
-        painter: WhatsAppPatternPainter(),
-        child: SafeArea(
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            shadowColor: Colors.transparent,
-            surfaceTintColor: Colors.transparent,
-      bottom: const PreferredSize(
-        preferredSize: Size.fromHeight(0),
-        child: SizedBox.shrink(),
+  PreferredSizeWidget _buildHomeStyleAppBar() {
+    return AppBar(
+      backgroundColor: const Color(0xFFF9F7F4), // Cream background like home
+      elevation: 0,
+      surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      shadowColor: Colors.transparent,
+      systemOverlayStyle: const SystemUiOverlayStyle(
+        statusBarColor: Color(0xFFF9F7F4), // Match background
+        statusBarIconBrightness: Brightness.dark,
       ),
       leading: IconButton(
         onPressed: () {
           Navigator.pop(context);
         },
         icon: const FaIcon(
-          FontAwesomeIcons.chevronLeft,
+          FontAwesomeIcons.arrowLeft, // Better back icon
           size: 18,
           color: Color(0xFF09090B),
         ),
@@ -164,8 +164,8 @@ class _RoomChatPageState extends State<RoomChatPage> {
         children: [
           Text(
             widget.room.name,
-            style: GoogleFonts.inter(
-              fontSize: 15,
+            style: GoogleFonts.spaceMono( // Same font as AhamAI
+              fontSize: 18, // Bigger like homescreen
               fontWeight: FontWeight.w600,
               color: const Color(0xFF09090B),
             ),
@@ -203,9 +203,6 @@ class _RoomChatPageState extends State<RoomChatPage> {
           ),
         ),
       ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -219,7 +216,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
 
   Widget _buildChatInterface() {
     return CustomPaint(
-      painter: WhatsAppPatternPainter(),
+      painter: RoomPatternPainter(),
       child: Stack(
         children: [
           Column(
@@ -1347,28 +1344,20 @@ Guidelines:
   }
 }
 
-class WhatsAppPatternPainter extends CustomPainter {
+class RoomPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    // Fill with cream background
-    final paint = Paint()..color = const Color(0xFFF9F7F4);
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
-    
-    // Create dot pattern
+    // Create subtle dot pattern like homescreen
     final dotPaint = Paint()
-      ..color = Colors.grey.withOpacity(0.08)
+      ..color = const Color(0xFFF5F5DC).withOpacity(0.2) // Subtle pattern like home
       ..style = PaintingStyle.fill;
     
-    const dotSize = 1.5;
-    const spacing = 20.0;
+    const dotSize = 1.0;
+    const spacing = 25.0; // Wider spacing for cleaner look
     
     for (double x = 0; x < size.width; x += spacing) {
       for (double y = 0; y < size.height; y += spacing) {
         canvas.drawCircle(Offset(x, y), dotSize, dotPaint);
-        // Add smaller dots for more WhatsApp-like pattern
-        if ((x / spacing) % 2 == 0 && (y / spacing) % 2 == 0) {
-          canvas.drawCircle(Offset(x + spacing/2, y + spacing/2), dotSize * 0.5, dotPaint);
-        }
       }
     }
   }

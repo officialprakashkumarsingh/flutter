@@ -33,9 +33,9 @@ class _CharactersPageState extends State<CharactersPage> {
                 // Header
                 Text(
                   'Characters',
-                  style: GoogleFonts.inter(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
+                  style: GoogleFonts.spaceMono( // Same font as AhamAI
+                    fontSize: 20, // Bigger and consistent
+                    fontWeight: FontWeight.w600,
                     color: const Color(0xFF09090B),
                   ),
                 ),

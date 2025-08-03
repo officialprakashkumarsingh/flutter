@@ -3,14 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class HistoryPage extends StatefulWidget {
-  const HistoryPage({super.key});
+class SavedPage extends StatefulWidget {
+  const SavedPage({super.key});
 
   @override
-  State<HistoryPage> createState() => _HistoryPageState();
+  State<SavedPage> createState() => _SavedPageState();
 }
 
-class _HistoryPageState extends State<HistoryPage> {
+class _SavedPageState extends State<SavedPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -61,16 +61,16 @@ class _HistoryPageState extends State<HistoryPage> {
         children: [
           // Title and Description
           Text(
-            'History',
-            style: GoogleFonts.inter(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
+            'Saved',
+            style: GoogleFonts.spaceMono( // Same font as AhamAI
+              fontSize: 20, // Bigger
+              fontWeight: FontWeight.w600,
               color: const Color(0xFF09090B),
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Your chat conversations',
+            'Your saved conversations',
             style: GoogleFonts.inter(
               fontSize: 13,
               color: const Color(0xFF71717A),
