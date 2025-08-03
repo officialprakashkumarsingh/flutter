@@ -160,14 +160,23 @@ class CollaborationService {
   Future<List<CollaborationRoom>> getUserRooms() async {
     if (_currentUserId == null) return [];
 
+    // Get all rooms where user is a member
+    final memberResponse = await _supabase
+        .from('room_members')
+        .select('room_id')
+        .eq('user_id', _currentUserId!)
+        .eq('is_active', true);
+
+    final roomIds = memberResponse.map((m) => m['room_id'] as String).toList();
+    
+    if (roomIds.isEmpty) return [];
+
+    // Get room details for user's rooms
     final response = await _supabase
         .from('collaboration_rooms')
-        .select('''
-          *,
-          room_members!inner(*)
-        ''')
-        .eq('room_members.user_id', _currentUserId!)
-        .eq('room_members.is_active', true)
+        .select('*')
+        .in_('id', roomIds)
+        .eq('is_active', true)
         .order('last_activity', ascending: false);
 
     return response.map((json) => CollaborationRoom.fromJson(json)).toList();
@@ -241,6 +250,19 @@ class CollaborationService {
       throw Exception('User not authenticated');
     }
 
+    // Security check: Verify user is member of this room
+    final memberCheck = await _supabase
+        .from('room_members')
+        .select('id')
+        .eq('room_id', roomId)
+        .eq('user_id', _currentUserId!)
+        .eq('is_active', true)
+        .maybeSingle();
+    
+    if (memberCheck == null) {
+      throw Exception('Access denied: You are not a member of this room');
+    }
+
     await _supabase.from('room_messages').insert({
       'room_id': roomId,
       'user_id': _currentUserId,
@@ -274,6 +296,21 @@ class CollaborationService {
 
   /// Get room messages
   Future<List<RoomMessage>> getRoomMessages(String roomId, {int limit = 50}) async {
+    // Security check: Verify user is member of this room
+    if (_currentUserId != null) {
+      final memberCheck = await _supabase
+          .from('room_members')
+          .select('id')
+          .eq('room_id', roomId)
+          .eq('user_id', _currentUserId!)
+          .eq('is_active', true)
+          .maybeSingle();
+      
+      if (memberCheck == null) {
+        throw Exception('Access denied: You are not a member of this room');
+      }
+    }
+
     final response = await _supabase
         .from('room_messages')
         .select()
