@@ -270,39 +270,12 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
 
   Widget _buildMessageBubble() {
     return Flexible(
-      child: Container(
-        decoration: BoxDecoration(
-          color: _getBubbleColor(),
-          borderRadius: _getBubbleBorderRadius(),
-          border: widget.message.messageType != 'system'
-              ? Border.all(
-                  color: const Color(0xFFE4E4E7).withOpacity(0.3),
-                  width: 1,
-                )
-              : null,
-          boxShadow: widget.message.messageType == 'ai' 
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildMessageHeader(),
-            _buildMessageContent(),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildMessageHeader(),
+          _buildMessageContent(),
+        ],
       ),
     );
   }
@@ -310,46 +283,37 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
   Widget _buildMessageHeader() {
     if (widget.message.messageType == 'system') return const SizedBox.shrink();
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-                     Text(
-             widget.message.userName,
-             style: GoogleFonts.inter(
-               fontSize: 12,
-               fontWeight: FontWeight.w600,
-               color: widget.message.messageType == 'ai'
-                   ? const Color(0xFF09090B) // Your app's dark color for AI
-                   : widget.isOwnMessage 
-                       ? Colors.white.withOpacity(0.9) // White for own messages
-                       : const Color(0xFF09090B), // Dark for others
-             ),
-           ),
-           const SizedBox(width: 6),
-           Text(
-             _formatTime(widget.message.createdAt),
-             style: GoogleFonts.inter(
-               fontSize: 11,
-               color: widget.isOwnMessage 
-                   ? Colors.white.withOpacity(0.7) // White for own messages
-                   : const Color(0xFF71717A), // Gray for others
-             ),
-           ),
+          Text(
+            widget.message.messageType == 'ai' ? 'AhamAI' : widget.message.userName,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: widget.message.messageType == 'ai'
+                  ? const Color(0xFF7C3AED) // Purple for AI
+                  : const Color(0xFF09090B), // Dark for users
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            _formatTime(widget.message.createdAt),
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              color: const Color(0xFF71717A), // Gray for all timestamps
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildMessageContent() {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        12, 
-        widget.message.messageType == 'system' ? 8 : 0, 
-        12, 
-        8
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
       child: widget.message.messageType == 'ai' 
           ? _buildMarkdownContent()
           : _buildTextContent(),

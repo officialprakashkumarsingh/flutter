@@ -19,10 +19,10 @@ class CollaborationInputBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(bottom: 16),
       decoration: const BoxDecoration(
-        color: Color(0xFFE5DDD5), // Match WhatsApp background
+        color: Colors.white, // Clean white background
         border: Border(
           top: BorderSide(
-            color: Color(0xFFD1C7BD),
+            color: Color(0xFFE4E4E7),
             width: 1,
           ),
         ),

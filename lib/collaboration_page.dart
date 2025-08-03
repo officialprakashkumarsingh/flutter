@@ -120,27 +120,44 @@ class _ChatsPageState extends State<ChatsPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header Section - Fixed positioning
-            _buildHeader(),
-            
-            // Content Area
-            Expanded(
-              child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF09090B)),
-                      ),
-                    )
-                  : _filteredRooms.isEmpty
-                      ? _buildEmptyState()
-                      : _buildRoomsList(),
-            ),
-          ],
+      body: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          image: DecorationImage(
+            image: _createCollabsDotPattern(),
+            repeat: ImageRepeat.repeat,
+            opacity: 0.02,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header Section - Fixed positioning
+              _buildHeader(),
+              
+              // Content Area
+              Expanded(
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF09090B)),
+                        ),
+                      )
+                    : _filteredRooms.isEmpty
+                        ? _buildEmptyState()
+                        : _buildRoomsList(),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  ImageProvider _createCollabsDotPattern() {
+    // Creating a subtle dot pattern for Collabs page
+    return const NetworkImage(
+      'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCAzMCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTUiIGN5PSIxNSIgcj0iMSIgZmlsbD0iIzAwMDAwMCIgZmlsbC1vcGFjaXR5PSIwLjA4Ii8+CjxjaXJjbGUgY3g9IjUiIGN5PSI1IiByPSIwLjUiIGZpbGw9IiMwMDAwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNCIvPgo8Y2lyY2xlIGN4PSIyNSIgY3k9IjI1IiByPSIwLjUiIGZpbGw9IiMwMDAwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNCIvPgo8L3N2Zz4='
     );
   }
 
@@ -148,13 +165,7 @@ class _ChatsPageState extends State<ChatsPage> {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
       decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xFFE4E4E7),
-            width: 1,
-          ),
-        ),
+        color: Colors.transparent,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -295,7 +306,7 @@ class _ChatsPageState extends State<ChatsPage> {
       height: isLarge ? 44 : 36,
       decoration: BoxDecoration(
         color: isPrimary ? const Color(0xFF09090B) : Colors.white,
-        borderRadius: BorderRadius.circular(isLarge ? 12 : 8),
+        borderRadius: BorderRadius.circular(isLarge ? 18 : 14),
         border: Border.all(
           color: const Color(0xFFE4E4E7),
           width: 1,
@@ -312,7 +323,7 @@ class _ChatsPageState extends State<ChatsPage> {
         color: Colors.transparent,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(isLarge ? 12 : 8),
+          borderRadius: BorderRadius.circular(isLarge ? 18 : 14),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: isLarge ? 20 : 12),
             child: Row(
@@ -498,19 +509,8 @@ class _ChatsPageState extends State<ChatsPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.8),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFE4E4E7),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF09090B).withOpacity(0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 1),
-          ),
-        ],
       ),
       child: Material(
         color: Colors.transparent,

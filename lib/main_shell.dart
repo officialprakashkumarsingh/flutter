@@ -826,7 +826,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
               child: Material(
-                color: const Color(0xFFF8F9FA),
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
                 child: InkWell(
                   onTap: () {
@@ -881,7 +881,7 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin {
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
               child: Material(
-                color: const Color(0xFFF8F9FA),
+                color: Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
                 child: InkWell(
                   onTap: () {

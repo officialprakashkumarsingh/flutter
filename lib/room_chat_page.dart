@@ -103,7 +103,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE5DDD5), // WhatsApp background color
+      backgroundColor: Colors.white, // Clean white background
       appBar: _buildShadcnAppBar(),
       body: Stack(
         children: [
@@ -164,49 +164,21 @@ class _RoomChatPageState extends State<RoomChatPage> {
       ),
       actions: [
         // Copy invite code
-        Container(
-          margin: const EdgeInsets.only(right: 4),
-          child: IconButton(
-            onPressed: _copyInviteCode,
-            icon: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: const Color(0xFFE4E4E7),
-                  width: 1,
-                ),
-              ),
-              child: const FaIcon(
-                FontAwesomeIcons.copy,
-                size: 14,
-                color: Color(0xFF09090B),
-              ),
-            ),
+        IconButton(
+          onPressed: _copyInviteCode,
+          icon: const FaIcon(
+            FontAwesomeIcons.copy,
+            size: 18,
+            color: Color(0xFF09090B),
           ),
         ),
         // Room menu
-        Container(
-          margin: const EdgeInsets.only(right: 8),
-          child: IconButton(
-            onPressed: () => _showShadcnActionSheet(context),
-            icon: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FA),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: const Color(0xFFE4E4E7),
-                  width: 1,
-                ),
-              ),
-              child: const FaIcon(
-                FontAwesomeIcons.ellipsisVertical,
-                size: 14,
-                color: Color(0xFF09090B),
-              ),
-            ),
+        IconButton(
+          onPressed: () => _showShadcnActionSheet(context),
+          icon: const FaIcon(
+            FontAwesomeIcons.ellipsisVertical,
+            size: 18,
+            color: Color(0xFF09090B),
           ),
         ),
       ],
@@ -223,8 +195,13 @@ class _RoomChatPageState extends State<RoomChatPage> {
 
   Widget _buildChatInterface() {
     return Container(
-      decoration: const BoxDecoration(
-        color: Color(0xFFE5DDD5), // WhatsApp background
+      decoration: BoxDecoration(
+        color: Colors.white,
+        image: DecorationImage(
+          image: _createWhatsAppDotPattern(),
+          repeat: ImageRepeat.repeat,
+          opacity: 0.03,
+        ),
       ),
       child: Column(
         children: [
@@ -245,6 +222,13 @@ class _RoomChatPageState extends State<RoomChatPage> {
           ),
         ],
       ),
+    );
+  }
+
+  ImageProvider _createWhatsAppDotPattern() {
+    // Creating a subtle dot pattern like WhatsApp
+    return const NetworkImage(
+      'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMC44IiBmaWxsPSIjMDAwMDAwIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+'
     );
   }
 
