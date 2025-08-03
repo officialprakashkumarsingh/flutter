@@ -150,139 +150,90 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
   }
 
   Widget _buildPerplexityUserMessage() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Flexible(
-          child: Container(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.75,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF374151),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              widget.message.text,
-              style: GoogleFonts.inter(
-                fontSize: 15,
-                color: Colors.white,
-                fontWeight: FontWeight.w400,
-                height: 1.4,
+    return Padding(
+      padding: const EdgeInsets.only(left: 40), // Leave space on left for AI messages
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Flexible(
+            child: Container(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.7,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF374151),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                widget.message.text,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w400,
+                  height: 1.4,
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: const Color(0xFF374151),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Icon(
-            Icons.person,
-            size: 18,
-            color: Colors.white,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildPerplexityBotMessage() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: const Color(0xFF374151),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Icon(
-            Icons.auto_awesome,
-            size: 18,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFFE5E7EB),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+    return Padding(
+      padding: const EdgeInsets.only(right: 40), // Leave space on right for user messages
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.message.text.isNotEmpty)
+            MarkdownBody(
+              data: widget.message.text,
+              styleSheet: MarkdownStyleSheet(
+                p: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: const Color(0xFF111827),
+                  fontWeight: FontWeight.w400,
+                  height: 1.5,
                 ),
-              ],
+                h1: GoogleFonts.inter(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF111827),
+                ),
+                h2: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+                h3: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+                code: GoogleFonts.jetBrainsMono(
+                  fontSize: 14,
+                  backgroundColor: const Color(0xFFF3F4F6),
+                  color: const Color(0xFF374151),
+                ),
+                codeblockDecoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                blockquote: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: const Color(0xFF6B7280),
+                  fontStyle: FontStyle.italic,
+                ),
+                listBullet: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: const Color(0xFF374151),
+                ),
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (widget.message.text.isNotEmpty)
-                  MarkdownBody(
-                    data: widget.message.text,
-                    styleSheet: MarkdownStyleSheet(
-                      p: GoogleFonts.inter(
-                        fontSize: 15,
-                        color: const Color(0xFF111827),
-                        fontWeight: FontWeight.w400,
-                        height: 1.5,
-                      ),
-                      h1: GoogleFonts.inter(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF111827),
-                      ),
-                      h2: GoogleFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF111827),
-                      ),
-                      h3: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF111827),
-                      ),
-                      code: GoogleFonts.jetBrainsMono(
-                        fontSize: 14,
-                        backgroundColor: const Color(0xFFF3F4F6),
-                        color: const Color(0xFF374151),
-                      ),
-                      codeblockDecoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      blockquote: GoogleFonts.inter(
-                        fontSize: 15,
-                        color: const Color(0xFF6B7280),
-                        fontStyle: FontStyle.italic,
-                      ),
-                      listBullet: GoogleFonts.inter(
-                        fontSize: 15,
-                        color: const Color(0xFF374151),
-                      ),
-                    ),
-                  ),
-                // Add thinking section if needed (placeholder for future implementation)
-              ],
-            ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

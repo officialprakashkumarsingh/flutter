@@ -113,17 +113,9 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
         height: 70, // Slightly taller for better ergonomics
         margin: const EdgeInsets.only(bottom: 8), // Lift higher for easier access
         padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF9F7F4), // Match screen background exactly
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(0), // No rounded corners for seamless look
-          ),
-          border: Border(
-            top: BorderSide(
-              color: Colors.grey.withOpacity(0.1),
-              width: 0.5,
-            ),
-          ),
+        decoration: const BoxDecoration(
+          color: Color(0xFFF9F7F4), // Match screen background exactly
+          // Removed border/separator
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -148,15 +140,13 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
         curve: Curves.easeInOutCubic,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Better touch area
         child: AnimatedScale(
-          scale: isSelected ? 1.2 : 1.0, // More pronounced scale for better visibility
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.elasticOut, // Cool elastic animation
+          scale: isSelected ? 1.15 : 1.0, // Better animation
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.elasticOut, // Better elastic animation
           child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isSelected 
-                ? Colors.black.withOpacity(0.05) // Subtle background when active
-                : Colors.transparent,
+              color: Colors.transparent, // No grey background
               borderRadius: BorderRadius.circular(12),
             ),
             child: icon,
@@ -166,59 +156,51 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     );
   }
 
-  // Custom painted home icon
+  // FontAwesome home icon
   Widget _buildHomeIcon() {
     final isSelected = _currentIndex == 0;
-    return CustomPaint(
-      size: const Size(22, 22), // Smaller, more proportional size
-      painter: HomeIconPainter(
-        color: isSelected 
-          ? const Color(0xFF374151) // Lighter gray when active (like Perplexity)
-          : const Color(0xFF9CA3AF), // Light gray when inactive
-        isSelected: isSelected,
-      ),
+    return FaIcon(
+      FontAwesomeIcons.house,
+      size: 20,
+      color: isSelected 
+        ? const Color(0xFF374151) // Active color
+        : const Color(0xFF9CA3AF), // Inactive color
     );
   }
 
-  // Custom painted characters icon
+  // FontAwesome characters icon
   Widget _buildCharactersIcon() {
     final isSelected = _currentIndex == 1;
-    return CustomPaint(
-      size: const Size(22, 22), // Smaller, more proportional size
-      painter: CharactersIconPainter(
-        color: isSelected 
-          ? const Color(0xFF374151) // Lighter gray when active
-          : const Color(0xFF9CA3AF), // Light gray when inactive
-        isSelected: isSelected,
-      ),
+    return FaIcon(
+      FontAwesomeIcons.robot,
+      size: 20,
+      color: isSelected 
+        ? const Color(0xFF374151) // Active color
+        : const Color(0xFF9CA3AF), // Inactive color
     );
   }
 
-  // Custom painted collabs icon
+  // FontAwesome collabs icon
   Widget _buildCollabsIcon() {
     final isSelected = _currentIndex == 2;
-    return CustomPaint(
-      size: const Size(22, 22), // Smaller, more proportional size
-      painter: CollabsIconPainter(
-        color: isSelected 
-          ? const Color(0xFF374151) // Lighter gray when active
-          : const Color(0xFF9CA3AF), // Light gray when inactive
-        isSelected: isSelected,
-      ),
+    return FaIcon(
+      FontAwesomeIcons.users,
+      size: 20,
+      color: isSelected 
+        ? const Color(0xFF374151) // Active color
+        : const Color(0xFF9CA3AF), // Inactive color
     );
   }
 
-  // Custom painted history icon
+  // FontAwesome history icon
   Widget _buildHistoryIcon() {
     final isSelected = _currentIndex == 3;
-    return CustomPaint(
-      size: const Size(22, 22), // Smaller, more proportional size
-      painter: HistoryIconPainter(
-        color: isSelected 
-          ? const Color(0xFF374151) // Lighter gray when active
-          : const Color(0xFF9CA3AF), // Light gray when inactive
-        isSelected: isSelected,
-      ),
+    return FaIcon(
+      FontAwesomeIcons.clockRotateLeft,
+      size: 20,
+      color: isSelected 
+        ? const Color(0xFF374151) // Active color
+        : const Color(0xFF9CA3AF), // Inactive color
     );
   }
 }
@@ -266,195 +248,3 @@ class MainPatternPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// Custom icon painters with better proportions and modern design
-class HomeIconPainter extends CustomPainter {
-  final Color color;
-  final bool isSelected;
-  
-  HomeIconPainter({required this.color, required this.isSelected});
-  
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = isSelected ? 2.0 : 1.8
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    
-    final path = Path();
-    
-    // Modern minimalist house shape - better proportions
-    path.moveTo(size.width * 0.25, size.height * 0.75);
-    path.lineTo(size.width * 0.25, size.height * 0.5);
-    path.lineTo(size.width * 0.5, size.height * 0.3);
-    path.lineTo(size.width * 0.75, size.height * 0.5);
-    path.lineTo(size.width * 0.75, size.height * 0.75);
-    path.close();
-    
-    canvas.drawPath(path, paint);
-    
-    // Door - more proportional
-    final doorRect = Rect.fromLTWH(
-      size.width * 0.45, 
-      size.height * 0.6, 
-      size.width * 0.1, 
-      size.width * 0.15
-    );
-    canvas.drawRect(doorRect, paint);
-  }
-  
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
-}
-
-class CharactersIconPainter extends CustomPainter {
-  final Color color;
-  final bool isSelected;
-  
-  CharactersIconPainter({required this.color, required this.isSelected});
-  
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = isSelected ? 2.0 : 1.8
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    
-    // Modern AI/robot head design - cleaner and smaller
-    final headRadius = size.width * 0.14;
-    final headCenter = Offset(size.width * 0.5, size.height * 0.4);
-    
-    // Head circle
-    canvas.drawCircle(headCenter, headRadius, paint);
-    
-    // Body rectangle - more proportional
-    final bodyRect = Rect.fromLTWH(
-      size.width * 0.4, 
-      size.height * 0.54, 
-      size.width * 0.2, 
-      size.height * 0.25
-    );
-    canvas.drawRect(bodyRect, paint);
-    
-    // Simple eyes (if selected)
-    if (isSelected) {
-      final eyePaint = Paint()
-        ..color = color
-        ..style = PaintingStyle.fill;
-      
-      canvas.drawCircle(
-        Offset(size.width * 0.46, size.height * 0.37), 
-        1.5, 
-        eyePaint
-      );
-      canvas.drawCircle(
-        Offset(size.width * 0.54, size.height * 0.37), 
-        1.5, 
-        eyePaint
-      );
-    }
-  }
-  
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
-}
-
-class CollabsIconPainter extends CustomPainter {
-  final Color color;
-  final bool isSelected;
-  
-  CollabsIconPainter({required this.color, required this.isSelected});
-  
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = isSelected ? 2.0 : 1.8
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    
-    // Three people in a more compact, modern arrangement
-    final radius = size.width * 0.06;
-    
-    // Person 1 (left)
-    canvas.drawCircle(
-      Offset(size.width * 0.3, size.height * 0.35), 
-      radius, 
-      paint
-    );
-    
-    // Person 2 (center, slightly elevated)
-    canvas.drawCircle(
-      Offset(size.width * 0.5, size.height * 0.32), 
-      radius, 
-      paint
-    );
-    
-    // Person 3 (right)
-    canvas.drawCircle(
-      Offset(size.width * 0.7, size.height * 0.35), 
-      radius, 
-      paint
-    );
-    
-    // Simple connection line at bottom
-    if (isSelected) {
-      final path = Path();
-      path.moveTo(size.width * 0.25, size.height * 0.65);
-      path.lineTo(size.width * 0.75, size.height * 0.65);
-      canvas.drawPath(path, paint);
-    }
-  }
-  
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
-}
-
-class HistoryIconPainter extends CustomPainter {
-  final Color color;
-  final bool isSelected;
-  
-  HistoryIconPainter({required this.color, required this.isSelected});
-  
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = isSelected ? 2.0 : 1.8
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    
-    final center = Offset(size.width * 0.5, size.height * 0.5);
-    final radius = size.width * 0.25;
-    
-    // Clock circle - more proportional
-    canvas.drawCircle(center, radius, paint);
-    
-    // Clock hands - simpler design
-    final path = Path();
-    
-    // Short hour hand (pointing to 3)
-    path.moveTo(center.dx, center.dy);
-    path.lineTo(center.dx + radius * 0.5, center.dy);
-    
-    // Long minute hand (pointing to 12)
-    path.moveTo(center.dx, center.dy);
-    path.lineTo(center.dx, center.dy - radius * 0.7);
-    
-    canvas.drawPath(path, paint);
-    
-    // Center dot
-    final centerPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, 1.5, centerPaint);
-  }
-  
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => true;
-}

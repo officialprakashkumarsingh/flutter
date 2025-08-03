@@ -141,16 +141,16 @@ class _ChatsPageState extends State<ChatsPage> {
                   Text(
                     'Collabs',
                     style: GoogleFonts.inter(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
                       color: const Color(0xFF111827),
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     'Collaborate with friends, families and teams',
                     style: GoogleFonts.inter(
-                      fontSize: 16,
+                      fontSize: 13,
                       color: const Color(0xFF6B7280),
                       fontWeight: FontWeight.w400,
                     ),
@@ -203,63 +203,63 @@ class _ChatsPageState extends State<ChatsPage> {
                    Row(
                      children: [
                        Expanded(
-                         child: ElevatedButton(
-                           onPressed: _showCreateRoomDialog,
-                           style: ElevatedButton.styleFrom(
-                             backgroundColor: const Color(0xFF374151),
-                             foregroundColor: Colors.white,
-                             padding: const EdgeInsets.symmetric(vertical: 12),
-                             shape: RoundedRectangleBorder(
-                               borderRadius: BorderRadius.circular(8),
-                             ),
-                             elevation: 0,
-                           ),
-                           child: Row(
-                             mainAxisAlignment: MainAxisAlignment.center,
-                             children: [
-                               const Icon(Icons.add, size: 18),
-                               const SizedBox(width: 8),
-                               Text(
-                                 'Create Room',
-                                 style: GoogleFonts.inter(
-                                   fontSize: 14,
-                                   fontWeight: FontWeight.w600,
-                                 ),
-                               ),
-                             ],
-                           ),
-                         ),
+                                                 child: ElevatedButton(
+                          onPressed: _showCreateRoomDialog,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF374151),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.add, size: 14),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Create',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                        ),
                        const SizedBox(width: 12),
                        Expanded(
-                         child: OutlinedButton(
-                           onPressed: _showJoinRoomDialog,
-                           style: OutlinedButton.styleFrom(
-                             foregroundColor: const Color(0xFF374151),
-                             padding: const EdgeInsets.symmetric(vertical: 12),
-                             shape: RoundedRectangleBorder(
-                               borderRadius: BorderRadius.circular(8),
-                             ),
-                             side: const BorderSide(
-                               color: Color(0xFFE5E7EB),
-                               width: 1,
-                             ),
-                           ),
-                           child: Row(
-                             mainAxisAlignment: MainAxisAlignment.center,
-                             children: [
-                               const Icon(Icons.login, size: 18),
-                               const SizedBox(width: 8),
-                               Text(
-                                 'Join Room',
-                                 style: GoogleFonts.inter(
-                                   fontSize: 14,
-                                   fontWeight: FontWeight.w600,
-                                 ),
-                               ),
-                             ],
-                           ),
-                         ),
+                                                   child: OutlinedButton(
+                            onPressed: _showJoinRoomDialog,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: const Color(0xFF374151),
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              side: const BorderSide(
+                                color: Color(0xFFE5E7EB),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.login, size: 14),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Join',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                        ),
                      ],
                    ),
@@ -272,15 +272,10 @@ class _ChatsPageState extends State<ChatsPage> {
               child: Container(
                 color: const Color(0xFFF9F7F4),
                 child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF374151)),
-                          strokeWidth: 2,
-                        ),
-                      )
+                    ? _buildShimmerLoading()
                     : _filteredRooms.isEmpty
-                        ? _buildPerplexityEmptyState()
-                        : _buildPerplexityRoomsList(),
+                        ? _buildModernEmptyState()
+                        : _buildModernRoomsList(),
               ),
             ),
           ],
@@ -1006,6 +1001,204 @@ class _ChatsPageState extends State<ChatsPage> {
             onPressed: () => Navigator.pop(context),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildModernRoomsList() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ListView.builder(
+        itemCount: _filteredRooms.length,
+        itemBuilder: (context, index) {
+          final room = _filteredRooms[index];
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _joinRoomChat(room),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      // Small icon
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.groups_outlined,
+                          color: Color(0xFF6B7280),
+                          size: 16,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      
+                      // Room Info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              room.name,
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF111827),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Text(
+                                  '${room.memberCount} members',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: const Color(0xFF9CA3AF),
+                                  ),
+                                ),
+                                if (room.description != null && room.description!.isNotEmpty) ...[
+                                  const Text(' • ', style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 11)),
+                                  Flexible(
+                                    child: Text(
+                                      room.description!,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        color: const Color(0xFF9CA3AF),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // Small arrow
+                      const Icon(
+                        Icons.chevron_right,
+                        size: 16,
+                        color: Color(0xFFD1D5DB),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildModernEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.groups_outlined,
+                size: 24,
+                color: Color(0xFFD1D5DB),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No rooms yet',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF374151),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Create your first room to start collaborating',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: const Color(0xFF9CA3AF),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerLoading() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: List.generate(6, (index) => _buildShimmerItem()),
+      ),
+    );
+  }
+
+  Widget _buildShimmerItem() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          // Shimmer icon
+          _buildShimmerBox(28, 28),
+          const SizedBox(width: 12),
+          
+          // Shimmer content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildShimmerBox(120, 14),
+                const SizedBox(height: 4),
+                _buildShimmerBox(80, 11),
+              ],
+            ),
+          ),
+          
+          // Shimmer arrow
+          _buildShimmerBox(16, 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShimmerBox(double width, double height) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4),
+        gradient: const LinearGradient(
+          begin: Alignment(-1.0, 0.0),
+          end: Alignment(1.0, 0.0),
+          colors: [
+            Color(0xFFF3F4F6),
+            Color(0xFFE5E7EB),
+            Color(0xFFF3F4F6),
+          ],
+          stops: [0.0, 0.5, 1.0],
+        ),
       ),
     );
   }
