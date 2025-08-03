@@ -287,7 +287,7 @@ class CollaborationService {
   Future<void> _sendSystemMessage(String roomId, String content) async {
     await _supabase.from('room_messages').insert({
       'room_id': roomId,
-      'user_id': null,
+      'user_id': _currentUserId, // Use current user ID instead of null
       'user_name': 'System',
       'content': content,
       'message_type': 'system',
