@@ -52,7 +52,13 @@ class InputBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(bottom: 16),
       decoration: const BoxDecoration(
-        color: Color(0xFFF9F7F4), // Consistent cream background
+        color: Colors.white, // Keep input area completely white
+        border: Border(
+          top: BorderSide(
+            color: Color(0xFFE5E7EB),
+            width: 1,
+          ),
+        ),
       ),
       child: Column(
         children: [
@@ -251,7 +257,7 @@ class InputBar extends StatelessWidget {
             margin: EdgeInsets.fromLTRB(20, isEditing ? 0 : 16, 20, 0),
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              color: const Color(0xFFF9F7F4), // Consistent cream background
+              color: Colors.white, // White input field background
               borderRadius: BorderRadius.circular(16), // More rounded for smooth feel
               boxShadow: [
                 BoxShadow(

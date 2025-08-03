@@ -108,32 +108,33 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   }
 
   Widget _buildBottomNavBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9F7F4), // Cream background
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+    return SafeArea(
+      child: Container(
+        height: 70, // Slightly taller for better ergonomics
+        margin: const EdgeInsets.only(bottom: 8), // Lift higher for easier access
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9F7F4), // Match screen background exactly
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(0), // No rounded corners for seamless look
           ),
-        ],
-      ),
-              child: SafeArea(
-          child: Container(
-            height: 60, // Slightly smaller
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(_buildHomeIcon(), 0),
-                _buildNavItem(_buildCharactersIcon(), 1),
-                _buildNavItem(_buildCollabsIcon(), 2),
-                _buildNavItem(_buildHistoryIcon(), 3),
-              ],
+          border: Border(
+            top: BorderSide(
+              color: Colors.grey.withOpacity(0.1),
+              width: 0.5,
             ),
           ),
         ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildNavItem(_buildHomeIcon(), 0),
+            _buildNavItem(_buildCharactersIcon(), 1),
+            _buildNavItem(_buildCollabsIcon(), 2),
+            _buildNavItem(_buildHistoryIcon(), 3),
+          ],
+        ),
+      ),
     );
   }
 
@@ -143,73 +144,81 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     return GestureDetector(
       onTap: () => _onNavTap(index),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150), // Faster response
+        duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // iOS-style icon with instant scale, then reset
-            AnimatedScale(
-              scale: isSelected ? 1.1 : 1.0, // Clean scale effect
-              duration: const Duration(milliseconds: 150),
-              curve: Curves.easeInOutCubic,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.transparent, // No background colors
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: icon,
-              ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Better touch area
+        child: AnimatedScale(
+          scale: isSelected ? 1.2 : 1.0, // More pronounced scale for better visibility
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.elasticOut, // Cool elastic animation
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isSelected 
+                ? Colors.black.withOpacity(0.05) // Subtle background when active
+                : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
+            child: icon,
+          ),
         ),
       ),
     );
   }
 
+  // Custom painted home icon
   Widget _buildHomeIcon() {
     final isSelected = _currentIndex == 0;
-    return FaIcon(
-      FontAwesomeIcons.house, // Beautiful house icon
-      size: 20, // Slightly larger for better visibility
-      color: isSelected 
-        ? const Color(0xFF09090B) // Pure black when active
-        : const Color(0xFF64748B), // Grey when inactive
+    return CustomPaint(
+      size: const Size(24, 24),
+      painter: HomeIconPainter(
+        color: isSelected 
+          ? const Color(0xFF374151) // Lighter gray when active (like Perplexity)
+          : const Color(0xFF9CA3AF), // Light gray when inactive
+        isSelected: isSelected,
+      ),
     );
   }
 
+  // Custom painted characters icon
   Widget _buildCharactersIcon() {
     final isSelected = _currentIndex == 1;
-    return FaIcon(
-      FontAwesomeIcons.robot, // Perfect robot icon for AI characters
-      size: 20,
-      color: isSelected 
-        ? const Color(0xFF09090B) // Pure black when active
-        : const Color(0xFF64748B), // Grey when inactive
+    return CustomPaint(
+      size: const Size(24, 24),
+      painter: CharactersIconPainter(
+        color: isSelected 
+          ? const Color(0xFF374151) // Lighter gray when active
+          : const Color(0xFF9CA3AF), // Light gray when inactive
+        isSelected: isSelected,
+      ),
     );
   }
 
+  // Custom painted collabs icon
   Widget _buildCollabsIcon() {
     final isSelected = _currentIndex == 2;
-    return FaIcon(
-      FontAwesomeIcons.peopleGroup, // Beautiful collaboration icon
-      size: 20,
-      color: isSelected 
-        ? const Color(0xFF09090B) // Pure black when active
-        : const Color(0xFF64748B), // Grey when inactive
+    return CustomPaint(
+      size: const Size(24, 24),
+      painter: CollabsIconPainter(
+        color: isSelected 
+          ? const Color(0xFF374151) // Lighter gray when active
+          : const Color(0xFF9CA3AF), // Light gray when inactive
+        isSelected: isSelected,
+      ),
     );
   }
 
+  // Custom painted history icon
   Widget _buildHistoryIcon() {
     final isSelected = _currentIndex == 3;
-    return FaIcon(
-      FontAwesomeIcons.clockRotateLeft, // Perfect history/time icon
-      size: 20,
-      color: isSelected 
-        ? const Color(0xFF09090B) // Pure black when active
-        : const Color(0xFF64748B), // Grey when inactive
+    return CustomPaint(
+      size: const Size(24, 24),
+      painter: HistoryIconPainter(
+        color: isSelected 
+          ? const Color(0xFF374151) // Lighter gray when active
+          : const Color(0xFF9CA3AF), // Light gray when inactive
+        isSelected: isSelected,
+      ),
     );
   }
 }
@@ -255,4 +264,209 @@ class MainPatternPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Custom icon painters with cool animations
+class HomeIconPainter extends CustomPainter {
+  final Color color;
+  final bool isSelected;
+  
+  HomeIconPainter({required this.color, required this.isSelected});
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = isSelected ? 2.5 : 2.0
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    
+    final path = Path();
+    
+    // Beautiful house shape
+    path.moveTo(size.width * 0.2, size.height * 0.8);
+    path.lineTo(size.width * 0.2, size.height * 0.45);
+    path.lineTo(size.width * 0.5, size.height * 0.2);
+    path.lineTo(size.width * 0.8, size.height * 0.45);
+    path.lineTo(size.width * 0.8, size.height * 0.8);
+    path.lineTo(size.width * 0.2, size.height * 0.8);
+    
+    // Door
+    path.moveTo(size.width * 0.45, size.height * 0.8);
+    path.lineTo(size.width * 0.45, size.height * 0.6);
+    path.lineTo(size.width * 0.55, size.height * 0.6);
+    path.lineTo(size.width * 0.55, size.height * 0.8);
+    
+    canvas.drawPath(path, paint);
+    
+    // Window (if selected)
+    if (isSelected) {
+      final windowPaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(
+        Offset(size.width * 0.35, size.height * 0.5), 
+        2, 
+        windowPaint
+      );
+    }
+  }
+  
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
+}
+
+class CharactersIconPainter extends CustomPainter {
+  final Color color;
+  final bool isSelected;
+  
+  CharactersIconPainter({required this.color, required this.isSelected});
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = isSelected ? 2.5 : 2.0
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    
+    // Beautiful AI brain/character icon
+    final path = Path();
+    
+    // Head circle
+    canvas.drawCircle(
+      Offset(size.width * 0.5, size.height * 0.35),
+      size.width * 0.18,
+      paint,
+    );
+    
+    // Body
+    path.moveTo(size.width * 0.5, size.height * 0.53);
+    path.lineTo(size.width * 0.5, size.height * 0.75);
+    
+    // Arms
+    path.moveTo(size.width * 0.3, size.height * 0.6);
+    path.lineTo(size.width * 0.7, size.height * 0.6);
+    
+    canvas.drawPath(path, paint);
+    
+    // AI dots in head (if selected)
+    if (isSelected) {
+      final dotPaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.fill;
+      
+      canvas.drawCircle(Offset(size.width * 0.45, size.height * 0.32), 1, dotPaint);
+      canvas.drawCircle(Offset(size.width * 0.55, size.height * 0.32), 1, dotPaint);
+      canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.38), 1, dotPaint);
+    }
+  }
+  
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
+}
+
+class CollabsIconPainter extends CustomPainter {
+  final Color color;
+  final bool isSelected;
+  
+  CollabsIconPainter({required this.color, required this.isSelected});
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = isSelected ? 2.5 : 2.0
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    
+    // Three people collaboration
+    // Person 1
+    canvas.drawCircle(Offset(size.width * 0.25, size.height * 0.3), size.width * 0.08, paint);
+    // Person 2 (center, slightly higher)
+    canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.25), size.width * 0.08, paint);
+    // Person 3
+    canvas.drawCircle(Offset(size.width * 0.75, size.height * 0.3), size.width * 0.08, paint);
+    
+    // Bodies/connection lines
+    final path = Path();
+    path.moveTo(size.width * 0.25, size.height * 0.45);
+    path.lineTo(size.width * 0.5, size.height * 0.4);
+    path.lineTo(size.width * 0.75, size.height * 0.45);
+    
+    // Collaboration base
+    path.moveTo(size.width * 0.2, size.height * 0.75);
+    path.lineTo(size.width * 0.8, size.height * 0.75);
+    
+    canvas.drawPath(path, paint);
+    
+    // Connection dots (if selected)
+    if (isSelected) {
+      final dotPaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.fill;
+      
+      canvas.drawCircle(Offset(size.width * 0.375, size.height * 0.425), 1.5, dotPaint);
+      canvas.drawCircle(Offset(size.width * 0.625, size.height * 0.425), 1.5, dotPaint);
+    }
+  }
+  
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
+}
+
+class HistoryIconPainter extends CustomPainter {
+  final Color color;
+  final bool isSelected;
+  
+  HistoryIconPainter({required this.color, required this.isSelected});
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = isSelected ? 2.5 : 2.0
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    
+    // Clock circle
+    canvas.drawCircle(
+      Offset(size.width * 0.5, size.height * 0.5),
+      size.width * 0.35,
+      paint,
+    );
+    
+    // Clock hands
+    final path = Path();
+    
+    // Hour hand (pointing to 3)
+    path.moveTo(size.width * 0.5, size.height * 0.5);
+    path.lineTo(size.width * 0.65, size.height * 0.5);
+    
+    // Minute hand (pointing to 12)
+    path.moveTo(size.width * 0.5, size.height * 0.5);
+    path.lineTo(size.width * 0.5, size.height * 0.25);
+    
+    canvas.drawPath(path, paint);
+    
+    // Hour markers (if selected)
+    if (isSelected) {
+      final markerPaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.fill;
+      
+      // 12, 3, 6, 9 markers
+      canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.2), 1, markerPaint);
+      canvas.drawCircle(Offset(size.width * 0.8, size.height * 0.5), 1, markerPaint);
+      canvas.drawCircle(Offset(size.width * 0.5, size.height * 0.8), 1, markerPaint);
+      canvas.drawCircle(Offset(size.width * 0.2, size.height * 0.5), 1, markerPaint);
+    }
+  }
+  
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
 }

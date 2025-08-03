@@ -1923,14 +1923,25 @@ ${AgentsService.getSystemPromptAddition()}
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFF8F9FA),
+                                              color: Colors.white, // White suggestion backgrounds
                                               borderRadius: BorderRadius.circular(20),
+                                              border: Border.all(
+                                                color: const Color(0xFFE5E7EB),
+                                                width: 1,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withOpacity(0.05),
+                                                  blurRadius: 8,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
                                             ),
                                             child: Text(
                                               p,
                                               style: const TextStyle(
                                                 fontSize: 14,
-                                                color: Color(0xFF000000),
+                                                color: Color(0xFF374151), // Perplexity-style text color
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
