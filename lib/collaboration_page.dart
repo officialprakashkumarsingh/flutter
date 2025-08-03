@@ -360,7 +360,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
                           const SizedBox(width: 6),
                           Text(
                             room.inviteCode,
-                            style: GoogleFonts.mono(
+                            style: GoogleFonts.robotoMono(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                               color: const Color(0xFF71717A),
@@ -413,7 +413,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
             controller: _inviteCodeController,
             textCapitalization: TextCapitalization.characters,
             maxLength: 6,
-            style: GoogleFonts.mono(
+            style: GoogleFonts.robotoMono(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF09090B),
@@ -421,7 +421,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
             ),
             decoration: InputDecoration(
               hintText: 'ABC123',
-              hintStyle: GoogleFonts.mono(
+              hintStyle: GoogleFonts.robotoMono(
                 fontSize: 16,
                 color: const Color(0xFF71717A),
                 letterSpacing: 2,

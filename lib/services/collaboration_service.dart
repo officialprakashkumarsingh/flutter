@@ -175,7 +175,7 @@ class CollaborationService {
     final response = await _supabase
         .from('collaboration_rooms')
         .select('*')
-        .in_('id', roomIds)
+        .inFilter('id', roomIds)
         .eq('is_active', true)
         .order('last_activity', ascending: false);
 
