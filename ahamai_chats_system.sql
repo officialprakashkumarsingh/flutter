@@ -26,12 +26,7 @@ CREATE TABLE IF NOT EXISTS direct_messages (
     content TEXT NOT NULL,
     message_type VARCHAR(20) DEFAULT 'text' CHECK (message_type IN ('text', 'system')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    is_read BOOLEAN DEFAULT FALSE,
-    
-    -- Index for faster queries
-    INDEX (chat_id, created_at),
-    INDEX (sender_id),
-    INDEX (created_at)
+    is_read BOOLEAN DEFAULT FALSE
 );
 
 -- Enable RLS on new tables
