@@ -350,7 +350,7 @@ class CollaborationService {
           .from('room_members')
           .select('''
             *,
-            profiles!inner(full_name, email)
+            profiles(full_name, email)
           ''')
           .eq('room_id', roomId)
           .eq('is_active', true)
@@ -360,8 +360,10 @@ class CollaborationService {
       
       return response.map((json) {
         final profile = json['profiles'];
-        final userName = profile['full_name'] ?? profile['email']?.split('@')[0] ?? 'Unknown User';
-        final userEmail = profile['email'];
+        final userName = profile != null 
+            ? (profile['full_name'] ?? profile['email']?.split('@')[0] ?? 'User')
+            : 'User';
+        final userEmail = profile?['email'];
         
         // Add user info to the json before parsing
         json['user_name'] = userName;

@@ -116,28 +116,15 @@ class _RoomChatPageState extends State<RoomChatPage> {
           height: 0.5,
         ),
       ),
-      leading: TextButton(
+      leading: IconButton(
         onPressed: () {
           HapticFeedback.lightImpact();
           Navigator.pop(context);
         },
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              CupertinoIcons.back,
-              size: 20,
-              color: Color(0xFF007AFF),
-            ),
-            SizedBox(width: 4),
-            Text(
-              'Collaborate',
-              style: TextStyle(
-                fontSize: 17,
-                color: Color(0xFF007AFF),
-              ),
-            ),
-          ],
+        icon: const Icon(
+          CupertinoIcons.chevron_left,
+          size: 24,
+          color: Color(0xFF007AFF),
         ),
       ),
       title: GestureDetector(

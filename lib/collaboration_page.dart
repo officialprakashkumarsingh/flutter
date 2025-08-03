@@ -145,38 +145,23 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
             ],
           ),
           
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           
-          // Title Section
+          // Minimalist Title
           Row(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Collaborate',
-                    style: TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.w700,
-                      color: CupertinoColors.label.resolveFrom(context),
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Connect with friends, family & teams',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
+              Text(
+                'Collaborate',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  color: CupertinoColors.label.resolveFrom(context),
+                ),
               ),
             ],
           ),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           
           // iOS-style Segmented Control
           Container(
@@ -650,7 +635,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
   }
 
   void _showCreateRoomDialog() {
-    showDialog(
+    showCupertinoModalPopup(
       context: context,
       builder: (context) => CreateRoomDialog(
         onRoomCreated: (room) {
@@ -729,7 +714,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
 
 enum ButtonVariant { primary, secondary }
 
-// Create Room Dialog
+// iOS-Style Create Room Modal
 class CreateRoomDialog extends StatefulWidget {
   final Function(CollaborationRoom) onRoomCreated;
 
@@ -740,7 +725,6 @@ class CreateRoomDialog extends StatefulWidget {
 }
 
 class _CreateRoomDialogState extends State<CreateRoomDialog> {
-  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _collaborationService = CollaborationService();
@@ -755,173 +739,201 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFFF2F2F7),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // iOS-style handle
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD1D1D6),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
                 children: [
-                  const FaIcon(FontAwesomeIcons.plus, color: Color(0xFF09090B), size: 20),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Create Room',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF09090B),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              
-              // Room Name
-              Text(
-                'Room Name',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF09090B),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  hintText: 'e.g., Project Planning',
-                  hintStyle: GoogleFonts.inter(color: CupertinoColors.placeholderText),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: CupertinoColors.systemBlue, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: CupertinoColors.systemGrey6,
-                  contentPadding: const EdgeInsets.all(12),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a room name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              
-              // Description
-              Text(
-                'Description (Optional)',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF09090B),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _descriptionController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'What will you be working on together?',
-                  hintStyle: GoogleFonts.inter(color: CupertinoColors.placeholderText),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: CupertinoColors.systemBlue, width: 2),
-                  ),
-                  filled: true,
-                  fillColor: CupertinoColors.systemGrey6,
-                  contentPadding: const EdgeInsets.all(12),
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: _isCreating ? null : () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: BorderSide.none,
-                        ),
-                      ),
-                      child: Text(
-                        'Cancel',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: const Color(0xFF09090B),
-                        ),
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: _isCreating ? null : () => Navigator.pop(context),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Color(0xFF007AFF),
+                        fontSize: 17,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isCreating ? null : _createRoom,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF09090B),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
+                  const Expanded(
+                    child: Text(
+                      'New Room',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF000000),
                       ),
-                      child: _isCreating
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : Text(
-                              'Create',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
+                    ),
+                  ),
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: _isCreating ? null : _createRoom,
+                    child: _isCreating
+                        ? const CupertinoActivityIndicator()
+                        : const Text(
+                            'Create',
+                            style: TextStyle(
+                              color: Color(0xFF007AFF),
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
                             ),
-                    ),
+                          ),
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+            
+            // Form content
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    // Room Name Section
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF007AFF),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    CupertinoIcons.group,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Room Name',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF8E8E93),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      CupertinoTextField(
+                                        controller: _nameController,
+                                        placeholder: 'Enter room name',
+                                        style: const TextStyle(
+                                          fontSize: 17,
+                                          color: Color(0xFF000000),
+                                        ),
+                                        decoration: const BoxDecoration(),
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Description Section
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(
+                                CupertinoIcons.doc_text,
+                                color: Color(0xFF8E8E93),
+                                size: 20,
+                              ),
+                              SizedBox(width: 12),
+                              Text(
+                                'Description (Optional)',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF8E8E93),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          CupertinoTextField(
+                            controller: _descriptionController,
+                            placeholder: 'What will you be working on together?',
+                            maxLines: 3,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              color: Color(0xFF000000),
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF2F2F7),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.all(12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 40),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Future<void> _createRoom() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_nameController.text.trim().isEmpty) {
+      _showErrorAlert('Please enter a room name');
+      return;
+    }
 
     setState(() => _isCreating = true);
 
@@ -937,16 +949,26 @@ class _CreateRoomDialogState extends State<CreateRoomDialog> {
       Navigator.pop(context);
       widget.onRoomCreated(room);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to create room: ${e.toString()}'),
-          backgroundColor: const Color(0xFFEF4444),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
+      _showErrorAlert('Failed to create room: ${e.toString()}');
     } finally {
       setState(() => _isCreating = false);
     }
+  }
+
+  void _showErrorAlert(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 }
