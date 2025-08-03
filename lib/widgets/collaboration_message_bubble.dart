@@ -349,7 +349,6 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
         codeblockDecoration: BoxDecoration(
           color: const Color(0xFFF8F9FA),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE4E4E7)),
         ),
         codeblockPadding: const EdgeInsets.all(12),
       ),
@@ -409,7 +408,6 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
             decoration: BoxDecoration(
               color: const Color(0xFFF8F9FA),
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: const Color(0xFFE4E4E7)),
             ),
             child: FaIcon(
               icon,

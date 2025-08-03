@@ -29,10 +29,7 @@ class CollaborationInputBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFFF8F9FA),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFFE4E4E7),
-            width: 1,
-          ),
+
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),

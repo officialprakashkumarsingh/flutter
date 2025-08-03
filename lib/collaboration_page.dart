@@ -451,10 +451,7 @@ class _CollaborationPageState extends State<CollaborationPage> with TickerProvid
       decoration: BoxDecoration(
         color: CupertinoColors.systemBackground.resolveFrom(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: CupertinoColors.separator.resolveFrom(context).withOpacity(0.2),
-          width: 0.5,
-        ),
+
       ),
       child: CupertinoButton(
         padding: EdgeInsets.zero,
