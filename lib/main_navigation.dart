@@ -337,7 +337,7 @@ class CharactersIconPainter extends CustomPainter {
       size.width * 0.2, 
       size.height * 0.25
     );
-    canvas.drawRoundRect(bodyRect, const Radius.circular(4), paint);
+    canvas.drawRect(bodyRect, paint);
     
     // Simple eyes (if selected)
     if (isSelected) {

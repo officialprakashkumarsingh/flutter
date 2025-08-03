@@ -277,9 +277,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
                       ),
                     ),
                   ),
-                // Add thinking section if needed
-                if (widget.message.thinkingProcess != null && widget.message.thinkingProcess!.isNotEmpty)
-                  _buildPerplexityThinking(),
+                // Add thinking section if needed (placeholder for future implementation)
               ],
             ),
           ),
@@ -288,57 +286,7 @@ class _MessageBubbleState extends State<MessageBubble> with TickerProviderStateM
     );
   }
 
-  Widget _buildPerplexityThinking() {
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          GestureDetector(
-            onTap: _toggleThinking,
-            child: Row(
-              children: [
-                Icon(
-                  _isThinkingExpanded ? Icons.expand_less : Icons.expand_more,
-                  size: 18,
-                  color: const Color(0xFF6B7280),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'View thinking process',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: const Color(0xFF6B7280),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (_isThinkingExpanded) ...[
-            const SizedBox(height: 12),
-            Text(
-              widget.message.thinkingProcess!,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: const Color(0xFF4B5563),
-                height: 1.4,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+
   
   void _disposeCodeControllers() {
     for (final controller in _codeAnimationControllers.values) {
