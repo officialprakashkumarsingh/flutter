@@ -109,11 +109,11 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // User message bubble - clean white
+        // User message bubble - same as homescreen
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white, // Clean white for user messages
+            color: const Color(0xFFF8F9FA), // Same as homescreen user bubbles
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
@@ -166,12 +166,12 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // AI response - with homescreen user bubble color background
+        // AI response - with white background
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F9FA), // Homescreen user bubble color for AI
+            color: Colors.white, // Clean white for AI messages
             borderRadius: BorderRadius.circular(16),
           ),
           child: MarkdownBody(
