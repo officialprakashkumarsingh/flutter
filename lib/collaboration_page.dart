@@ -128,59 +128,30 @@ class _ChatsPageState extends State<ChatsPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Beautiful Modern Header
+            // Clean minimal header like homescreen
             Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9F7F4),
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.black.withOpacity(0.06),
-                    width: 1,
-                  ),
-                ),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              color: const Color(0xFFF9F7F4),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Modern Title Section
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF09090B),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.groups_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Collabs',
-                            style: GoogleFonts.inter(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF09090B),
-                            ),
-                          ),
-                          Text(
-                            'Collaborate with friends, families and teams',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: const Color(0xFF6B7280),
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                  // Title using homescreen AhamAI font
+                  Text(
+                    'Collabs',
+                    style: GoogleFonts.spaceMono( // Same font as AhamAI
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF09090B),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Collaborate with friends, families and teams',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: const Color(0xFF6B7280),
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   // Perplexity-style search bar
@@ -225,132 +196,66 @@ class _ChatsPageState extends State<ChatsPage> {
                       ),
                                          ),
                    ),
-                                     const SizedBox(height: 20),
-                  // Modern Action Cards
+                                     const SizedBox(height: 16),
+                  // Simple small buttons
                   Row(
                     children: [
                       Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF09090B),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                        child: ElevatedButton(
+                          onPressed: _showCreateRoomDialog,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF09090B),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
                           ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: _showCreateRoomDialog,
-                              borderRadius: BorderRadius.circular(16),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Icon(
-                                        Icons.add_rounded,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Create Room',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Start a new collaboration',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        color: Colors.white.withOpacity(0.7),
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.add, size: 14),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Create',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: const Color(0xFF09090B),
-                              width: 1.5,
+                        child: OutlinedButton(
+                          onPressed: _showJoinRoomDialog,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF09090B),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            side: const BorderSide(
+                              color: Color(0xFF09090B),
+                              width: 1,
+                            ),
                           ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: _showJoinRoomDialog,
-                              borderRadius: BorderRadius.circular(16),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF09090B).withOpacity(0.08),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Icon(
-                                        Icons.group_add_rounded,
-                                        color: Color(0xFF09090B),
-                                        size: 20,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Join Room',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF09090B),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Enter with invite code',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        color: const Color(0xFF6B7280),
-                                        fontWeight: FontWeight.w400,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.group_add, size: 14),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Join',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
                       ),
@@ -671,52 +576,28 @@ class _ChatsPageState extends State<ChatsPage> {
   Widget _buildRoomsList() {
     return Column(
       children: [
-        // Room Count Header
-        Container(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-          child: Row(
-            children: [
-              Text(
-                '${_filteredRooms.length} ${_filteredRooms.length == 1 ? 'Room' : 'Rooms'}${_searchText.isNotEmpty ? ' found' : ''}',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF09090B),
-                ),
+        // Clean minimal header
+        if (_filteredRooms.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+            child: Text(
+              '${_filteredRooms.length} ${_filteredRooms.length == 1 ? 'room' : 'rooms'}${_searchText.isNotEmpty ? ' found' : ''}',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF71717A),
               ),
-              if (_searchText.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FA),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFFE4E4E7),
-                      width: 1,
-                    ),
-                  ),
-                  child: Text(
-                    'for "$_searchText"',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: const Color(0xFF71717A),
-                    ),
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
-        // Rooms List
-                    Expanded(
-              child: RefreshIndicator(
-                onRefresh: _loadRooms,
-                color: const Color(0xFF7C3AED),
-                strokeWidth: 2.0,
-                displacement: 20,
+        // Clean rooms list like chat list
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadRooms,
+            color: const Color(0xFF09090B),
+            strokeWidth: 2.0,
+            displacement: 20,
             child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+              padding: EdgeInsets.zero, // No padding - full screen
               itemCount: _filteredRooms.length,
               itemBuilder: (context, index) => _buildRoomCard(_filteredRooms[index]),
             ),
@@ -905,116 +786,68 @@ class _ChatsPageState extends State<ChatsPage> {
   }
 
   Widget _buildRoomCard(CollaborationRoom room) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _joinRoomChat(room),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FA),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: const Color(0xFFE4E4E7),
-                      width: 1,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.groups_rounded,
-                    color: Color(0xFF09090B),
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        room.name,
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF09090B),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _joinRoomChat(room),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              // No icon - clean text-only design
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      room.name,
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xFF09090B),
                       ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.people_outline_rounded,
-                            size: 14,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Text(
+                          '${room.memberCount} members',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
                             color: const Color(0xFF71717A),
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${room.memberCount} members',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: const Color(0xFF71717A),
-                            ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '•',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: const Color(0xFF71717A),
                           ),
-                          const SizedBox(width: 12),
-                          Text(
-                            '•',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: const Color(0xFF71717A),
-                            ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          room.inviteCode,
+                          style: GoogleFonts.spaceMono(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF71717A),
                           ),
-                          const SizedBox(width: 12),
-                          Text(
-                            _formatDate(room.createdAt),
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: const Color(0xFF71717A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F9FA),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: const Color(0xFFE4E4E7),
-                      width: 1,
+                        ),
+                      ],
                     ),
-                  ),
-                  child: Text(
-                    room.inviteCode,
-                    style: GoogleFonts.spaceMono(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF09090B),
-                    ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              // Simple arrow
+              const Icon(
+                Icons.arrow_forward_ios,
+                size: 14,
+                color: Color(0xFF9CA3AF),
+              ),
+            ],
           ),
         ),
       ),
