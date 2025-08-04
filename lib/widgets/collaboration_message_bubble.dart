@@ -188,7 +188,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isAI ? Colors.white : const Color(0xFFF8F9FA),
+            color: isAI ? Colors.white : const Color(0xFFF8F9FA), // User messages match homescreen exactly
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -451,7 +451,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
 
   String _getSenderName() {
     if (widget.message.messageType == MessageType.ai) {
-      return 'AI Assistant';
+      return 'AhamAI';
     }
     return widget.message.userName;
   }
