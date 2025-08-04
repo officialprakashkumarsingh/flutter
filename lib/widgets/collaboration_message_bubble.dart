@@ -76,17 +76,17 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
       child: Stack(
         children: [
           Row(
-            mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: widget.isLeftAligned ? MainAxisAlignment.start : MainAxisAlignment.end,
             children: [
-              if (isUser) const Spacer(flex: 2),
+              if (!widget.isLeftAligned) const Spacer(flex: 2),
               Flexible(
                 flex: 8,
                 child: GestureDetector(
                   onDoubleTap: _showHeartEffect,
-                  child: isUser ? _buildUserMessage() : _buildBotMessage(),
+                  child: _buildMessage(),
                 ),
               ),
-              if (!isUser) const Spacer(flex: 2),
+              if (widget.isLeftAligned) const Spacer(flex: 2),
             ],
           ),
           // Heart animation overlay
@@ -107,33 +107,167 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
     );
   }
 
-  Widget _buildUserMessage() {
+  Widget _buildMessage() {
+    final isAI = widget.message.messageType == MessageType.ai;
+    final senderName = _getSenderName();
+    final avatarLetter = _getAvatarLetter();
+    
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: widget.isLeftAligned ? CrossAxisAlignment.start : CrossAxisAlignment.end,
       children: [
-        // User message bubble - same as homescreen
+        // Sender info row
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.isLeftAligned) ...[
+                // Avatar circle with first letter
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: isAI ? const Color(0xFF6366F1) : const Color(0xFF10B981),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      avatarLetter,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  senderName,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+              ] else ...[
+                Text(
+                  senderName,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Avatar circle with first letter
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: isAI ? const Color(0xFF6366F1) : const Color(0xFF10B981),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      avatarLetter,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        
+        // Message bubble
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F9FA), // Same as homescreen user bubbles
+            color: isAI ? Colors.white : const Color(0xFFF8F9FA),
             borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-          child: Text(
-            widget.message.content,
-            style: GoogleFonts.inter(
-              fontSize: 15,
-              color: const Color(0xFF374151),
-              height: 1.4,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
+          child: isAI 
+              ? MarkdownBody(
+                  data: widget.message.content,
+                  styleSheet: MarkdownStyleSheet(
+                    p: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: const Color(0xFF374151),
+                      height: 1.6,
+                      fontWeight: FontWeight.w400,
+                    ),
+                    strong: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: const Color(0xFF111827),
+                      fontWeight: FontWeight.w600,
+                      height: 1.6,
+                    ),
+                    em: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: const Color(0xFF374151),
+                      fontStyle: FontStyle.italic,
+                      height: 1.6,
+                    ),
+                    h1: GoogleFonts.inter(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF111827),
+                    ),
+                    h2: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF111827),
+                    ),
+                    h3: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF111827),
+                    ),
+                    code: GoogleFonts.jetBrainsMono(
+                      fontSize: 14,
+                      backgroundColor: const Color(0xFFF3F4F6),
+                      color: const Color(0xFF374151),
+                    ),
+                    codeblockDecoration: BoxDecoration(
+                      color: const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    blockquote: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: const Color(0xFF6B7280),
+                      fontStyle: FontStyle.italic,
+                      height: 1.6,
+                    ),
+                  ),
+                )
+              : Text(
+                  widget.message.content,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    color: const Color(0xFF374151),
+                    height: 1.4,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
         ),
         
         const SizedBox(height: 4),
         
         // Timestamp and actions row
         Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisAlignment: widget.isLeftAligned ? MainAxisAlignment.start : MainAxisAlignment.end,
           children: [
             Text(
               _formatTimestamp(widget.message.createdAt),
@@ -313,5 +447,25 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
         ),
       ),
     );
+  }
+
+  String _getSenderName() {
+    if (widget.message.messageType == MessageType.ai) {
+      return 'AI Assistant';
+    }
+    return widget.message.userName;
+  }
+
+  String _getAvatarLetter() {
+    final senderName = _getSenderName();
+    if (widget.message.messageType == MessageType.ai) {
+      return 'AI';
+    }
+    
+    // Try to get first letter of email or name
+    if (senderName.isNotEmpty) {
+      return senderName[0].toUpperCase();
+    }
+    return 'U';
   }
 }

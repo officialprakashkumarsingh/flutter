@@ -384,14 +384,14 @@ class _RoomChatPageState extends State<RoomChatPage> {
         // Count only user and AI messages for alternation
         int userAiMessageIndex = 0;
         for (int i = 0; i <= index; i++) {
-          if (_messages[i].messageType == 'user' || _messages[i].messageType == 'ai') {
+          if (_messages[i].messageType == MessageType.user || _messages[i].messageType == MessageType.ai) {
             if (i == index) break;
             userAiMessageIndex++;
           }
         }
         
         bool isOwnMessage;
-        if (message.messageType == 'system') {
+        if (message.messageType == MessageType.system) {
           isOwnMessage = false; // System messages always center
         } else {
           // Alternate: odd index (1st, 3rd, 5th...) = left, even index (2nd, 4th, 6th...) = right
@@ -402,6 +402,7 @@ class _RoomChatPageState extends State<RoomChatPage> {
           message: message,
           currentUserId: _collaborationService.currentUserId,
           onReply: () => _handleReply(message),
+          isLeftAligned: userAiMessageIndex % 2 == 0, // 0=left, 1=right, 2=left, etc.
         );
       },
     );
