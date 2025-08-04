@@ -932,149 +932,76 @@ class _ChatsPageState extends State<ChatsPage> {
   }
 
   Widget _buildModernRoomsList() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ListView.builder(
-        itemCount: _filteredRooms.length,
-        itemBuilder: (context, index) {
-          final room = _filteredRooms[index];
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-              border: Border.all(
-                color: const Color(0xFFF1F1F1),
-                width: 1,
-              ),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-              child: InkWell(
-                onTap: () => _joinRoomChat(room),
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      // Clean room icon without gradient
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF09090B), // App's primary dark color
-                          borderRadius: BorderRadius.circular(12),
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+      itemCount: _filteredRooms.length,
+      itemBuilder: (context, index) {
+        final room = _filteredRooms[index];
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _joinRoomChat(room),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          room.name,
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF09090B),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        child: const Icon(
-                          Icons.groups_rounded,
-                          color: Colors.white,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      
-                      // Room Info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: 4),
+                        Row(
                           children: [
                             Text(
-                              room.name,
+                              '${room.memberCount} members',
                               style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(0xFF111827),
+                                fontSize: 13,
+                                color: const Color(0xFF71717A),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(width: 8),
                             Text(
-                              room.description ?? 'No description',
+                              '•',
                               style: GoogleFonts.inter(
-                                fontSize: 14,
-                                color: const Color(0xFF6B7280),
-                                fontWeight: FontWeight.w400,
+                                fontSize: 13,
+                                color: const Color(0xFF71717A),
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 8),
-                            // Members and status row
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF3F4F6),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.people,
-                                        size: 12,
-                                        color: Color(0xFF6B7280),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '${room.memberCount}',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                          color: const Color(0xFF6B7280),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF71717A), // Subtle gray instead of bright green
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Active',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: const Color(0xFF71717A), // Subtle gray text
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
+                            const SizedBox(width: 8),
+                            Text(
+                              room.inviteCode,
+                              style: GoogleFonts.spaceMono(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xFF71717A),
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                      
-                      // Arrow icon
-                      const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: Color(0xFFD1D5DB),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: Color(0xFF9CA3AF),
+                  ),
+                ],
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
