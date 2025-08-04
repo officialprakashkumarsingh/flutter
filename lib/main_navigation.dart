@@ -166,14 +166,14 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     );
   }
 
-  // Smaller FontAwesome home icon
+  // Beautiful Material home icon
   Widget _buildHomeIcon() {
     final isSelected = _currentIndex == 0;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 100), // Faster response
-      child: FaIcon(
-        FontAwesomeIcons.house,
-        size: 16, // Smaller size
+      child: Icon(
+        isSelected ? Icons.home : Icons.home_outlined,
+        size: 24, // Perfect size for Material icons
         color: isSelected 
           ? const Color(0xFF374151) // Active color
           : const Color(0xFF9CA3AF), // Inactive color
@@ -181,14 +181,14 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     );
   }
 
-  // Better character icon (masks-theater)
+  // Beautiful Material character icon
   Widget _buildCharactersIcon() {
     final isSelected = _currentIndex == 1;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 100), // Faster response
-      child: FaIcon(
-        FontAwesomeIcons.masksTheater, // Updated to masks-theater
-        size: 16,
+      child: Icon(
+        isSelected ? Icons.person : Icons.person_outline,
+        size: 24,
         color: isSelected 
           ? const Color(0xFF374151)
           : const Color(0xFF9CA3AF),
@@ -196,14 +196,14 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     );
   }
 
-  // Better collabs icon (people-group)
+  // Beautiful Material collabs icon
   Widget _buildCollabsIcon() {
     final isSelected = _currentIndex == 2;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 100), // Faster response
-      child: FaIcon(
-        FontAwesomeIcons.peopleGroup, // Updated to people-group
-        size: 16,
+      child: Icon(
+        isSelected ? Icons.groups : Icons.groups_outlined,
+        size: 24,
         color: isSelected 
           ? const Color(0xFF374151)
           : const Color(0xFF9CA3AF),
@@ -211,14 +211,14 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     );
   }
 
-  // Better history icon (bookmark for Saved)
+  // Beautiful Material saved icon
   Widget _buildSavedIcon() {
     final isSelected = _currentIndex == 3;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 100), // Faster response
-      child: FaIcon(
-        FontAwesomeIcons.bookmark, // Better saved icon
-        size: 16, // Smaller size
+      child: Icon(
+        isSelected ? Icons.bookmark : Icons.bookmark_outline,
+        size: 24,
         color: isSelected 
           ? const Color(0xFF374151) // Active color
           : const Color(0xFF9CA3AF), // Inactive color
