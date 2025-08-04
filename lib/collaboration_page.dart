@@ -201,27 +201,27 @@ class _ChatsPageState extends State<ChatsPage> {
                    Row(
                      children: [
                        Expanded(
-                                                                           child: ElevatedButton(
-                            onPressed: _showCreateRoomDialog,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF374151),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 6), // Smaller padding
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12), // More rounded
-                              ),
-                              elevation: 0,
+                                                                                                   child: ElevatedButton(
+                          onPressed: _showCreateRoomDialog,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF09090B),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20), // Much more rounded
                             ),
+                            elevation: 0,
+                          ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.add, size: 12), // Smaller icon
-                                const SizedBox(width: 4), // Smaller spacing
+                                const Icon(Icons.add, size: 16),
+                                const SizedBox(width: 6),
                                 Text(
                                   'Create',
                                   style: GoogleFonts.inter(
-                                    fontSize: 11, // Smaller text
-                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],
@@ -230,29 +230,29 @@ class _ChatsPageState extends State<ChatsPage> {
                        ),
                        const SizedBox(width: 12),
                        Expanded(
-                                                   child: OutlinedButton(
-                            onPressed: _showJoinRoomDialog,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: const Color(0xFF374151),
-                              padding: const EdgeInsets.symmetric(vertical: 6), // Smaller padding
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12), // More rounded
-                              ),
-                              side: const BorderSide(
-                                color: Color(0xFFE5E7EB),
-                                width: 1,
-                              ),
+                                                                           child: OutlinedButton(
+                          onPressed: _showJoinRoomDialog,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF09090B),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20), // Much more rounded
                             ),
+                            side: const BorderSide(
+                              color: Color(0xFF09090B),
+                              width: 1.5,
+                            ),
+                          ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const Icon(Icons.login, size: 12), // Smaller icon
-                                const SizedBox(width: 4), // Smaller spacing
+                                const Icon(Icons.group_add, size: 16),
+                                const SizedBox(width: 6),
                                 Text(
                                   'Join',
                                   style: GoogleFonts.inter(
-                                    fontSize: 11, // Smaller text
-                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ],
