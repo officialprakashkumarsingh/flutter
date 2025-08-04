@@ -109,11 +109,11 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // User message bubble - exactly like homescreen
+        // User message bubble - clean white
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F9FA), // Exact homescreen color
+            color: Colors.white, // Clean white for user messages
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
@@ -166,10 +166,14 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // AI response - exactly like homescreen (no background, just markdown)
+        // AI response - with homescreen user bubble color background
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8F9FA), // Homescreen user bubble color for AI
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: MarkdownBody(
             data: widget.message.content,
             styleSheet: MarkdownStyleSheet(

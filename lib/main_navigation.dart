@@ -148,16 +148,8 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
               scale: isSelected ? 1.15 : 1.0,
               duration: const Duration(milliseconds: 150), // Super fast response
               curve: Curves.easeOutCirc, // Smooth but quick
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isSelected 
-                      ? const Color(0xFF374151).withOpacity(0.08)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: icon,
-                ),
+              child: Center(
+                child: icon,
               ),
             ),
           ),
@@ -181,13 +173,13 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
     );
   }
 
-  // Beautiful Material character icon
+  // Beautiful entertainment mask icon for characters
   Widget _buildCharactersIcon() {
     final isSelected = _currentIndex == 1;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 100), // Faster response
       child: Icon(
-        isSelected ? Icons.person : Icons.person_outline,
+        isSelected ? Icons.theater_comedy : Icons.theater_comedy_outlined,
         size: 24,
         color: isSelected 
           ? const Color(0xFF374151)
