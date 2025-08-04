@@ -10,6 +10,7 @@ class CollaborationMessageBubble extends StatefulWidget {
   final VoidCallback? onReply;
   final String? currentUserId;
   final bool isDirectMessage;
+  final bool isLeftAligned;
 
   const CollaborationMessageBubble({
     super.key,
@@ -17,6 +18,7 @@ class CollaborationMessageBubble extends StatefulWidget {
     this.onReply,
     this.currentUserId,
     this.isDirectMessage = false,
+    this.isLeftAligned = true,
   });
 
   @override
