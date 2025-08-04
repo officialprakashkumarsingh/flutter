@@ -1,0 +1,36 @@
+<variant
+    name="release"
+    package="com.aham.app"
+    minSdkVersion="21"
+    targetSdkVersion="34"
+    shrinking="true"
+    mergedManifest="/workspace/build/app/intermediates/merged_manifest/release/AndroidManifest.xml"
+    manifestMergeReport="/workspace/build/app/outputs/logs/manifest-merger-release-report.txt"
+    proguardFiles="/workspace/build/app/intermediates/default_proguard_files/global/proguard-android.txt-8.1.4:/workspace/flutter/packages/flutter_tools/gradle/flutter_proguard_rules.pro:proguard-rules.pro"
+    partialResultsDir="/workspace/build/app/intermediates/lint_vital_partial_results/release/out">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src/main/AndroidManifest.xml"
+        javaDirectories="src/main/java:src/main/kotlin:src/release/java:src/release/kotlin"
+        resDirectories="src/main/res:src/release/res"
+        assetsDirectories="src/main/assets:src/release/assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <manifestPlaceholders>
+    <placeholder
+        name="applicationName"
+        value="android.app.Application" />
+  </manifestPlaceholders>
+  <mainArtifact
+      classOutputs="/workspace/build/app/intermediates/javac/release/classes:/workspace/build/app/tmp/kotlin-classes/release:/workspace/build/app/kotlinToolingMetadata:/workspace/build/app/intermediates/compile_and_runtime_not_namespaced_r_class_jar/release/R.jar"
+      applicationId="com.aham.app"
+      generatedSourceFolders="/workspace/build/app/generated/ap_generated_sources/release/out"
+      generatedResourceFolders="/workspace/build/app/generated/res/resValues/release"
+      desugaredMethodsFiles="/home/ubuntu/.gradle/caches/transforms-3/c8ad4d994d13eb26aed0d2e4dbfc77aa/transformed/D8BackportedDesugaredMethods.txt">
+  </mainArtifact>
+</variant>

@@ -53,20 +53,20 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   void _onNavTap(int index) {
     if (index == _currentIndex) return;
     
-    // Immediate haptic feedback for ultra-responsive feel
-    HapticFeedback.selectionClick();
+    // Triple immediate feedback for ultra-responsive feel
+    HapticFeedback.lightImpact(); // Instant tactile response
     
     // Update state immediately for instant visual feedback
     setState(() {
       _currentIndex = index;
     });
     
-    // Jump directly to page with no delay
+    // Jump directly to page with zero delay
     _pageController.jumpToPage(index);
     
-    // Light second haptic for smooth confirmation
-    Future.delayed(const Duration(milliseconds: 30), () {
-      HapticFeedback.lightImpact();
+    // Additional quick confirmation haptic
+    Future.delayed(const Duration(milliseconds: 10), () {
+      HapticFeedback.selectionClick();
     });
   }
 
@@ -133,26 +133,32 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   Widget _buildNavItem(Widget icon, int index) {
     final isSelected = _currentIndex == index;
     
-    return GestureDetector(
-      onTap: () => _onNavTap(index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: AnimatedScale(
-          scale: isSelected ? 1.25 : 1.0,
-          duration: const Duration(milliseconds: 200), // Shorter for quick return
-          curve: Curves.easeOutBack, // Better curve for returning to original
-          child: AnimatedRotation(
-            turns: isSelected ? 0.0 : 0.0, // Remove rotation, keep original state
-            duration: const Duration(milliseconds: 200),
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(10),
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _onNavTap(index),
+          borderRadius: BorderRadius.circular(16),
+          splashColor: const Color(0xFF374151).withOpacity(0.1),
+          highlightColor: const Color(0xFF374151).withOpacity(0.05),
+          child: Container(
+            height: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: AnimatedScale(
+              scale: isSelected ? 1.15 : 1.0,
+              duration: const Duration(milliseconds: 150), // Super fast response
+              curve: Curves.easeOutCirc, // Smooth but quick
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isSelected 
+                      ? const Color(0xFF374151).withOpacity(0.08)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: icon,
+                ),
               ),
-              child: icon,
             ),
           ),
         ),
@@ -164,7 +170,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   Widget _buildHomeIcon() {
     final isSelected = _currentIndex == 0;
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 100), // Faster response
       child: FaIcon(
         FontAwesomeIcons.house,
         size: 16, // Smaller size
@@ -179,7 +185,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   Widget _buildCharactersIcon() {
     final isSelected = _currentIndex == 1;
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 100), // Faster response
       child: FaIcon(
         FontAwesomeIcons.masksTheater, // Updated to masks-theater
         size: 16,
@@ -194,7 +200,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   Widget _buildCollabsIcon() {
     final isSelected = _currentIndex == 2;
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 100), // Faster response
       child: FaIcon(
         FontAwesomeIcons.peopleGroup, // Updated to people-group
         size: 16,
@@ -209,7 +215,7 @@ class _MainNavigationState extends State<MainNavigation> with TickerProviderStat
   Widget _buildSavedIcon() {
     final isSelected = _currentIndex == 3;
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 100), // Faster response
       child: FaIcon(
         FontAwesomeIcons.bookmark, // Better saved icon
         size: 16, // Smaller size

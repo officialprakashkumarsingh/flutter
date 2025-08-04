@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../models/collaboration_message.dart';
+import '../models/collaboration_models.dart';
 
 class CollaborationMessageBubble extends StatefulWidget {
-  final CollaborationMessage message;
+  final RoomMessage message;
   final VoidCallback? onReply;
   final String? currentUserId;
   final bool isDirectMessage;
@@ -66,8 +66,8 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
 
   @override
   Widget build(BuildContext context) {
-    final isUser = widget.message.senderId == widget.currentUserId;
-    final isAI = widget.message.senderId == 'ai' || widget.message.senderName == 'AI';
+    final isUser = widget.message.userId == widget.currentUserId;
+    final isAI = widget.message.messageType == 'ai';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -117,7 +117,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
-            widget.message.text,
+            widget.message.content,
             style: GoogleFonts.inter(
               fontSize: 15,
               color: const Color(0xFF374151),
@@ -134,7 +134,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Text(
-              _formatTimestamp(widget.message.timestamp),
+              _formatTimestamp(widget.message.createdAt),
               style: GoogleFonts.inter(
                 fontSize: 11,
                 color: const Color(0xFF9CA3AF),
@@ -145,7 +145,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
             GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
-                _copyToClipboard(widget.message.text);
+                _copyToClipboard(widget.message.content);
               },
               child: Container(
                 padding: const EdgeInsets.all(4),
@@ -171,7 +171,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: MarkdownBody(
-            data: widget.message.text,
+            data: widget.message.content,
             styleSheet: MarkdownStyleSheet(
               p: GoogleFonts.inter(
                 fontSize: 15,
@@ -234,7 +234,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
         Row(
           children: [
             Text(
-              _formatTimestamp(widget.message.timestamp),
+              _formatTimestamp(widget.message.createdAt),
               style: GoogleFonts.inter(
                 fontSize: 11,
                 color: const Color(0xFF9CA3AF),
@@ -245,7 +245,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
             GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
-                _copyToClipboard(widget.message.text);
+                _copyToClipboard(widget.message.content);
               },
               child: Container(
                 padding: const EdgeInsets.all(4),

@@ -31,6 +31,8 @@ class CollaborationService {
   Stream<List<RoomMessage>> get messagesStream => _messagesController?.stream ?? const Stream.empty();
   Stream<List<RoomMember>> get membersStream => _membersController?.stream ?? const Stream.empty();
   Stream<List<TypingIndicator>> get typingStream => _typingController?.stream ?? const Stream.empty();
+  
+
 
   /// Initialize the service with current user info
   Future<void> initialize() async {

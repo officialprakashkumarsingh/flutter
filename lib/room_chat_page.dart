@@ -400,8 +400,8 @@ class _RoomChatPageState extends State<RoomChatPage> {
         
         return CollaborationMessageBubble(
           message: message,
-          isOwnMessage: isOwnMessage,
-          onReply: _handleReply,
+          currentUserId: _collaborationService.currentUserId,
+          onReply: () => _handleReply(message),
         );
       },
     );
@@ -715,6 +715,12 @@ class _RoomChatPageState extends State<RoomChatPage> {
 
   // Removed _buildMembersDrawer - no longer needed since member count is shown in room list
 
+  void _handleReply(RoomMessage message) {
+    setState(() {
+      _replyingTo = message;
+    });
+  }
+
   Future<void> _sendMessage() async {
     final content = _messageController.text.trim();
     if (content.isEmpty || _isSendingMessage) return;
@@ -1007,15 +1013,7 @@ Guidelines:
     }
   }
 
-  void _handleReply(RoomMessage message) {
-    setState(() {
-      _replyingTo = message;
-    });
-    _messageController.text = '@${message.userName} ';
-    _messageController.selection = TextSelection.fromPosition(
-      TextPosition(offset: _messageController.text.length),
-    );
-  }
+
 
   Widget _buildReplyPreview() {
     if (_replyingTo == null) return const SizedBox.shrink();
