@@ -265,7 +265,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
         
         const SizedBox(height: 4),
         
-        // Timestamp and actions row
+        // Timestamp row (no copy button)
         Row(
           mainAxisAlignment: widget.isLeftAligned ? MainAxisAlignment.start : MainAxisAlignment.end,
           children: [
@@ -275,21 +275,6 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
                 fontSize: 11,
                 color: const Color(0xFF9CA3AF),
                 fontWeight: FontWeight.w400,
-              ),
-            ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () {
-                HapticFeedback.lightImpact();
-                _copyToClipboard(widget.message.content);
-              },
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                child: const Icon(
-                  Icons.copy_rounded,
-                  size: 14,
-                  color: Color(0xFF9CA3AF),
-                ),
               ),
             ),
           ],
