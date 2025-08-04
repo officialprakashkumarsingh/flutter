@@ -184,17 +184,17 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
           ),
         ),
         
-        // Message bubble
+        // Beautiful raindrop-style message bubble
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isAI ? Colors.white : const Color(0xFFF8F9FA), // User messages match homescreen exactly
-            borderRadius: BorderRadius.circular(16),
+            color: isAI ? Colors.white : const Color(0xFF394B5A), // Dark bluish-gray for user messages
+            borderRadius: _getRaindropBorderRadius(),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: Colors.black.withOpacity(isAI ? 0.04 : 0.12),
+                blurRadius: 12,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
@@ -256,7 +256,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
                   widget.message.content,
                   style: GoogleFonts.inter(
                     fontSize: 15,
-                    color: const Color(0xFF374151),
+                    color: Colors.white, // White text for dark user bubbles
                     height: 1.4,
                     fontWeight: FontWeight.w400,
                   ),
@@ -452,5 +452,27 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
       return senderName[0].toUpperCase();
     }
     return 'U';
+  }
+
+  BorderRadius _getRaindropBorderRadius() {
+    final isAI = widget.message.messageType == MessageType.ai;
+    
+    if (widget.isLeftAligned) {
+      // Left-aligned raindrop: pointed on bottom-left
+      return BorderRadius.only(
+        topLeft: const Radius.circular(20),
+        topRight: const Radius.circular(20),
+        bottomRight: const Radius.circular(20),
+        bottomLeft: const Radius.circular(4), // Sharp corner for raindrop effect
+      );
+    } else {
+      // Right-aligned raindrop: pointed on bottom-right
+      return BorderRadius.only(
+        topLeft: const Radius.circular(20),
+        topRight: const Radius.circular(20),
+        bottomLeft: const Radius.circular(20),
+        bottomRight: const Radius.circular(4), // Sharp corner for raindrop effect
+      );
+    }
   }
 }
