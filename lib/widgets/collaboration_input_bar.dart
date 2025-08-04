@@ -19,19 +19,19 @@ class CollaborationInputBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(bottom: 16),
       decoration: const BoxDecoration(
-        color: Color(0xFFF9F7F4), // Cream background like homescreen
+        color: Color(0xFFF9F7F4), // Clean cream background exactly like homescreen
       ),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        margin: const EdgeInsets.fromLTRB(20, 16, 20, 0), // Exact homescreen margins
+        margin: const EdgeInsets.fromLTRB(20, 16, 20, 0), // Perfect homescreen margins
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: Colors.white, // White input field background like homescreen
-          borderRadius: BorderRadius.circular(16), // Exact homescreen border radius
+          color: Colors.white, // Pure white input exactly like homescreen
+          borderRadius: BorderRadius.circular(16), // Perfect 16px radius like homescreen
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04), // Exact homescreen shadow
+              color: Colors.black.withOpacity(0.04), // Exact homescreen shadow opacity
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

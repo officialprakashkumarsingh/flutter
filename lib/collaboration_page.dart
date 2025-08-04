@@ -1132,19 +1132,12 @@ class _ChatsPageState extends State<ChatsPage> {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      // Modern room icon with gradient
+                      // Clean room icon without gradient
                       Container(
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFF6366F1),
-                              Color(0xFF8B5CF6),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          color: const Color(0xFF09090B), // App's primary dark color
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
@@ -1216,7 +1209,7 @@ class _ChatsPageState extends State<ChatsPage> {
                                   width: 8,
                                   height: 8,
                                   decoration: const BoxDecoration(
-                                    color: Color(0xFF10B981),
+                                    color: Color(0xFF71717A), // Subtle gray instead of bright green
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -1225,7 +1218,7 @@ class _ChatsPageState extends State<ChatsPage> {
                                   'Active',
                                   style: GoogleFonts.inter(
                                     fontSize: 12,
-                                    color: const Color(0xFF10B981),
+                                    color: const Color(0xFF71717A), // Subtle gray text
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),

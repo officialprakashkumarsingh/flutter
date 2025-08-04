@@ -127,7 +127,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: isAI ? const Color(0xFF6366F1) : const Color(0xFF10B981),
+                    color: isAI ? const Color(0xFF6366F1) : const Color(0xFF374151), // User avatar matches homescreen
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -165,7 +165,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: isAI ? const Color(0xFF6366F1) : const Color(0xFF10B981),
+                    color: isAI ? const Color(0xFF6366F1) : const Color(0xFF374151), // User avatar matches homescreen
                     shape: BoxShape.circle,
                   ),
                   child: Center(
