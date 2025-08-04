@@ -1248,8 +1248,8 @@ class _MainShellState extends State<MainShell> with TickerProviderStateMixin, Au
                           _saveAndStartNewChat();
                         },
                         borderRadius: BorderRadius.circular(8),
-                        child: const FaIcon(
-                          FontAwesomeIcons.squarePlus,
+                        child: const Icon(
+                          Icons.add_rounded,
                           color: Color(0xFF71717A),
                           size: 20,
                         ),

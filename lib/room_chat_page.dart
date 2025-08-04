@@ -577,10 +577,10 @@ class _RoomChatPageState extends State<RoomChatPage> {
             borderRadius: BorderRadius.circular(18),
             onTap: _scrollToBottom,
             child: const Center(
-              child: FaIcon(
-                FontAwesomeIcons.chevronDown,
+              child: Icon(
+                Icons.keyboard_arrow_down,
                 color: Colors.white,
-                size: 14,
+                size: 20,
               ),
             ),
           ),

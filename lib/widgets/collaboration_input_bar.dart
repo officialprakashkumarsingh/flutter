@@ -24,14 +24,14 @@ class CollaborationInputBar extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+        margin: const EdgeInsets.fromLTRB(20, 16, 20, 0), // Exact homescreen margins
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: Colors.white, // White input field background like homescreen
-          borderRadius: BorderRadius.circular(16), // Same as homescreen
+          borderRadius: BorderRadius.circular(16), // Exact homescreen border radius
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withOpacity(0.04), // Exact homescreen shadow
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -40,35 +40,6 @@ class CollaborationInputBar extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // Attachment button like homescreen
-            if (!isSending)
-              Padding(
-                padding: const EdgeInsets.only(left: 8, bottom: 6),
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(10),
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      // TODO: Add attachment functionality for rooms
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        FontAwesomeIcons.puzzlePiece,
-                        color: Color(0xFF71717A),
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            
             // Text input field - exactly like homescreen
             Expanded(
               child: TextField(
@@ -92,7 +63,7 @@ class CollaborationInputBar extends StatelessWidget {
                     fontWeight: FontWeight.w400,
                   ),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.fromLTRB(16, 16, 8, 16),
+                  contentPadding: const EdgeInsets.fromLTRB(16, 16, 8, 16), // Exact homescreen padding
                 ),
                 onSubmitted: (value) {
                   if (value.trim().isNotEmpty && !isSending) {
@@ -104,7 +75,7 @@ class CollaborationInputBar extends StatelessWidget {
             
             // Send button - exactly like homescreen
             Padding(
-              padding: const EdgeInsets.only(right: 8, bottom: 6),
+              padding: const EdgeInsets.only(right: 8, bottom: 6), // Exact homescreen padding
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
                 curve: Curves.easeInOut,
@@ -112,10 +83,10 @@ class CollaborationInputBar extends StatelessWidget {
                   color: isSending 
                       ? const Color(0xFFFEE2E2)
                       : const Color(0xFF09090B),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12), // Exact homescreen border radius
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
+                      color: Colors.black.withOpacity(0.08), // Exact homescreen shadow
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -131,22 +102,20 @@ class CollaborationInputBar extends StatelessWidget {
                       onSend();
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(10), // Exact homescreen padding
                       child: isSending 
                           ? const SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFEF4444)),
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             )
-                          : Icon(
-                              controller.text.trim().isNotEmpty
-                                  ? Icons.arrow_upward_rounded
-                                  : Icons.auto_fix_high_rounded,
+                          : const Icon(
+                              Icons.arrow_upward_rounded, // Exact homescreen icon
                               color: Colors.white,
-                              size: 20,
+                              size: 20, // Exact homescreen size
                             ),
                     ),
                   ),

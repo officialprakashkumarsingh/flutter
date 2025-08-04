@@ -113,7 +113,7 @@ class _CollaborationMessageBubbleState extends State<CollaborationMessageBubble>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8F9FA),
+            color: const Color(0xFFF8F9FA), // Exact homescreen color
             borderRadius: BorderRadius.circular(16),
           ),
           child: Text(
